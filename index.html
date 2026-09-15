@@ -104,9 +104,9 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 .item .t i{font-style:normal;color:var(--ink-3);font-size:10.5px}
 
 /* ---------- scène ---------- */
-#c2d{position:absolute;inset:0;display:block;touch-action:none}
-#v3d{position:absolute;inset:0;touch-action:none}
-#v3d canvas{display:block}
+#c2d{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
+#v3d{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none}
+#v3d canvas{display:block;width:100%!important;height:100%!important}
 .hide{display:none!important}
 #hint{
   position:absolute;left:50%;top:12px;transform:translateX(-50%);
@@ -647,10 +647,14 @@ let W2 = 0, H2 = 0;                       // dimensions CSS du canevas
 const RULER = 18;                         // largeur des règles graduées
 
 function resize2D(){
-  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-  W2 = r.width; H2 = r.height;
-  cv.width = Math.max(1, Math.round(r.width * dpr));
-  cv.height = Math.max(1, Math.round(r.height * dpr));
+  const stage = $("#stage");
+  const r = stage ? stage.getBoundingClientRect() : cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  W2 = r.width || 800; H2 = r.height || 600;
+  cv.style.width = W2 + "px";
+  cv.style.height = H2 + "px";
+  cv.width = Math.max(1, Math.round(W2 * dpr));
+  cv.height = Math.max(1, Math.round(H2 * dpr));
   need2D = true;
 }
 /* Monde (m) → écran (px CSS) */
@@ -1230,7 +1234,11 @@ cv.addEventListener("contextmenu", e => e.preventDefault());
 cv.addEventListener("dblclick", () => { if (state.fluxDraft) endFluxDraft(); });
 
 function fit2D(){
-  if (W2 < 10){ const r = $("#stage").getBoundingClientRect(); W2 = r.width; H2 = r.height; }
+  const stage = $("#stage");
+  if (stage){
+    const r = stage.getBoundingClientRect();
+    if (r.width > 20 && r.height > 20){ W2 = r.width; H2 = r.height; }
+  }
   const S = state.site;
   const zx = (W2 - 60) / S.w, zz = (H2 - 60) / S.d;
   state.cam2.zoom = clamp(Math.min(zx, zz), 2, 60);
@@ -2698,6 +2706,10 @@ function boot(){
   init3D(); bind3D();
   loadDemo();
   setTool("select", true); setView("2d");
+  requestAnimationFrame(() => {
+    resize2D();
+    fit2D();
+  });
   animate();                       // boucle unique, active même sans WebGL
   if (!THREE_OK) toast("Three.js indisponible : la vue 3D est désactivée, le plan 2D reste complet.", true);
 }
