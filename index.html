@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AgroPlan — implantation d'usine agroalimentaire 2D / 3D</title>
 <style>
-/* =====================================================================
-   AgroPlan — feuille de style
-   Parti pris : la chrome de l'outil reste graphite désaturée pour ne pas
-   entrer en concurrence avec le code couleur sanitaire du plan (gris /
-   vert / bleu / violet), qui est la seule information colorée utile.
-   Le plan lui-même est sur fond clair : c'est un document technique,
-   destiné à être imprimé et annoté.
-   ===================================================================== */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0e141b;          /* fond application */
@@ -45,15 +37,13 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 ::-webkit-scrollbar-thumb:hover{background:#3b4a5e;background-clip:padding-box}
 ::-webkit-scrollbar-track{background:transparent}
 
-/* ---------- ossature ---------- */
 #app{display:grid;grid-template-rows:46px 1fr 24px;grid-template-columns:262px 1fr 326px;height:100vh}
 #bar{grid-column:1/4;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
 #left{grid-row:2;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-#stage{grid-row:2;position:relative;background:#0a0f14;overflow:hidden}
+#stage{grid-row:2;position:relative;background:#0a0f14;overflow:hidden;width:100%;height:100%}
 #right{grid-row:2;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;min-height:0}
 #status{grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px;background:var(--panel);border-top:1px solid var(--line);color:var(--ink-2);font-size:11.5px}
 
-/* ---------- barre d'outils ---------- */
 .brand{display:flex;align-items:baseline;gap:7px;padding-right:12px;margin-right:4px;border-right:1px solid var(--line);height:26px}
 .brand b{font-size:14px;font-weight:650;letter-spacing:.2px}
 .brand span{font-size:10.5px;color:var(--ink-3)}
@@ -76,9 +66,7 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 .seg button{background:transparent;border:0;padding:5px 12px;cursor:pointer;color:var(--ink-2);font-weight:600}
 .seg button.on{background:var(--acc);color:var(--acc-ink)}
 .spacer{flex:1}
-.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---------- bibliothèque ---------- */
 #search{margin:9px;padding:6px 9px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);width:calc(100% - 18px)}
 #search::placeholder{color:var(--ink-3)}
 #lib{overflow-y:auto;padding:0 9px 16px;flex:1;min-height:0}
@@ -103,7 +91,6 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 .item .t b{display:block;font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .item .t i{font-style:normal;color:var(--ink-3);font-size:10.5px}
 
-/* ---------- scène ---------- */
 #c2d{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
 #v3d{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none}
 #v3d canvas{display:block;width:100%!important;height:100%!important}
@@ -116,7 +103,7 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 }
 #legend{
   position:absolute;left:12px;bottom:12px;background:rgba(14,20,27,.92);border:1px solid var(--line);
-  border-radius:var(--r);padding:8px 10px;font-size:11px;z-index:4;max-width:236px;backdrop-filter:blur(4px)
+  border-radius:var(--r);padding:8px 10px;font-size:11px;z-index:4;max-width:245px;backdrop-filter:blur(4px)
 }
 #legend h4{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-bottom:5px}
 #legend h4+h4{margin-top:8px}
@@ -131,7 +118,6 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 #drop{position:absolute;inset:0;z-index:9;background:rgba(10,15,20,.85);border:2px dashed var(--acc);
   display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--acc)}
 
-/* ---------- panneau droit ---------- */
 .sec{border-bottom:1px solid var(--line)}
 .sec>summary{
   list-style:none;cursor:pointer;padding:9px 12px;font-weight:600;font-size:12px;
@@ -162,7 +148,6 @@ input[type=range]{accent-color:var(--acc);width:100%}
 .help{color:var(--ink-3);font-size:11px;line-height:1.5;margin:4px 0 8px}
 .empty{color:var(--ink-3);font-size:12px;padding:10px 2px;line-height:1.55}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .unit{position:relative;flex:1}
 .unit input{padding-right:22px}
 .unit::after{content:attr(data-u);position:absolute;right:7px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:10.5px;pointer-events:none}
@@ -173,7 +158,6 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:11px 0}
 .bar{height:6px;border-radius:3px;background:var(--panel-2);overflow:hidden;margin:3px 0 7px;display:flex}
 .bar i{display:block;height:100%}
 
-/* diagnostics */
 .iss{
   display:flex;gap:8px;padding:7px 8px;border:1px solid var(--line);border-left-width:3px;
   border-radius:var(--r);margin-bottom:6px;cursor:pointer;background:var(--panel-2)
@@ -187,11 +171,23 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:11px 0}
 .ok-box{display:flex;gap:8px;align-items:flex-start;background:#12241f;border:1px solid #1d4034;color:#9fe6c6;padding:8px 10px;border-radius:var(--r);font-size:11.5px;line-height:1.5}
 
 .toast{
-  position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:50;
+  position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:100;
   background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
   padding:8px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px
 }
 .toast.bad{border-color:#6d2b2b;color:#ffb4b0}
+#modal-backdrop{
+  position:fixed;inset:0;background:rgba(5,9,14,.75);z-index:200;display:flex;
+  align-items:center;justify-content:center;backdrop-filter:blur(2px);
+}
+.modal-box{
+  background:var(--panel);border:1px solid var(--line-2);border-radius:8px;
+  width:360px;padding:18px 20px;box-shadow:0 16px 40px rgba(0,0,0,.65);
+}
+.modal-box h3{font-size:14px;margin-bottom:8px;color:#fff}
+.modal-box p{font-size:12px;color:var(--ink-2);margin-bottom:16px;line-height:1.5}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+
 kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:3px;padding:0 4px;font:inherit;font-size:10.5px;color:var(--ink-2)}
 #coord{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:var(--acc)}
 #msg{margin-left:auto;color:var(--ink-3)}
@@ -205,13 +201,11 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
   #left.off{transform:translateX(-100%)}#right.off{transform:translateX(100%)}
   #stage{grid-column:1}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ============================ BARRE D'OUTILS ============================ -->
   <header id="bar">
     <div class="brand"><b>AgroPlan</b><span>implantation agroalimentaire</span></div>
 
@@ -240,6 +234,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <option value="1" selected>1 m</option><option value="2">2 m</option><option value="5">5 m</option>
       </select>
       <button class="btn sm" id="fit" title="Recadrer sur le site (F2)">Recadrer</button>
+      <button class="btn sm" id="navlock" title="Verrouiller le plan (L) : navigation seule, aucun élément ne peut être déplacé">Verrouiller le plan</button>
     </div>
 
     <div class="spacer"></div>
@@ -257,21 +252,18 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <input type="file" id="file" accept="application/json,.json" class="hide">
   </header>
 
-  <!-- ============================ BIBLIOTHÈQUE ============================ -->
   <aside id="left">
     <input id="search" type="text" placeholder="Rechercher un élément…" autocomplete="off">
     <div id="lib"></div>
   </aside>
 
-  <!-- ============================ SCÈNE ============================ -->
   <main id="stage">
     <canvas id="c2d"></canvas>
     <div id="v3d" class="hide"></div>
     <div id="nothree" class="hide">
       <div>
         <b>La vue 3D a besoin de Three.js</b><br>
-        <span style="color:var(--ink-2)">La bibliothèque n'a pas pu être chargée depuis le CDN. Connectez-vous une fois au réseau
-        pour la mettre en cache, ou placez <code>three.min.js</code> à côté de ce fichier.
+        <span style="color:var(--ink-2)">La bibliothèque n'a pas pu être chargée depuis le CDN.
         Le plan 2D, l'édition et les exports restent pleinement utilisables.</span>
       </div>
     </div>
@@ -284,9 +276,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <div id="drop" class="hide">Déposez un fichier .json d'implantation</div>
   </main>
 
-  <!-- ============================ PANNEAU DROIT ============================ -->
   <aside id="right">
-
     <details class="sec" open id="sec-prop">
       <summary>Propriétés <span class="tag" id="seltag">rien</span></summary>
       <div class="body" id="props"></div>
@@ -314,7 +304,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <hr class="sep">
         <label class="chk"><input type="checkbox" id="v-grid" checked> Grille métrique et règles</label>
         <label class="chk"><input type="checkbox" id="v-zones" checked> Zones sanitaires</label>
-        <label class="chk"><input type="checkbox" id="v-flux" checked> Flux</label>
+        <label class="chk"><input type="checkbox" id="v-flux" checked> Flux de circulation</label>
         <label class="chk"><input type="checkbox" id="v-labels" checked> Étiquettes des éléments</label>
         <label class="chk"><input type="checkbox" id="v-issues" checked> Repères d'anomalie</label>
         <label class="chk"><input type="checkbox" id="v-shadow" checked> Ombres portées (3D)</label>
@@ -335,47 +325,34 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
       <summary>Raccourcis</summary>
       <div class="body" id="keys"></div>
     </details>
-
   </aside>
 
-  <!-- ============================ BARRE D'ÉTAT ============================ -->
   <footer id="status">
     <span id="coord">x 0,00 m &nbsp; z 0,00 m</span>
     <span id="selinfo">Aucune sélection</span>
     <span id="zoominfo"></span>
+    <span id="lockinfo" style="color:var(--acc)"></span>
     <span id="msg"></span>
   </footer>
 </div>
 
-<!-- Three.js r128 (build global classique : fonctionne aussi en file:// sans serveur) -->
+<div id="modal-backdrop" class="hide">
+  <div class="modal-box">
+    <h3 id="modal-title">Confirmation</h3>
+    <p id="modal-msg">Êtes-vous certain de vouloir effectuer cette action ?</p>
+    <div class="modal-actions">
+      <button class="btn sm ghost" id="modal-cancel">Annuler</button>
+      <button class="btn sm danger" id="modal-ok">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js r128 & OrbitControls -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- OrbitControls officiel de la même révision. Si le CDN est injoignable,
-     un contrôleur orbital de secours équivalent est défini plus bas. -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
 "use strict";
-/* =====================================================================
-   AgroPlan — éditeur d'implantation d'usine agroalimentaire
-   ---------------------------------------------------------------------
-   Sommaire
-     1. Constantes métier  : zones sanitaires, familles de flux, catalogue
-     2. État global        : state, historique, invalidation
-     3. Utilitaires        : maths, géométrie orientée (OBB), DOM
-     4. Vue 2D             : rendu Canvas + interactions
-     5. Vue 3D             : scène Three.js + réconciliateur + interactions
-     6. Conformité         : contrôle de la marche en avant
-     7. Interface          : bibliothèque, propriétés, synthèse, E/S
-     8. Amorçage
-   ===================================================================== */
-
-/* =====================================================================
-   1. CONSTANTES MÉTIER
-   ===================================================================== */
-
-/* Classes sanitaires.
-   hyg   : niveau d'hygiène requis (contrôle des contaminations croisées)
-   ordre : rang dans le procédé (contrôle de la marche en avant)      */
 const ZONES = {
   ext:     {label:"Extérieur / voirie",              color:"#7b8899", hyg:0, ordre:0},
   grise:   {label:"Zone grise",                      color:"#d08a2c", hyg:1, ordre:1},
@@ -387,22 +364,19 @@ const ZONES = {
 };
 const ZONE_KEYS = Object.keys(ZONES);
 
-/* Familles de flux. produit = flux soumis à la règle de non-retour.
-   propre : niveau de propreté du flux, sert au test de croisement.   */
 const FLUX = {
-  mp:   {label:"Matières premières",       color:"#3d9be9", produit:true,  propre:1},
-  enc:  {label:"En-cours de fabrication",  color:"#f4b740", produit:true,  propre:2},
-  pf:   {label:"Produits finis",           color:"#3ecf8e", produit:true,  propre:3},
-  emb:  {label:"Emballages",               color:"#c9a227", produit:false, propre:2},
-  dech: {label:"Déchets et sous-produits", color:"#ff5f56", produit:false, propre:0},
-  pers: {label:"Personnel",                color:"#b07cf0", produit:false, propre:-1}
+  mp:      {label:"Matières premières",            color:"#3d9be9", produit:true,  propre:1},
+  entrant: {label:"MP entrante (quai réception)",   color:"#00e5ff", produit:true,  propre:1},
+  enc:     {label:"En-cours de fabrication",       color:"#f4b740", produit:true,  propre:2},
+  pf:      {label:"Produits finis",                color:"#3ecf8e", produit:true,  propre:3},
+  sortant: {label:"MP sortante (quai expédition)",  color:"#00e676", produit:true,  propre:3},
+  emb:     {label:"Emballages",                    color:"#c9a227", produit:false, propre:2},
+  dech:    {label:"Déchets et sous-produits",      color:"#ff5f56", produit:false, propre:0},
+  pers:    {label:"Personnel",                     color:"#b07cf0", produit:false, propre:-1}
 };
 
-/* Catalogue des éléments instanciables.
-   w = largeur (X), d = longueur (Z), h = hauteur (Y), en mètres.
-   shape pilote à la fois le symbole 2D et le volume 3D.              */
 const CATALOG = [
-  /* ---------- Structure ---------- */
+  /* Structure */
   {id:"mur_ext",    fam:"Structure", cat:"structure", shape:"wall",   label:"Mur périmétrique",              w:12,  d:.25, h:7,   color:"#9aa7b5", zone:"ext",    note:"Bardage ou béton, raccords sol/mur en gorge arrondie."},
   {id:"cloison",    fam:"Structure", cat:"structure", shape:"wall",   label:"Cloison isotherme 100 mm",      w:8,   d:.10, h:4,   color:"#dbe3ec", zone:"propre", note:"Panneau sandwich PIR, parement lisse nettoyable, joints siliconés alimentaires."},
   {id:"cloison_v",  fam:"Structure", cat:"structure", shape:"window", label:"Cloison vitrée",                w:4,   d:.08, h:2.5, color:"#8fd3f4", zone:"propre", note:"Vision entre zones sans passage d'air : facilite la supervision."},
@@ -414,27 +388,31 @@ const CATALOG = [
   {id:"poteau",     fam:"Structure", cat:"structure", shape:"box",    label:"Poteau de structure",           w:.4,  d:.4,  h:7,   color:"#8b93a0", zone:"ext"},
   {id:"caniveau",   fam:"Structure", cat:"structure", shape:"trench", label:"Caniveau / siphon de sol",      w:6,   d:.3,  h:.06, color:"#6b7a8c", zone:"propre", note:"Pente 1 %, écoulement de la zone propre vers la zone grise, jamais l'inverse."},
 
-  /* ---------- Zones et sas ---------- */
-  {id:"z_quai_r",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Quai de réception",             w:8,  d:12, h:4, zone:"grise",   note:"Contrôle à réception : température, agréage, propreté du camion."},
-  {id:"z_recep",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Réception / déconditionnement", w:12, d:12, h:5, zone:"grise",   note:"Retrait des emballages de transport avant entrée en zone propre."},
-  {id:"z_stock_mp", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage MP réfrigéré",         w:10, d:14, h:5, zone:"froid",   note:"0–4 °C, rotation FEFO, séparation allergènes."},
-  {id:"z_embal",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage emballages",           w:8,  d:6,  h:5, zone:"propre",  note:"Déconditionner les cartons avant l'entrée en zone de conditionnement."},
-  {id:"z_prepa",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Atelier de préparation",        w:14, d:14, h:5, zone:"propre"},
-  {id:"z_cuisson",  fam:"Zones et sas", cat:"zones", shape:"zone", label:"Cuisson / traitement thermique",w:14, d:12, h:5, zone:"propre",  note:"CCP barème temps/température, extraction des buées."},
-  {id:"z_refroid",  fam:"Zones et sas", cat:"zones", shape:"zone", label:"Refroidissement rapide",        w:12, d:12, h:5, zone:"froid",   note:"CCP : 63 → 10 °C en moins de 2 h."},
-  {id:"z_condi1",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Conditionnement primaire",      w:12, d:14, h:4, zone:"blanche", note:"Salle blanche en surpression, air filtré, accès par sas uniquement."},
-  {id:"z_condi2",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Conditionnement secondaire",    w:8,  d:14, h:5, zone:"expe",    note:"Produit déjà protégé : mise en carton, palettisation."},
-  {id:"z_stock_pf", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage produits finis",       w:10, d:10, h:6, zone:"froid"},
-  {id:"z_expe",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Quai d'expédition",             w:8,  d:12, h:4, zone:"expe"},
-  {id:"sas_hyg",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Sas hygiène personnel",         w:3,  d:4,  h:3, zone:"blanche", note:"Lave-bottes, lave-mains sans contact, distributeur de charlottes, marche au pas obligé."},
-  {id:"sas_mat",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Sas matériel / passe-plat",     w:3,  d:2.5,h:3, zone:"propre",  note:"Transfert des bacs sans rupture de la barrière sanitaire."},
-  {id:"z_vest",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Vestiaires et sanitaires",      w:10, d:6,  h:3, zone:"tech",    note:"Circuit à sens unique : rue → tenue de ville → douche → tenue de travail."},
-  {id:"z_labo",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Laboratoire qualité",           w:6,  d:5,  h:3, zone:"tech"},
-  {id:"z_dechet",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Local déchets",                 w:6,  d:5,  h:4, zone:"grise",   sale:true, note:"Sortie directe sur l'extérieur, réfrigéré, jamais de traversée de zone propre."},
-  {id:"z_lavage",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Laverie bacs et chariots",      w:6,  d:5,  h:4, zone:"grise",   sale:true},
-  {id:"z_tech",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Local technique",               w:8,  d:5,  h:4, zone:"tech",    note:"Froid, air comprimé, TGBT : accès depuis l'extérieur de la zone de production."},
+  /* Zones et sas */
+  {id:"z_quai_r",   fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Quai de réception",             w:8,   d:12, h:4,   zone:"grise",   note:"Contrôle à réception : température, agréage, propreté du camion."},
+  {id:"z_recep",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Réception / déconditionnement", w:12,  d:12, h:5,   zone:"grise",   note:"Retrait des emballages de transport avant entrée en zone propre."},
+  {id:"z_stock_mp", fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Stockage MP réfrigéré",         w:10,  d:14, h:5,   zone:"froid",   note:"0–4 °C, rotation FEFO, séparation allergènes."},
+  {id:"z_stock_sec",fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Zone stockage matériel sec & ingr.", w:10, d:10, h:5, zone:"propre", note:"Ambiance saine, hygrométrie régulée, stockage hors-sol sur racks et palettes."},
+  {id:"z_embal",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Stockage emballages",           w:8,   d:6,  h:5,   zone:"propre",  note:"Déconditionner les cartons avant l'entrée en zone de conditionnement."},
+  {id:"z_prepa",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Atelier de préparation",        w:14,  d:14, h:5,   zone:"propre"},
+  {id:"z_cuisson",  fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Cuisson / traitement thermique",w:14,  d:12, h:5,   zone:"propre",  note:"CCP barème temps/température, extraction des buées."},
+  {id:"z_refroid",  fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Refroidissement rapide",        w:12,  d:12, h:5,   zone:"froid",   note:"CCP : 63 → 10 °C en moins de 2 h."},
+  {id:"z_condi1",   fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Conditionnement primaire",      w:12,  d:14, h:4,   zone:"blanche", note:"Salle blanche en surpression, air filtré, accès par sas uniquement."},
+  {id:"z_condi2",   fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Conditionnement secondaire",    w:8,   d:14, h:5,   zone:"expe",    note:"Produit déjà protégé : mise en carton, palettisation."},
+  {id:"z_stock_pf", fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Stockage produits finis",       w:10,  d:10, h:6,   zone:"froid"},
+  {id:"z_expe",     fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Quai d'expédition",             w:8,   d:12, h:4,   zone:"expe"},
+  {id:"sas_hyg",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Sas hygiène personnel",         w:3,   d:4,  h:3,   zone:"blanche", note:"Lave-bottes, lave-mains sans contact, distributeur de charlottes, marche au pas obligé."},
+  {id:"sas_mat",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Sas matériel / passe-plat",     w:3,   d:2.5,h:3,   zone:"propre",  note:"Transfert des bacs sans rupture de la barrière sanitaire."},
+  {id:"z_vest",     fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Vestiaires et sanitaires",      w:10,  d:6,  h:3,   zone:"tech",    note:"Circuit à sens unique : rue → tenue de ville → douche → tenue de travail."},
+  {id:"z_labo",     fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Laboratoire qualité",           w:6,   d:5,  h:3,   zone:"tech"},
+  {id:"z_dechet",   fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Local déchets",                 w:6,   d:5,  h:4,   zone:"grise",   sale:true, note:"Sortie directe sur l'extérieur, réfrigéré, jamais de traversée de zone propre."},
+  {id:"z_lavage",   fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Laverie bacs et chariots",      w:6,   d:5,  h:4,   zone:"grise",   sale:true},
+  {id:"z_chim_plonge",fam:"Zones et sas",cat:"zones",shape:"zone",    label:"Zone produits chimiques & plonge",w:8, d:6,  h:4,   zone:"grise",   sale:true, note:"Stockage sur bacs de rétention, ventilation forcée et zone de plonge/nettoyage."},
+  {id:"z_maint",    fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Atelier de maintenance",        w:10,  d:7,  h:4.5, zone:"tech",    note:"Pièces mécaniques, outillage, lubrifiants certifiés H1. Accès extérieur recommandé."},
+  {id:"z_tech",     fam:"Zones et sas", cat:"zones", shape:"zone",    label:"Local technique",               w:8,   d:5,  h:4,   zone:"tech",    note:"Froid, air comprimé, TGBT : accès depuis l'extérieur de la zone de production."},
+  {id:"z_parking",  fam:"Zones et sas", cat:"zones", shape:"parking", label:"Zone Parking & Voies PL/VL",    w:20,  d:16, h:3,   zone:"ext",     note:"Voirie lourde et stationnement extérieur avec séparation des flux camions et VL."},
 
-  /* ---------- Process ---------- */
+  /* Process */
   {id:"cuve",       fam:"Process", cat:"equip", shape:"cylinder", label:"Cuve de mélange inox",        w:2.2,d:2.2,h:2.6, color:"#b6c2cf", zone:"propre", note:"316L, fond bombé, nettoyage NEP."},
   {id:"petrin",     fam:"Process", cat:"equip", shape:"box",      label:"Pétrin / mélangeur",          w:1.8,d:1.6,h:1.9, color:"#a9b5c2", zone:"propre"},
   {id:"four",       fam:"Process", cat:"equip", shape:"box",      label:"Four continu (tunnel)",       w:9,  d:2.5,h:2.6, color:"#c4713f", zone:"propre", note:"Enregistrement continu du barème, hotte d'extraction."},
@@ -452,43 +430,47 @@ const CATALOG = [
   {id:"laveur",     fam:"Process", cat:"equip", shape:"box",      label:"Tunnel de lavage des bacs",   w:5,  d:1.5,h:2,   color:"#8fa0b3", zone:"grise",  sale:true},
   {id:"lave_bot",   fam:"Process", cat:"equip", shape:"box",      label:"Lave-bottes et lave-mains",   w:1.6,d:1,  h:1.6, color:"#3ecf8e", zone:"blanche", note:"Implanter en travers du passage, commande fémorale ou cellule."},
 
-  /* ---------- Logistique ---------- */
-  {id:"rack",       fam:"Logistique", cat:"equip", shape:"rack",     label:"Rack palettes 3 niveaux", w:2.7,d:1.1,h:6,   color:"#4f7fb0", zone:"froid"},
-  {id:"empl_pal",   fam:"Logistique", cat:"equip", shape:"footprint",label:"Emplacement palette",     w:1.2,d:.8, h:.05, color:"#7b8899", zone:"grise"},
-  {id:"palette",    fam:"Logistique", cat:"equip", shape:"pallet",   label:"Palette chargée (EUR)",   w:1.2,d:.8, h:1.5, color:"#b98b4e", zone:"grise"},
-  {id:"frigo",      fam:"Logistique", cat:"equip", shape:"box",      label:"Armoire froide / congélateur", w:1.4,d:.9,h:2.1, color:"#7fb8e0", zone:"froid"},
-  {id:"evapo",      fam:"Logistique", cat:"equip", shape:"box",      label:"Évaporateur plafonnier",  w:2,  d:.8, h:.8,  color:"#8fa0b3", zone:"froid", y:3.2, note:"Ne jamais surplomber un produit nu : risque de condensats."},
-  {id:"silo",       fam:"Logistique", cat:"equip", shape:"silo",     label:"Silo à ingrédients",      w:3,  d:3,  h:8,   color:"#c3ccd6", zone:"ext"},
-  {id:"quai",       fam:"Logistique", cat:"equip", shape:"dock",     label:"Niveleur de quai",        w:3.5,d:2.5,h:1.2, color:"#6b7a8c", zone:"ext"},
-  {id:"bac_dech",   fam:"Logistique", cat:"equip", shape:"box",      label:"Bac à déchets 660 L",     w:1.2,d:.8, h:1.2, color:"#ff5f56", zone:"grise", sale:true},
-  {id:"transpal",   fam:"Logistique", cat:"equip", shape:"box",      label:"Transpalette électrique", w:1.8,d:.8, h:1.3, color:"#f4b740", zone:"grise"},
-  {id:"poste_info", fam:"Logistique", cat:"equip", shape:"desk",     label:"Poste informatique",      w:1.4,d:.8, h:1.6, color:"#5d6c80", zone:"propre"}
+  /* Logistique */
+  {id:"rack",       fam:"Logistique", cat:"equip", shape:"rack",        label:"Rack palettes 3 niveaux", w:2.7,d:1.1,h:6,   color:"#4f7fb0", zone:"froid"},
+  {id:"empl_pal",   fam:"Logistique", cat:"equip", shape:"footprint",   label:"Emplacement palette",     w:1.2,d:.8, h:.05, color:"#7b8899", zone:"grise"},
+  {id:"palette",    fam:"Logistique", cat:"equip", shape:"pallet",      label:"Palette chargée (EUR)",   w:1.2,d:.8, h:1.5, color:"#b98b4e", zone:"grise"},
+  {id:"evier_plonge",fam:"Logistique",cat:"equip", shape:"sink",        label:"Évier / plonge inox 2 bacs",w:1.8,d:.75,h:.95,color:"#b0bec5",zone:"propre",note:"Inox 316L, dosseret arrière, commande fémorale."},
+  {id:"chargeur_chariot",fam:"Logistique",cat:"equip",shape:"charger",  label:"Chargeur de chariots",    w:1.2,d:.8, h:1.8, color:"#37474f", zone:"tech", note:"Station de charge haute fréquence, local ventilé anti-déflagrant."},
+  {id:"chariot_elev",fam:"Logistique",cat:"equip", shape:"forklift",    label:"Chariot élévateur frontal",w:2.4,d:1.1,h:2.2,color:"#f4b740", zone:"grise",note:"Électrique, roues bandage blanc non-marquantes, huile alimentaire H1."},
+  {id:"frigo",      fam:"Logistique", cat:"equip", shape:"box",         label:"Armoire froide / congélateur", w:1.4,d:.9,h:2.1, color:"#7fb8e0", zone:"froid"},
+  {id:"evapo",      fam:"Logistique", cat:"equip", shape:"box",         label:"Évaporateur plafonnier",  w:2,  d:.8, h:.8,  color:"#8fa0b3", zone:"froid", y:3.2, note:"Ne jamais surplomber un produit nu : risque de condensats."},
+  {id:"silo",       fam:"Logistique", cat:"equip", shape:"silo",        label:"Silo à ingrédients",      w:3,  d:3,  h:8,   color:"#c3ccd6", zone:"ext"},
+  {id:"quai",       fam:"Logistique", cat:"equip", shape:"dock",        label:"Niveleur de quai",        w:3.5,d:2.5,h:1.2, color:"#6b7a8c", zone:"ext"},
+  {id:"bac_dech",   fam:"Logistique", cat:"equip", shape:"box",         label:"Bac à déchets 660 L",     w:1.2,d:.8, h:1.2, color:"#ff5f56", zone:"grise", sale:true},
+  {id:"benne_dech", fam:"Logistique", cat:"equip", shape:"benne",       label:"Benne à déchets 15 m³",   w:5.8,d:2.4,h:1.8, color:"#c62828", zone:"ext", sale:true, note:"Benne Ampliroll extérieure avec berce et rouleaux."},
+  {id:"transpal",   fam:"Logistique", cat:"equip", shape:"box",         label:"Transpalette électrique", w:1.8,d:.8, h:1.3, color:"#f4b740", zone:"grise"},
+  {id:"poste_info", fam:"Logistique", cat:"equip", shape:"desk",        label:"Poste informatique",      w:1.4,d:.8, h:1.6, color:"#5d6c80", zone:"propre"},
+  {id:"place_parking",fam:"Logistique",cat:"equip",shape:"parking_spot",label:"Place de stationnement VL",w:2.5,d:5,  h:.04, color:"#eceff1", zone:"ext"},
+  {id:"voiture",    fam:"Logistique", cat:"equip", shape:"car",         label:"Voiture (VL)",            w:1.85,d:4.4,h:1.5, color:"#90a4ae", zone:"ext", vehicule:true, note:"Stationnement personnel et visiteurs à l'écart des voies PL et des quais."},
+  {id:"camion",     fam:"Logistique", cat:"equip", shape:"truck",       label:"Semi-remorque frigo (PL)",w:16.5,d:2.55,h:4, color:"#37474f", zone:"ext", vehicule:true, note:"Aire de manœuvre de 25 m devant le quai. Contrôle de température et propreté de la caisse à réception."}
 ];
 const BY_ID = {}; CATALOG.forEach(d => BY_ID[d.id] = d);
 const FAMS = []; CATALOG.forEach(d => { if (FAMS.indexOf(d.fam) < 0) FAMS.push(d.fam); });
 
-/* =====================================================================
-   2. ÉTAT GLOBAL
-   ===================================================================== */
 const state = {
-  site:{name:"Site de transformation", w:60, d:40, h:7, grid:1, snap:true, axis:"+x"},
-  objects:[],            // éléments d'usine (cf. structure de données)
-  flux:[],               // polylignes de flux
-  selection:[],          // tableau d'identifiants
-  seq:1,                 // compteur d'identifiants
-  view:"2d",             // "2d" | "3d"
-  tool:"select",         // "select" | "flux" | "mesure"
-  placing:null,          // type du catalogue en attente de pose
-  fluxDraft:null,        // polyligne de flux en cours de tracé
-  measure:null,          // {a:{x,z}, b:{x,z}} en cours
-  fluxType:"mp",         // nature du prochain flux tracé
-  cam2:{x:30, z:20, zoom:14},   // caméra 2D : centre visé (m) + échelle (px/m)
+  site:{name:"Site agroalimentaire", w:74, d:42, h:7, grid:1, snap:true, axis:"+x"},
+  objects:[],
+  flux:[],
+  selection:[],
+  seq:1,
+  view:"2d",
+  tool:"select",
+  placing:null,
+  fluxDraft:null,
+  measure:null,
+  fluxType:"entrant",
+  navLock:false,        // plan verrouillé : navigation seule (zoom, pan, orbite)
+  cam2:{x:37, z:21, zoom:14},
   show:{grid:true, zones:true, flux:true, labels:true, issues:true, shadows:true},
   issues:[]
 };
 const history = {past:[], future:[]};
 
-/* Invalidation : les deux vues sont des projections pures de `state`. */
 let need2D = true, need3D = true, needDiag = true;
 function markDirty(){ need2D = true; need3D = true; needDiag = true; }
 
@@ -501,7 +483,6 @@ function restore(json){
   state.selection = state.selection.filter(id => byId(id));
   markDirty();
 }
-/* À appeler AVANT toute mutation destinée à être annulable. */
 function commit(){
   history.past.push(snapshot());
   if (history.past.length > 80) history.past.shift();
@@ -521,9 +502,6 @@ function redo(){
   refreshAll();
 }
 
-/* =====================================================================
-   3. UTILITAIRES
-   ===================================================================== */
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
@@ -540,16 +518,12 @@ function selected(){ return state.selection.map(byId).filter(Boolean); }
 function selectedObjects(){ return selected().filter(o => !o.points); }
 function isFlux(o){ return !!(o && o.points); }
 
-/* Magnétisme sur la grille. */
 function snapV(v){ const g = state.site.grid; return state.site.snap ? Math.round(v / g) * g : Math.round(v * 1000) / 1000; }
 
-/* Rotation d'un vecteur local (px,pz) de `deg` degrés autour de l'origine.
-   Convention : X vers la droite, Z vers le bas du plan (sens horaire à l'écran). */
 function rot2(px, pz, deg){
   const a = rad(deg), c = Math.cos(a), s = Math.sin(a);
   return {x: px * c - pz * s, z: px * s + pz * c};
 }
-/* Les 4 sommets d'un élément, en coordonnées monde. */
 function corners(o){
   const hw = o.w / 2, hd = o.d / 2;
   return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(p => {
@@ -557,53 +531,46 @@ function corners(o){
     return {x: o.x + r.x, z: o.z + r.z};
   });
 }
-/* Boîte englobante alignée aux axes. */
 function aabb(o){
   const c = corners(o);
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   c.forEach(p => { x0 = Math.min(x0,p.x); x1 = Math.max(x1,p.x); z0 = Math.min(z0,p.z); z1 = Math.max(z1,p.z); });
   return {x0,x1,z0,z1};
 }
-/* Test point / rectangle orienté : on repasse le point en repère local. */
 function hitObj(px, pz, o, pad){
   const l = rot2(px - o.x, pz - o.z, -o.rot), m = pad || 0;
   return Math.abs(l.x) <= o.w / 2 + m && Math.abs(l.z) <= o.d / 2 + m;
 }
-/* Recouvrement de deux rectangles orientés (théorème de l'axe séparateur). */
 function overlapOBB(a, b){
   const ca = corners(a), cb = corners(b);
   const axes = [];
   [a,b].forEach(o => {
-    const r1 = rot2(1,0,o.rot), r2 = rot2(0,1,o.rot);
-    axes.push(r1, r2);
+    axes.push(rot2(1,0,o.rot), rot2(0,1,o.rot));
   });
   for (const ax of axes){
     let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
     ca.forEach(p => { const d = p.x*ax.x + p.z*ax.z; a0 = Math.min(a0,d); a1 = Math.max(a1,d); });
     cb.forEach(p => { const d = p.x*ax.x + p.z*ax.z; b0 = Math.min(b0,d); b1 = Math.max(b1,d); });
-    if (a1 < b0 + 1e-9 || b1 < a0 + 1e-9) return false;  // axe séparateur trouvé
+    if (a1 < b0 + 1e-9 || b1 < a0 + 1e-9) return false;
   }
   return true;
 }
-/* Intersection stricte de deux segments (extrémités exclues). */
 function segCross(p1, p2, p3, p4){
   const d1x = p2.x-p1.x, d1z = p2.z-p1.z, d2x = p4.x-p3.x, d2z = p4.z-p3.z;
   const den = d1x*d2z - d1z*d2x;
-  if (Math.abs(den) < 1e-9) return null;                  // parallèles
+  if (Math.abs(den) < 1e-9) return null;
   const t = ((p3.x-p1.x)*d2z - (p3.z-p1.z)*d2x) / den;
   const u = ((p3.x-p1.x)*d1z - (p3.z-p1.z)*d1x) / den;
   const e = 1e-4;
   if (t <= e || t >= 1-e || u <= e || u >= 1-e) return null;
   return {x: p1.x + t*d1x, z: p1.z + t*d1z};
 }
-/* Distance d'un point à un segment. */
 function distSeg(p, a, b){
   const dx = b.x-a.x, dz = b.z-a.z, l2 = dx*dx + dz*dz;
   if (l2 < 1e-12) return Math.hypot(p.x-a.x, p.z-a.z);
   const t = clamp(((p.x-a.x)*dx + (p.z-a.z)*dz) / l2, 0, 1);
   return Math.hypot(p.x - (a.x + t*dx), p.z - (a.z + t*dz));
 }
-/* Composante d'un déplacement le long de l'axe de marche en avant. */
 function alongAxis(dx, dz){
   switch (state.site.axis){
     case "+x": return dx; case "-x": return -dx;
@@ -611,11 +578,8 @@ function alongAxis(dx, dz){
   }
 }
 function zoneOf(o){ return ZONES[o.zone] || ZONES.ext; }
-function colorOf(o){
-  if (o.color) return o.color;
-  return zoneOf(o).color;
-}
-function shade(hex, k){                  // éclaircit (k>0) ou assombrit (k<0)
+function colorOf(o){ return o.color || zoneOf(o).color; }
+function shade(hex, k){
   const n = parseInt(hex.slice(1), 16);
   let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
   const f = v => clamp(Math.round(k > 0 ? v + (255-v)*k : v * (1+k)), 0, 255);
@@ -636,33 +600,40 @@ function toast(msg, bad){
   $("#msg").textContent = msg;
 }
 
-/* =====================================================================
-   4. VUE 2D — plan technique en projection orthogonale
-   ---------------------------------------------------------------------
-   Repère : X vers la droite, Z vers le bas. C'est exactement le repère
-   utilisé par la vue 3D, ce qui évite toute conversion entre les deux.
-   ===================================================================== */
+function askConfirm(title, msg, onOk){
+  const m = $("#modal-backdrop");
+  $("#modal-title").textContent = title;
+  $("#modal-msg").textContent = msg;
+  m.classList.remove("hide");
+  const ok = $("#modal-ok"), cancel = $("#modal-cancel");
+  const close = () => { m.classList.add("hide"); ok.onclick = null; cancel.onclick = null; };
+  ok.onclick = () => { close(); onOk(); };
+  cancel.onclick = close;
+}
+
 const cv = $("#c2d"), ctx = cv.getContext("2d");
-let W2 = 0, H2 = 0;                       // dimensions CSS du canevas
-const RULER = 18;                         // largeur des règles graduées
+let W2 = 0, H2 = 0;
+const RULER = 18;
 
 function resize2D(){
   const stage = $("#stage");
-  const r = stage ? stage.getBoundingClientRect() : cv.getBoundingClientRect();
+  if (!stage) return;
+  const r = stage.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  W2 = r.width || 800; H2 = r.height || 600;
-  cv.style.width = W2 + "px";
-  cv.style.height = H2 + "px";
-  cv.width = Math.max(1, Math.round(W2 * dpr));
-  cv.height = Math.max(1, Math.round(H2 * dpr));
-  need2D = true;
+  if (r.width > 10 && r.height > 10){
+    W2 = r.width;
+    H2 = r.height;
+    cv.style.width = W2 + "px";
+    cv.style.height = H2 + "px";
+    cv.width = Math.max(1, Math.round(W2 * dpr));
+    cv.height = Math.max(1, Math.round(H2 * dpr));
+    need2D = true;
+  }
 }
-/* Monde (m) → écran (px CSS) */
 function w2s(x, z){
   const c = state.cam2;
   return {x: (x - c.x) * c.zoom + W2 / 2, y: (z - c.z) * c.zoom + H2 / 2};
 }
-/* Écran (px CSS) → monde (m) */
 function s2w(px, py){
   const c = state.cam2;
   return {x: (px - W2 / 2) / c.zoom + c.x, z: (py - H2 / 2) / c.zoom + c.z};
@@ -680,20 +651,41 @@ function drawOrder(){
   return state.objects.map((o,i) => [o,i]).sort((a,b) => layerOf(a[0]) - layerOf(b[0]) || a[1] - b[1]).map(p => p[0]);
 }
 
-/* ---------------------------------------------------------------------
-   Symboles : dessinés dans le repère local de l'élément, centré en (0,0),
-   en pixels. La même fonction sert aux vignettes de la bibliothèque.
-   --------------------------------------------------------------------- */
 function drawShape(g, def, o, W, H, thumb){
   const col = colorOf(o), z = zoneOf(o);
   const x = -W/2, y = -H/2;
   g.lineJoin = "miter";
   switch (def.shape){
+    case "parking": {
+      g.fillStyle = "#2c3542"; g.fillRect(x, y, W, H);
+      g.strokeStyle = "#4a5568"; g.lineWidth = 1.6; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "rgba(255,255,255,.3)"; g.lineWidth = 1; g.setLineDash([4,4]);
+      for (let px = x + 20; px < x + W - 10; px += 24){
+        g.beginPath(); g.moveTo(px, y + 2); g.lineTo(px, y + H - 2); g.stroke();
+      }
+      g.setLineDash([]);
+      if (!thumb && Math.min(W,H) > 30){
+        g.fillStyle = "#1e40af"; g.beginPath(); g.arc(0, 0, 11, 0, 6.2832); g.fill();
+        g.fillStyle = "#fff"; g.font = "bold 13px system-ui,sans-serif";
+        g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 1);
+      }
+      break;
+    }
+    case "parking_spot": {
+      g.fillStyle = "rgba(59, 130, 246, 0.12)"; g.fillRect(x, y, W, H);
+      g.strokeStyle = "#e2e8f0"; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x, y+H); g.lineTo(x+W, y+H); g.lineTo(x+W, y); g.stroke();
+      if (!thumb && W > 12){
+        g.fillStyle = "rgba(255,255,255,.7)"; g.font = "9px system-ui,sans-serif";
+        g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, y+H/2);
+      }
+      break;
+    }
     case "zone": {
       g.fillStyle = hexA(z.color, .14); g.fillRect(x, y, W, H);
       g.strokeStyle = z.color; g.lineWidth = 1.6; g.setLineDash([7,4]);
       g.strokeRect(x, y, W, H); g.setLineDash([]);
-      const t = Math.min(14, W/4, H/4);                 // équerres de coin
+      const t = Math.min(14, W/4, H/4);
       g.lineWidth = 2.4; g.beginPath();
       [[x,y,1,1],[x+W,y,-1,1],[x+W,y+H,-1,-1],[x,y+H,1,-1]].forEach(c => {
         g.moveTo(c[0]+c[2]*t, c[1]); g.lineTo(c[0], c[1]); g.lineTo(c[0], c[1]+c[3]*t);
@@ -703,7 +695,7 @@ function drawShape(g, def, o, W, H, thumb){
     case "wall": {
       g.fillStyle = col; g.fillRect(x, y, W, H);
       g.strokeStyle = "#3f4855"; g.lineWidth = 1; g.strokeRect(x, y, W, H);
-      if (Math.min(W,H) > 5){                            // hachure de coupe
+      if (Math.min(W,H) > 5){
         g.save(); g.beginPath(); g.rect(x,y,W,H); g.clip();
         g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = .8; g.beginPath();
         for (let i = -H; i < W; i += 6){ g.moveTo(x+i, y+H); g.lineTo(x+i+H, y); }
@@ -785,33 +777,127 @@ function drawShape(g, def, o, W, H, thumb){
       g.strokeStyle = shade(col,-.3); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
       g.fillStyle = shade(col,-.2); g.fillRect(x+W*.15, y+H*.1, W*.7, H*.28); break;
     }
-    default: {                                            // machine générique
+    case "sink": {
+      g.fillStyle = shade(col, .15); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col, -.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      const bw = W * .38, bh = H * .7, by = y + H * .18;
+      g.fillStyle = shade(col, -.2);
+      g.fillRect(x + W * .06, by, bw, bh);
+      g.fillRect(x + W * .48, by, bw, bh);
+      g.strokeStyle = shade(col, -.45); g.lineWidth = 1;
+      g.strokeRect(x + W * .06, by, bw, bh); g.strokeRect(x + W * .48, by, bw, bh);
+      g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x + W * .46, y + H * .1, 2.2, 0, 6.2832); g.fill();
+      break;
+    }
+    case "charger": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col, -.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#06b6d4"; g.fillRect(x + W * .18, y + H * .14, W * .64, H * .22);
+      g.fillStyle = "#3ecf8e"; g.beginPath(); g.arc(x + W * .32, y + H * .52, 2.2, 0, 6.2832); g.fill();
+      g.fillStyle = "#f4b740"; g.beginPath(); g.arc(x + W * .68, y + H * .52, 2.2, 0, 6.2832); g.fill();
+      g.strokeStyle = "#ffffff"; g.lineWidth = 1.2; g.beginPath();
+      g.moveTo(x + W * .55, y + H * .68); g.lineTo(x + W * .42, y + H * .8);
+      g.lineTo(x + W * .58, y + H * .8); g.lineTo(x + W * .45, y + H * .94);
+      g.stroke();
+      break;
+    }
+    case "forklift": {
+      g.fillStyle = col; g.fillRect(x, y + H * .15, W * .68, H * .7);
+      g.strokeStyle = shade(col, -.4); g.lineWidth = 1.2; g.strokeRect(x, y + H * .15, W * .68, H * .7);
+      g.fillStyle = "#263238"; g.fillRect(x, y + H * .22, W * .18, H * .56);
+      g.fillStyle = "#37474f"; g.fillRect(x + W * .22, y + H * .26, W * .32, H * .48);
+      g.fillStyle = "#1b2532"; g.fillRect(x + W * .66, y + H * .1, W * .08, H * .8);
+      g.fillStyle = "#212121";
+      g.fillRect(x + W * .74, y + H * .22, W * .26, H * .12);
+      g.fillRect(x + W * .74, y + H * .66, W * .26, H * .12);
+      break;
+    }
+    /* Véhicules : dessinés longueur à l'horizontale, la rotation du
+       contexte remet le symbole dans le sens de l'objet. */
+    case "car": {
+      g.save();
+      let L = W, B = H;
+      if (H > W){ g.rotate(Math.PI/2); L = H; B = W; }
+      const hx = -L/2, hy = -B/2;
+      g.fillStyle = col; g.fillRect(hx + L*.04, hy + B*.06, L*.92, B*.88);
+      g.strokeStyle = shade(col, -.45); g.lineWidth = 1.1;
+      g.strokeRect(hx + L*.04, hy + B*.06, L*.92, B*.88);
+      g.fillStyle = "#26323a";                                  // habitacle
+      g.fillRect(hx + L*.28, hy + B*.14, L*.34, B*.72);
+      g.fillStyle = shade(col, .18);                            // capot et coffre
+      g.fillRect(hx + L*.66, hy + B*.16, L*.26, B*.68);
+      g.fillRect(hx + L*.07, hy + B*.18, L*.18, B*.64);
+      g.fillStyle = "#11161c";                                  // roues
+      if (L > 14){
+        g.fillRect(hx + L*.18, hy - B*.04, L*.16, B*.12);
+        g.fillRect(hx + L*.18, hy + B*.92, L*.16, B*.12);
+        g.fillRect(hx + L*.68, hy - B*.04, L*.16, B*.12);
+        g.fillRect(hx + L*.68, hy + B*.92, L*.16, B*.12);
+      }
+      g.restore();
+      break;
+    }
+    case "truck": {
+      g.save();
+      let L = W, B = H;
+      if (H > W){ g.rotate(Math.PI/2); L = H; B = W; }
+      const hx = -L/2, hy = -B/2, cab = L*.22;
+      g.fillStyle = "#eceff1";                                  // remorque
+      g.fillRect(hx, hy, L*.74, B);
+      g.strokeStyle = shade(col, -.3); g.lineWidth = 1.2; g.strokeRect(hx, hy, L*.74, B);
+      g.strokeStyle = "rgba(55,71,79,.45)"; g.lineWidth = .8;   // montants de caisse
+      g.beginPath();
+      for (let i = 1; i < 6; i++){ g.moveTo(hx + i*L*.74/6, hy); g.lineTo(hx + i*L*.74/6, hy + B); }
+      g.stroke();
+      g.fillStyle = "#b0bec5";                                  // groupe frigorifique
+      g.fillRect(hx + L*.70, hy + B*.18, L*.05, B*.64);
+      g.fillStyle = col;                                        // tracteur
+      g.fillRect(hx + L*.78, hy + B*.02, cab, B*.96);
+      g.strokeStyle = shade(col, -.45); g.lineWidth = 1.1;
+      g.strokeRect(hx + L*.78, hy + B*.02, cab, B*.96);
+      g.fillStyle = "#26323a";
+      g.fillRect(hx + L*.78 + cab*.62, hy + B*.1, cab*.3, B*.8);
+      if (L > 30){
+        g.fillStyle = "#11161c";                                // essieux
+        [.10, .16, .22, .82, .93].forEach(t => {
+          g.fillRect(hx + L*t, hy - B*.06, L*.045, B*.14);
+          g.fillRect(hx + L*t, hy + B*.92, L*.045, B*.14);
+        });
+      }
+      g.restore();
+      break;
+    }
+    case "benne": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col, -.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col, -.25); g.lineWidth = 1; g.beginPath();
+      for (let i = 1; i < 5; i++){ g.moveTo(x + i*W/5, y); g.lineTo(x + i*W/5, y+H); }
+      g.stroke();
+      g.fillStyle = "#fbc02d"; g.fillRect(x, y + H * .35, W * .08, H * .3);
+      break;
+    }
+    default: {
       g.fillStyle = col; g.fillRect(x, y, W, H);
       g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
       if (W > 12 && H > 12){
         g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1;
         g.strokeRect(x+3, y+3, W-6, H-6);
       }
+      break;
     }
   }
-  /* Pastille de classe sanitaire, hors zones et hors vignettes */
-  if (!thumb && def.shape !== "zone" && Math.min(W,H) > 16){
+  if (!thumb && def.shape !== "zone" && def.shape !== "parking" && Math.min(W,H) > 16){
     g.fillStyle = z.color; g.beginPath(); g.arc(W/2-4, -H/2+4, 2.6, 0, 6.2832); g.fill();
   }
 }
 
-/* ---------------------------------------------------------------------
-   Rendu complet du plan
-   --------------------------------------------------------------------- */
 function draw2D(){
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W2, H2);
   const c = state.cam2, S = state.site;
 
-  /* fond hors emprise */
   ctx.fillStyle = "#d7dce3"; ctx.fillRect(0, 0, W2, H2);
-  /* dalle */
   const a = w2s(0,0), b = w2s(S.w, S.d);
   ctx.fillStyle = "#eef1f5";
   ctx.fillRect(a.x, a.y, b.x-a.x, b.y-a.y);
@@ -820,7 +906,7 @@ function draw2D(){
   if (state.show.grid) drawGrid(a, b);
   if (state.show.zones) drawOrder().filter(o => o.cat === "zones").forEach(drawObj2D);
   drawOrder().filter(o => o.cat !== "zones").forEach(drawObj2D);
-  if (state.show.flux){ state.flux.forEach(drawFlux2D); if (state.fluxDraft) drawFlux2D(state.fluxDraft, true); }
+  if (state.show.flux){ state.flux.forEach(f => drawFlux2D(f)); if (state.fluxDraft) drawFlux2D(state.fluxDraft, true); }
   if (state.show.issues) drawIssues2D();
   drawSelection2D();
   if (drag && drag.mode === "marquee") drawMarquee();
@@ -833,7 +919,7 @@ function draw2D(){
 function drawGrid(a, b){
   const c = state.cam2, S = state.site;
   let step = S.grid;
-  while (step * c.zoom < 7) step *= 2;                    // densité lisible
+  while (step * c.zoom < 7) step *= 2;
   ctx.save(); ctx.beginPath(); ctx.rect(a.x, a.y, b.x-a.x, b.y-a.y); ctx.clip();
   for (let pass = 0; pass < 2; pass++){
     const s = pass ? step * 5 : step;
@@ -861,7 +947,7 @@ function drawObj2D(o){
     const bb = aabb(o), tl = w2s(bb.x0, bb.z0);
     ctx.font = "600 11px system-ui,sans-serif"; ctx.textAlign = "left";
     const t = o.label, wtxt = ctx.measureText(t).width;
-    ctx.fillStyle = hexA(zoneOf(o).color, .92);
+    ctx.fillStyle = hexA(def.shape === "parking" ? "#313b48" : zoneOf(o).color, .92);
     ctx.fillRect(tl.x + 4, tl.y + 4, wtxt + 10, 16);
     ctx.fillStyle = "#fff"; ctx.fillText(t, tl.x + 9, tl.y + 12.5);
     if (c.zoom > 7){
@@ -880,19 +966,18 @@ function drawObj2D(o){
 }
 
 function drawFlux2D(f, draft){
-  const def = FLUX[f.type], c = state.cam2;
-  if (f.points.length < 1) return;
+  const def = FLUX[f.type] || FLUX.mp, c = state.cam2;
+  if (!f.points || f.points.length < 1) return;
   const pts = f.points.map(p => w2s(p.x, p.z));
   const sel = state.selection.indexOf(f.id) >= 0;
   ctx.lineCap = "round"; ctx.lineJoin = "round";
-  /* liseré blanc pour la lisibilité sur les zones colorées */
-  ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = (f.width || 1) * 5 + 4;
+  ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = (f.width || 1) * 5 + 4;
   ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke();
   ctx.strokeStyle = def.color; ctx.lineWidth = (f.width || 1) * 5;
   if (draft) ctx.setLineDash([9,6]);
   ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke();
   ctx.setLineDash([]);
-  /* têtes de flèche à mi-segment */
+  
   ctx.fillStyle = def.color;
   for (let i = 1; i < pts.length; i++){
     const A = pts[i-1], B = pts[i], L = Math.hypot(B.x-A.x, B.y-A.y);
@@ -902,7 +987,6 @@ function drawFlux2D(f, draft){
     ctx.beginPath(); ctx.moveTo(s,0); ctx.lineTo(-s*.8,s*.72); ctx.lineTo(-s*.8,-s*.72); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
-  /* poignées de sommet quand le flux est sélectionné */
   if (sel || draft){
     pts.forEach(p => {
       ctx.fillStyle = "#fff"; ctx.strokeStyle = def.color; ctx.lineWidth = 2;
@@ -910,7 +994,7 @@ function drawFlux2D(f, draft){
     });
   }
   if (state.show.labels && pts.length > 1 && c.zoom > 4){
-    const A = pts[0], B = pts[1];
+    const A = pts[0];
     ctx.font = "600 10px system-ui,sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     const t = def.label, tw = ctx.measureText(t).width;
     ctx.fillStyle = def.color; ctx.fillRect(A.x + 6, A.y - 8, tw + 8, 15);
@@ -927,18 +1011,15 @@ function drawSelection2D(){
     ctx.beginPath(); cs.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.stroke();
   });
   const objs = selectedObjects();
-  if (objs.length === 1 && !objs[0].locked){
+  if (objs.length === 1 && !objs[0].locked && !state.navLock){
     const o = objs[0], cs = corners(o).map(p => w2s(p.x, p.z));
-    /* poignées d'angle */
     ctx.fillStyle = "#fff"; ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 2;
     cs.forEach(p => { ctx.beginPath(); ctx.rect(p.x-4, p.y-4, 8, 8); ctx.fill(); ctx.stroke(); });
-    /* poignée de rotation, au-dessus du milieu de l'arête « haute » locale */
     const hp = rotHandlePos(o), s = w2s(hp.x, hp.z);
     const mid = {x:(cs[0].x+cs[1].x)/2, y:(cs[0].y+cs[1].y)/2};
     ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(mid.x, mid.y); ctx.lineTo(s.x, s.y); ctx.stroke();
     ctx.fillStyle = "#0b7ea8"; ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, 6.2832); ctx.fill();
-    /* cotes */
     ctx.font = "600 10px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const p = w2s(o.x, o.z);
     const t = fmt(o.w,2) + " × " + fmt(o.d,2) + " m";
@@ -1008,8 +1089,7 @@ function drawRulers(){
   ctx.strokeStyle = "#26313f"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0,RULER+.5); ctx.lineTo(W2,RULER+.5); ctx.moveTo(RULER+.5,0); ctx.lineTo(RULER+.5,H2); ctx.stroke();
   ctx.fillStyle = "#8494a8"; ctx.font = "9.5px ui-monospace,Menlo,Consolas,monospace";
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
+  ctx.textBaseline = "middle"; ctx.textAlign = "left";
   for (let x = 0; x <= S.w + 1e-6; x += step){
     const p = w2s(x, 0); if (p.x < RULER || p.x > W2) continue;
     ctx.fillRect(p.x, RULER-4, 1, 4); ctx.fillText(x, p.x + 2, RULER/2);
@@ -1037,15 +1117,10 @@ function drawScaleBar(){
   ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(m + " m", x0 + px/2, y0 + 1);
 }
 
-/* ---------------------------------------------------------------------
-   Interactions 2D
-   --------------------------------------------------------------------- */
 let drag = null, hover = null, spaceDown = false;
 
-/* Élément situé sous le point (px,pz), du plus haut au plus bas. */
 function pick(px, pz){
   const tol = 6 / state.cam2.zoom;
-  /* sommets de flux sélectionnés d'abord */
   for (const f of state.flux){
     if (state.selection.indexOf(f.id) < 0) continue;
     for (let i = 0; i < f.points.length; i++)
@@ -1073,7 +1148,7 @@ function pick(px, pz){
   }
   return null;
 }
-/* Poignée d'édition sous le curseur (sélection unique). */
+
 function pickHandle(px, pz){
   const objs = selectedObjects();
   if (objs.length !== 1 || objs[0].locked) return null;
@@ -1088,29 +1163,23 @@ function pickHandle(px, pz){
 
 cv.addEventListener("pointerdown", e => {
   cv.setPointerCapture(e.pointerId);
-  const p = mousePt(e), pan = e.button === 1 || e.button === 2 || spaceDown || e.altKey;
+  const p = mousePt(e), pan = e.button === 1 || e.button === 2 || spaceDown || e.altKey || state.navLock;
 
   if (pan){ drag = {mode:"pan", sx:e.clientX, sy:e.clientY, cx:state.cam2.x, cz:state.cam2.z}; return; }
   if (e.button !== 0) return;
 
-  /* pose d'un élément de la bibliothèque */
   if (state.placing){ placeAt(p.x, p.z, e.shiftKey); return; }
 
-  /* outil mesure */
   if (state.tool === "mesure"){
     state.measure = {a:{x:snapV(p.x), z:snapV(p.z)}};
     drag = {mode:"measure"};
     need2D = true; return;
   }
-  /* outil flux */
   if (state.tool === "flux"){ addFluxPoint(p.x, p.z); return; }
 
-  /* outil sélection */
   const h = pickHandle(p.x, p.z);
   if (h){
-    /* l'instantané d'annulation n'est pris qu'au premier mouvement réel */
-    drag = {mode:h.mode, obj:h.obj, idx:h.idx, start:p, pending:true,
-            orig:JSON.parse(JSON.stringify(h.obj))};
+    drag = {mode:h.mode, obj:h.obj, idx:h.idx, start:p, pending:true, orig:JSON.parse(JSON.stringify(h.obj))};
     return;
   }
   const t = pick(p.x, p.z);
@@ -1125,8 +1194,7 @@ cv.addEventListener("pointerdown", e => {
     if (t.mode === "fluxpt"){
       drag = {mode:"fluxpt", obj:t.obj, idx:t.idx, pending:true};
     } else {
-      drag = {mode:"move", start:p, pending:true,
-              origs:selected().map(o => JSON.parse(JSON.stringify(o)))};
+      drag = {mode:"move", start:p, pending:true, origs:selected().map(o => JSON.parse(JSON.stringify(o)))};
     }
   } else {
     if (!e.shiftKey){ state.selection = []; refreshProps(); }
@@ -1143,13 +1211,13 @@ cv.addEventListener("pointermove", e => {
   if (state.placing || state.fluxDraft || state.measure) need2D = true;
 
   if (!drag){
+    if (state.navLock){ cv.style.cursor = "grab"; return; }
     const h = pickHandle(p.x, p.z);
     cv.style.cursor = h ? (h.mode === "rotate" ? "grab" : "nwse-resize")
                         : (state.placing || state.tool === "flux") ? "crosshair"
                         : pick(p.x, p.z) ? "move" : "default";
     return;
   }
-  /* premier mouvement effectif : on empile l'état précédent pour Ctrl+Z */
   if (drag.pending && drag.mode !== "pan" && drag.mode !== "marquee"){ commit(); drag.pending = false; }
   switch (drag.mode){
     case "pan": {
@@ -1166,10 +1234,10 @@ cv.addEventListener("pointermove", e => {
     case "move": {
       const o0 = drag.origs[0];
       let dx = p.x - drag.start.x, dz = p.z - drag.start.z;
-      if (o0 && !isFlux(o0)){                             // aligne la 1re entité sur la grille
+      if (o0 && !isFlux(o0)){
         dx = snapV(o0.x + dx) - o0.x; dz = snapV(o0.z + dz) - o0.z;
       } else { dx = snapV(dx); dz = snapV(dz); }
-      if (e.shiftKey){ if (Math.abs(dx) > Math.abs(dz)) dz = 0; else dx = 0; }   // contrainte orthogonale
+      if (e.shiftKey){ if (Math.abs(dx) > Math.abs(dz)) dz = 0; else dx = 0; }
       drag.origs.forEach(orig => {
         const o = byId(orig.id); if (!o || o.locked) return;
         if (isFlux(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
@@ -1187,12 +1255,12 @@ cv.addEventListener("pointermove", e => {
     case "resize": {
       const o = drag.obj, og = drag.orig;
       const sp = {x:snapV(p.x), z:snapV(p.z)};
-      const loc = rot2(sp.x - og.x, sp.z - og.z, -og.rot);           // point en repère local d'origine
+      const loc = rot2(sp.x - og.x, sp.z - og.z, -og.rot);
       const hw = og.w/2, hd = og.d/2;
-      const fixed = [{x:hw,z:hd},{x:-hw,z:hd},{x:-hw,z:-hd},{x:hw,z:-hd}][drag.idx];  // coin opposé, local
+      const fixed = [{x:hw,z:hd},{x:-hw,z:hd},{x:-hw,z:-hd},{x:hw,z:-hd}][drag.idx];
       const nw = Math.max(.1, Math.abs(loc.x - fixed.x));
       const nd = Math.max(.1, Math.abs(loc.z - fixed.z));
-      const cx = (loc.x + fixed.x)/2, cz = (loc.z + fixed.z)/2;      // nouveau centre, local
+      const cx = (loc.x + fixed.x)/2, cz = (loc.z + fixed.z)/2;
       const wc = rot2(cx, cz, og.rot);
       o.w = Math.round(nw*100)/100; o.d = Math.round(nd*100)/100;
       o.x = Math.round((og.x + wc.x)*1000)/1000; o.z = Math.round((og.z + wc.z)*1000)/1000;
@@ -1202,7 +1270,7 @@ cv.addEventListener("pointermove", e => {
   need2D = true; need3D = true;
 });
 
-cv.addEventListener("pointerup", e => {
+cv.addEventListener("pointerup", () => {
   if (drag && drag.mode === "marquee"){
     const x0 = Math.min(drag.a.x, drag.b.x), x1 = Math.max(drag.a.x, drag.b.x);
     const z0 = Math.min(drag.a.z, drag.b.z), z1 = Math.max(drag.a.z, drag.b.z);
@@ -1250,23 +1318,13 @@ function focusOn(x, z){
   if (state.view === "3d" && typeof focus3D === "function") focus3D(x, z);
 }
 
-/* =====================================================================
-   5. VUE 3D — Three.js
-   ---------------------------------------------------------------------
-   Même repère que le plan : X droite, Z bas (caméra de dessus up = 0,0,-1).
-   Seule correspondance à retenir : mesh.rotation.y = -rot (degrés → rad),
-   parce que la rotation Y de Three tourne dans le sens trigonométrique
-   alors que le plan tourne dans le sens horaire à l'écran.
-   ===================================================================== */
 const THREE_OK = (typeof THREE !== "undefined");
 let scene, renderer, camP, camO, cam3, controls, sunLight, floorMesh, gridHelp, ghost3;
-const meshes = new Map();          // id élément → Object3D   (réconciliation)
-const fluxMeshes = new Map();      // id flux    → Object3D
+const meshes = new Map();
+const fluxMeshes = new Map();
 const matCache = new Map();
 let selBoxes = [], projection = "perspective", orthoSpan = 60;
 
-/* --- Contrôleur orbital de secours : activé seulement si le CDN
-       OrbitControls n'a pas pu être chargé. Même API minimale. --------- */
 function MiniOrbit(object, dom){
   const s = this;
   s.object = object; s.domElement = dom; s.enabled = true;
@@ -1311,7 +1369,7 @@ function MiniOrbit(object, dom){
     s.object.position.copy(s.target).add(new THREE.Vector3().setFromSpherical(sph));
     s.object.lookAt(s.target);
   };
-  s.sync = function(){                      // après changement de caméra
+  s.sync = function(){
     const o = new THREE.Vector3().copy(s.object.position).sub(s.target);
     sph.setFromVector3(o); sphT.copy(sph);
   };
@@ -1364,7 +1422,6 @@ function init3D(){
   focus3D(state.site.w/2, state.site.d/2);
 }
 
-/* Dalle, grille et éclairage : reconstruits quand l'emprise change. */
 let siteKey = "";
 function buildSite3D(){
   const S = state.site, key = S.w + "x" + S.d;
@@ -1394,9 +1451,6 @@ function buildSite3D(){
   resize3D();
 }
 
-/* ---------------------------------------------------------------------
-   Construction du volume d'un élément
-   --------------------------------------------------------------------- */
 function build3D(o){
   const def = BY_ID[o.type] || {shape:"box"};
   const g = new THREE.Group();
@@ -1404,6 +1458,24 @@ function build3D(o){
   const w = o.w, d = o.d, h = Math.max(.02, o.h);
 
   switch (def.shape){
+    case "parking": {
+      const asphalt = new THREE.Mesh(new THREE.BoxGeometry(w, .05, d), mat("#2c3542"));
+      asphalt.position.y = .025; asphalt.receiveShadow = true; g.add(asphalt);
+      const bord = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(w, .05, d)),
+        new THREE.LineBasicMaterial({color:0x94a3b8}));
+      bord.position.y = .026; g.add(bord);
+      break;
+    }
+    case "parking_spot": {
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(w, .04, d), mat("#1e293b"));
+      pad.position.y = .02; g.add(pad);
+      const lines = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(w, .04, d)),
+        new THREE.LineBasicMaterial({color:0xffffff}));
+      lines.position.y = .022; g.add(lines);
+      break;
+    }
     case "zone": {
       const pad = new THREE.Mesh(new THREE.BoxGeometry(w, .06, d),
                   mat(zc, {transparent:true, opacity:.34}));
@@ -1498,17 +1570,127 @@ function build3D(o){
       const leg = box(w*.8, .7, d*.7, shade(col,.05)); leg.position.y = .35; g.add(leg);
       break;
     }
+    case "sink": {
+      const topH = .08, legH = h - topH;
+      const top = box(w, topH, d, shade(col, .1)); top.position.y = legH + topH/2; g.add(top);
+      const splash = box(w, .14, .04, shade(col, .05)); splash.position.set(0, legH + topH + .07, -d/2 + .02); g.add(splash);
+      const bW = w * .38, bD = d * .68;
+      const b1 = box(bW, .01, bD, shade(col, -.35)); b1.position.set(-w*.22, legH + topH + .006, 0); g.add(b1);
+      const b2 = box(bW, .01, bD, shade(col, -.35)); b2.position.set( w*.22, legH + topH + .006, 0); g.add(b2);
+      const tap = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, .22, 10), mat("#ffffff"));
+      tap.position.set(0, legH + topH + .11, -d*.3); g.add(tap);
+      for (let i = 0; i < 4; i++){
+        const lg = box(.05, legH, .05, shade(col, -.2));
+        lg.position.set((i%2?1:-1)*(w/2-.06), legH/2, (i<2?1:-1)*(d/2-.06)); g.add(lg);
+      }
+      const shelf = box(w*.92, .03, d*.9, shade(col, -.05)); shelf.position.y = legH*.25; g.add(shelf);
+      break;
+    }
+    case "charger": {
+      const body = box(w, h*.94, d, col); body.position.y = h*.47; g.add(body);
+      const base = box(w*1.04, h*.06, d*1.04, "#1f2937"); base.position.y = h*.03; g.add(base);
+      const screen = box(w*.7, h*.22, .04, "#111827"); screen.position.set(0, h*.72, d/2 + .02); g.add(screen);
+      const display = box(w*.45, h*.12, .05, "#06b6d4"); display.position.set(0, h*.72, d/2 + .025); g.add(display);
+      const cable = box(.08, h*.6, .12, "#111827"); cable.position.set(w/2 + .04, h*.45, 0); g.add(cable);
+      const plug = box(.12, .18, .14, "#f59e0b"); plug.position.set(w/2 + .06, h*.62, 0); g.add(plug);
+      break;
+    }
+    case "forklift": {
+      const bodyL = w * .65;
+      const body = box(bodyL, h*.42, d*.9, col); body.position.set(-w*.16, h*.28, 0); g.add(body);
+      const counter = box(w*.22, h*.48, d*.9, "#263238"); counter.position.set(-w*.44, h*.3, 0); g.add(counter);
+      const cageH = h * .55;
+      for (let i = 0; i < 4; i++){
+        const post = box(.045, cageH, .045, "#1f2937");
+        post.position.set(-w*.3 + (i%2 ? bodyL*.55 : 0), h*.48 + cageH/2, (i<2?1:-1)*(d*.38)); g.add(post);
+      }
+      const roof = box(bodyL*.65, .04, d*.86, "#1f2937"); roof.position.set(-w*.3 + bodyL*.275, h*.48 + cageH, 0); g.add(roof);
+      const seat = box(.35, .28, .35, "#111827"); seat.position.set(-w*.15, h*.58, 0); g.add(seat);
+      const mastH = h * .96;
+      const mast1 = box(.06, mastH, .08, "#1b2532"); mast1.position.set(w*.2, mastH/2, -d*.28); g.add(mast1);
+      const mast2 = box(.06, mastH, .08, "#1b2532"); mast2.position.set(w*.2, mastH/2,  d*.28); g.add(mast2);
+      const apron = box(.04, .32, d*.75, "#212121"); apron.position.set(w*.24, .24, 0); g.add(apron);
+      const forkL = w * .32;
+      const f1 = box(forkL, .035, .08, "#212121"); f1.position.set(w*.24 + forkL/2, .07, -d*.18); g.add(f1);
+      const f2 = box(forkL, .035, .08, "#212121"); f2.position.set(w*.24 + forkL/2, .07,  d*.18); g.add(f2);
+      for (let i = 0; i < 4; i++){
+        const whl = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, .08, 16), mat("#eceff1"));
+        whl.rotation.x = Math.PI/2;
+        whl.position.set(i%2 ? w*.14 : -w*.38, .14, (i<2?1:-1)*(d*.45)); g.add(whl);
+      }
+      break;
+    }
+    /* Véhicules. Le volume est construit longueur suivant X ; si l'élément
+       est plus long en Z, un groupe intermédiaire le pivote, ce qui laisse
+       la rotation de l'objet libre pour le réconciliateur. */
+    case "car": {
+      const L = Math.max(w, d), B = Math.min(w, d), inner = new THREE.Group();
+      if (d > w) inner.rotation.y = Math.PI/2;
+      const body = box(L*.97, h*.40, B*.94, col);            body.position.y  = h*.34; inner.add(body);
+      const hood = box(L*.26, h*.14, B*.86, shade(col,-.1)); hood.position.set( L*.33, h*.58, 0); inner.add(hood);
+      const boot = box(L*.20, h*.13, B*.86, shade(col,-.1)); boot.position.set(-L*.38, h*.57, 0); inner.add(boot);
+      const cab  = box(L*.40, h*.32, B*.80, "#26323a");      cab.position.set(-L*.02, h*.66, 0); inner.add(cab);
+      for (let i = 0; i < 4; i++){
+        const whl = new THREE.Mesh(new THREE.CylinderGeometry(h*.19, h*.19, .14, 14), mat("#15191e"));
+        whl.rotation.x = Math.PI/2;
+        whl.position.set((i < 2 ? 1 : -1) * L*.30, h*.19, (i % 2 ? 1 : -1) * B*.46);
+        inner.add(whl);
+      }
+      g.add(inner);
+      break;
+    }
+    case "truck": {
+      const L = Math.max(w, d), B = Math.min(w, d), inner = new THREE.Group();
+      if (d > w) inner.rotation.y = Math.PI/2;
+      const wr = Math.min(.5, h*.14), deck = wr*1.9;          // rayon de roue, hauteur de plancher
+      const caisse = box(L*.72, h - deck - .1, B, "#eceff1");
+      caisse.position.set(-L*.13, deck + (h - deck - .1)/2, 0); inner.add(caisse);
+      const bande = box(L*.72, h*.05, B*1.02, col);
+      bande.position.set(-L*.13, deck + h*.10, 0); inner.add(bande);
+      const frigo = box(L*.05, h*.22, B*.72, "#cfd8dc");
+      frigo.position.set(L*.245, h - h*.14, 0); inner.add(frigo);
+      const cabine = box(L*.20, h*.52, B*.96, col);
+      cabine.position.set(L*.39, deck + h*.26, 0); inner.add(cabine);
+      const pare = box(L*.04, h*.18, B*.88, "#26323a");
+      pare.position.set(L*.48, deck + h*.40, 0); inner.add(pare);
+      const chassis = box(L*.76, .12, B*.7, "#2b3640");
+      chassis.position.set(-L*.11, deck - .12, 0); inner.add(chassis);
+      [-.40, -.33, -.26, .30, .44].forEach(t => {             // 3 essieux remorque, 2 tracteur
+        for (let k = 0; k < 2; k++){
+          const whl = new THREE.Mesh(new THREE.CylinderGeometry(wr, wr, .26, 14), mat("#15191e"));
+          whl.rotation.x = Math.PI/2;
+          whl.position.set(L*t, wr, (k ? 1 : -1) * (B/2 - .1));
+          inner.add(whl);
+        }
+      });
+      g.add(inner);
+      break;
+    }
+    case "benne": {
+      const tub = box(w, h*.82, d, col); tub.position.y = h*.45; g.add(tub);
+      const rim = box(w*1.02, .08, d*1.02, shade(col, -.35)); rim.position.y = h*.85; g.add(rim);
+      const hook = box(.16, h*.88, .16, "#fbc02d"); hook.position.set(-w/2 + .08, h*.48, 0); g.add(hook);
+      for (let i = 1; i < 5; i++){
+        const rib = box(.06, h*.8, d*1.03, shade(col, -.25));
+        rib.position.set(-w/2 + i*w/5, h*.45, 0); g.add(rib);
+      }
+      for (let i = 0; i < 2; i++){
+        const roller = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .14, 16), mat("#374151"));
+        roller.rotation.z = Math.PI/2;
+        roller.position.set(w/2 - .12, .12, (i===0?1:-1)*(d/2 - .2)); g.add(roller);
+      }
+      break;
+    }
     default: {
       const m = box(w, h, d, col); m.position.y = h/2; g.add(m);
-      if (w > .6 && d > .4 && h > .5){                    // bandeau de commande
+      if (w > .6 && d > .4 && h > .5){
         const p = box(w*.3, h*.16, .04, "#2b3441");
         p.position.set(w*.26, h*.72, d/2 + .02); g.add(p);
       }
     }
   }
-  /* étiquette flottante */
-  const lab = makeLabel(o.label, def.shape === "zone" ? zc : "#1d2733");
-  lab.position.y = (def.shape === "zone" ? Math.min(h, 3.2) : h) + .55;
+  const lab = makeLabel(o.label, def.shape === "zone" || def.shape === "parking" ? zc : "#1d2733");
+  lab.position.y = (def.shape === "zone" || def.shape === "parking" ? Math.min(h, 3.2) : h) + .55;
   lab.name = "__label"; g.add(lab);
 
   g.userData.geoKey = geoKey(o);
@@ -1534,9 +1716,8 @@ function makeLabel(text, color){
   return sp;
 }
 
-/* Flux : rubans plats posés au sol + flèches directionnelles. */
 function buildFlux3D(f){
-  const g = new THREE.Group(), def = FLUX[f.type], wdt = (f.width || 1) * .34;
+  const g = new THREE.Group(), def = FLUX[f.type] || FLUX.mp, wdt = (f.width || 1) * .34;
   for (let i = 1; i < f.points.length; i++){
     const A = f.points[i-1], B = f.points[i];
     const dx = B.x - A.x, dz = B.z - A.z, L = Math.hypot(dx, dz);
@@ -1560,17 +1741,13 @@ function buildFlux3D(f){
   return g;
 }
 
-/* ---------------------------------------------------------------------
-   Réconciliation état → scène : rien n'est reconstruit inutilement
-   --------------------------------------------------------------------- */
-/* Les matériaux proviennent d'un cache partagé : on ne libère que les
-   géométries et les textures d'étiquette, propres à chaque objet. */
 function disposeTree(g){
   g.traverse(n => {
     if (n.geometry) n.geometry.dispose();
     if (n.material && n.material.map) n.material.map.dispose();
   });
 }
+
 function sync3D(){
   if (!THREE_OK) return;
   buildSite3D();
@@ -1629,12 +1806,11 @@ function updateSelBoxes(){
   });
 }
 
-/* ---------------------------------------------------------------------
-   Caméra
-   --------------------------------------------------------------------- */
 function resize3D(){
   if (!THREE_OK || !renderer) return;
-  const r = $("#stage").getBoundingClientRect();
+  const stage = $("#stage");
+  if (!stage) return;
+  const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height);
   camP.aspect = r.width / r.height; camP.updateProjectionMatrix();
   const a = r.width / r.height, s = orthoSpan / 2;
@@ -1669,9 +1845,6 @@ function fit3D(){
   controls.update(); need3D = true;
 }
 
-/* ---------------------------------------------------------------------
-   Interactions 3D : sélection, glisser au sol (plan Y = 0), pose
-   --------------------------------------------------------------------- */
 const ray = THREE_OK ? new THREE.Raycaster() : null;
 const groundPlane = THREE_OK ? new THREE.Plane(new THREE.Vector3(0,1,0), 0) : null;
 let drag3 = null;
@@ -1704,9 +1877,11 @@ function pick3(e){
 function bind3D(){
   if (!THREE_OK) return;
   const host = $("#v3d");
-  /* phase de capture sur le conteneur : on décide AVANT OrbitControls */
   host.addEventListener("pointerdown", e => {
     if (e.button !== 0) return;
+    /* Plan verrouillé : on ne capte rien, l'orbite et le zoom reviennent
+       entièrement au contrôleur de caméra. */
+    if (state.navLock) return;
     const g = groundAt(e);
     if (state.placing){
       if (g) placeAt(g.x, g.z, e.shiftKey);
@@ -1717,7 +1892,7 @@ function bind3D(){
       e.stopPropagation(); return;
     }
     const t = pick3(e);
-    if (!t) return;                                    // vide → OrbitControls orbite
+    if (!t) return;
     if (e.shiftKey){
       const i = state.selection.indexOf(t.obj.id);
       if (i >= 0) state.selection.splice(i,1); else state.selection.push(t.obj.id);
@@ -1787,23 +1962,12 @@ function animate(){
   if (needDiag){ needDiag = false; runDiagnostics(); }
 }
 
-/* =====================================================================
-   6. CONFORMITÉ — contrôle de la marche en avant
-   ---------------------------------------------------------------------
-   Six familles de tests, rejoués à chaque modification du plan :
-     A. retour en arrière d'un flux produit sur l'axe du procédé
-     B. croisement de flux incompatibles
-     C. remontée vers une zone amont / franchissement sans sas
-     D. chevauchement de zones de niveaux d'hygiène différents
-     E. matériel « sale » implanté en zone propre ou haute hygiène
-     F. zone haute hygiène sans sas d'accès, éléments hors emprise
-   ===================================================================== */
 function sampleFlux(f, step){
   const out = [];
   let total = 0;
   for (let i = 1; i < f.points.length; i++)
     total += Math.hypot(f.points[i].x - f.points[i-1].x, f.points[i].z - f.points[i-1].z);
-  const st = Math.max(step, total / 400);               // plafonne le nombre d'échantillons
+  const st = Math.max(step, total / 400);
   for (let i = 1; i < f.points.length; i++){
     const a = f.points[i-1], b = f.points[i];
     const L = Math.hypot(b.x-a.x, b.z-a.z), n = Math.max(1, Math.ceil(L / st));
@@ -1812,32 +1976,32 @@ function sampleFlux(f, step){
   if (f.points.length) out.push(f.points[f.points.length-1]);
   return out;
 }
+
 function crossSeverity(a, b){
   if (a === b) return null;
   if (a === "dech" || b === "dech") return "critique";
   if ((a === "mp" && b === "pf") || (a === "pf" && b === "mp")) return "critique";
+  if ((a === "entrant" && b === "sortant") || (a === "sortant" && b === "entrant")) return "critique";
   if (a === "pers" || b === "pers") return "mineur";
-  return Math.abs(FLUX[a].propre - FLUX[b].propre) >= 1 ? "majeur" : null;
+  const pa = FLUX[a] ? FLUX[a].propre : 1;
+  const pb = FLUX[b] ? FLUX[b].propre : 1;
+  return Math.abs(pa - pb) >= 1 ? "majeur" : null;
 }
 const SAS_TYPES = ["sas_hyg","sas_mat","porte_batt","porte_rap","porte_iso","porte_sect"];
 
 function runDiagnostics(){
   const issues = [], S = state.site;
   const zones = state.objects.filter(o => o.cat === "zones");
-  /* Un sas est un ouvrage de franchissement, pas une étape du procédé :
-     on l'écarte de la séquence de zones pour ne pas créer de faux
-     « retour en arrière » à chaque passage de barrière sanitaire. */
   const seq = zones.filter(z => z.type !== "sas_hyg" && z.type !== "sas_mat");
-  const zoneAt = (x, z) => {                             // la dernière zone dessinée l'emporte
+  const zoneAt = (x, z) => {
     let f = null;
     for (const zo of seq) if (hitObj(x, z, zo)) f = zo;
     return f;
   };
   const push = o => { if (issues.length < 60) issues.push(o); };
 
-  /* --- A & C : parcours de chaque flux --- */
   state.flux.forEach(f => {
-    const def = FLUX[f.type];
+    const def = FLUX[f.type] || FLUX.mp;
     if (def.produit){
       for (let i = 1; i < f.points.length; i++){
         const a = f.points[i-1], b = f.points[i];
@@ -1845,7 +2009,7 @@ function runDiagnostics(){
         if (adv < -0.75) push({
           sev:"critique", ref:f.id, x:(a.x+b.x)/2, z:(a.z+b.z)/2,
           titre:"Retour en arrière — " + def.label,
-          detail:"Le tronçon " + i + " remonte de " + fmt(-adv,1) + " m à contre-sens de l'axe de marche en avant. Réorganiser l'enchaînement ou séparer physiquement les deux tronçons."
+          detail:"Le tronçon " + i + " remonte de " + fmt(-adv,1) + " m à contre-sens de la marche en avant. Séparer ou réorienter le cheminement."
         });
       }
     }
@@ -1853,7 +2017,7 @@ function runDiagnostics(){
     let cur = null;
     samples.forEach(p => {
       const zo = zoneAt(p.x, p.z);
-      if (!zo) return;                                   // hors zone : on garde la référence
+      if (!zo) return;
       const key = zo.zone, curKey = cur ? cur.zone : null;
       if (key === curKey){ cur = zo; return; }
       if (cur){
@@ -1864,13 +2028,11 @@ function runDiagnostics(){
           detail:"Passage de « " + cur.label + " » vers « " + zo.label + " », en amont dans le procédé."
         });
         if (B.hyg > A.hyg){
-          const near = state.objects.some(o => SAS_TYPES.indexOf(o.type) >= 0
-            && Math.hypot(o.x - p.x, o.z - p.z) < 4.5);
+          const near = state.objects.some(o => SAS_TYPES.indexOf(o.type) >= 0 && Math.hypot(o.x - p.x, o.z - p.z) < 4.5);
           if (!near) push({
             sev:"majeur", ref:f.id, x:p.x, z:p.z,
             titre:"Franchissement sans sas",
-            detail:"Le flux « " + def.label + " » entre en " + ZONES[key].label.toLowerCase() +
-                   " sans sas ni porte à moins de 4,5 m. Implanter un sas hygiène ou une porte rapide au droit du passage."
+            detail:"Le flux « " + def.label + " » entre en " + ZONES[key].label.toLowerCase() + " sans sas ni porte à proximité."
           });
         }
       }
@@ -1878,11 +2040,11 @@ function runDiagnostics(){
     });
   });
 
-  /* --- B : croisements de flux --- */
   for (let i = 0; i < state.flux.length; i++){
     for (let j = i; j < state.flux.length; j++){
       const A = state.flux[i], B = state.flux[j];
-      const sev = i === j ? (FLUX[A.type].produit ? "mineur" : null) : crossSeverity(A.type, B.type);
+      const defA = FLUX[A.type] || FLUX.mp, defB = FLUX[B.type] || FLUX.mp;
+      const sev = i === j ? (defA.produit ? "mineur" : null) : crossSeverity(A.type, B.type);
       if (!sev) continue;
       for (let a = 1; a < A.points.length; a++){
         for (let b = 1; b < B.points.length; b++){
@@ -1891,18 +2053,15 @@ function runDiagnostics(){
           if (!c) continue;
           push({
             sev:sev, ref:A.id, x:c.x, z:c.z,
-            titre: i === j ? "Flux qui se recoupe — " + FLUX[A.type].label
-                           : "Croisement " + FLUX[A.type].label.toLowerCase() + " / " + FLUX[B.type].label.toLowerCase(),
-            detail: i === j ? "Le tracé repasse sur lui-même : vérifier qu'il n'y a pas de rétro-circulation de produit."
-                            : "Contamination croisée possible en x " + fmt(c.x,1) + " / z " + fmt(c.z,1) +
-                              " m. Décaler le passage, décaler l'horaire ou créer un couloir dédié."
+            titre: i === j ? "Flux qui se recoupe — " + defA.label
+                           : "Croisement " + defA.label.toLowerCase() + " / " + defB.label.toLowerCase(),
+            detail: "Risque de contamination croisée en x " + fmt(c.x,1) + " / z " + fmt(c.z,1) + " m. Décaler le passage ou les plages horaires."
           });
         }
       }
     }
   }
 
-  /* --- D : chevauchement de zones --- */
   const realZones = zones.filter(z => z.type !== "sas_hyg" && z.type !== "sas_mat");
   for (let i = 0; i < realZones.length; i++){
     for (let j = i+1; j < realZones.length; j++){
@@ -1911,12 +2070,11 @@ function runDiagnostics(){
       if (overlapOBB(a, b)) push({
         sev:"majeur", ref:a.id, x:(a.x+b.x)/2, z:(a.z+b.z)/2,
         titre:"Zones superposées",
-        detail:"« " + a.label + " » et « " + b.label + " » se recouvrent alors que leurs niveaux d'hygiène diffèrent. Séparer par une cloison ou un sas."
+        detail:"« " + a.label + " » et « " + b.label + " » se recouvrent avec des classes d'hygiène divergentes."
       });
     }
   }
 
-  /* --- E : matériel sale en zone propre --- */
   state.objects.forEach(o => {
     const def = BY_ID[o.type];
     if (!def || !def.sale || o.cat === "zones") return;
@@ -1925,26 +2083,31 @@ function runDiagnostics(){
     if (h >= 2) push({
       sev: h >= 3 ? "critique" : "majeur", ref:o.id, x:o.x, z:o.z,
       titre:"Point sale en zone protégée",
-      detail:"« " + o.label + " » est implanté dans « " + zo.label + " ». Le sortir de la zone ou l'isoler dans un local dédié en dépression."
+      detail:"« " + o.label + " » est implanté dans « " + zo.label + " ». L'isoler ou le placer à l'extérieur."
     });
   });
 
-  /* --- F : desserte des zones haute hygiène + emprise --- */
-  zones.filter(z => ZONES[z.zone].hyg >= 3 && z.type !== "sas_hyg").forEach(z => {
-    const ok = state.objects.some(o => SAS_TYPES.indexOf(o.type) >= 0 && overlapOBB(
-      o, {x:z.x, z:z.z, w:z.w + 3, d:z.d + 3, rot:z.rot}));
-    if (!ok) push({
-      sev:"majeur", ref:z.id, x:z.x, z:z.z,
-      titre:"Zone haute hygiène sans sas",
-      detail:"« " + z.label + " » n'a ni sas hygiène ni porte sur son périmètre. L'accès du personnel doit se faire par un sas équipé (lave-bottes, lave-mains sans contact)."
+  /* Véhicules thermiques : leur place est sur la voirie extérieure. Un camion
+     ou une voiture posé dans une zone bâtie signale une erreur d'implantation
+     (gaz d'échappement, souillures de roues, hauteur libre insuffisante). */
+  state.objects.forEach(o => {
+    const def = BY_ID[o.type];
+    if (!def || !def.vehicule) return;
+    const zo = zoneAt(o.x, o.z); if (!zo || zo.zone === "ext") return;
+    const h = ZONES[zo.zone].hyg;
+    push({
+      sev: h >= 2 ? "critique" : "majeur", ref:o.id, x:o.x, z:o.z,
+      titre:"Véhicule en zone bâtie",
+      detail:"« " + o.label + " » est implanté dans « " + zo.label + " ». Le stationnement et la circulation PL/VL restent sur la voirie extérieure."
     });
   });
+
   state.objects.forEach(o => {
     const b = aabb(o);
     if (b.x0 < -.01 || b.z0 < -.01 || b.x1 > S.w + .01 || b.z1 > S.d + .01) push({
       sev:"mineur", ref:o.id, x:o.x, z:o.z,
       titre:"Élément hors emprise",
-      detail:"« " + o.label + " » dépasse les limites du bâtiment (" + fmt(S.w,0) + " × " + fmt(S.d,0) + " m)."
+      detail:"« " + o.label + " » dépasse les limites du site (" + fmt(S.w,0) + " × " + fmt(S.d,0) + " m)."
     });
   });
 
@@ -1962,12 +2125,12 @@ function renderDiag(){
   tag.className = "tag " + (crit ? "bad" : maj ? "mid" : "good");
 
   if (!state.flux.length && !n){
-    el.innerHTML = '<p class="help">Tracez au moins un flux pour vérifier la marche en avant : outil <b>Flux</b>, un clic par sommet, double-clic pour terminer.</p>';
+    el.innerHTML = '<p class="help">Tracez un flux avec l\'outil <b>Flux</b> (clic par sommet, double-clic pour terminer) pour analyser la marche en avant.</p>';
     return;
   }
   if (!n){
     el.innerHTML = '<div class="ok-box"><span>✓</span><div>Aucune anomalie détectée sur ' + state.flux.length +
-      ' flux et ' + state.objects.filter(o=>o.cat==="zones").length + ' zones. Les contrôles rejouent à chaque modification.</div></div>';
+      ' flux et ' + state.objects.filter(o=>o.cat==="zones").length + ' zones. Analyse permanente active.</div></div>';
     return;
   }
   el.innerHTML = state.issues.map((i, k) =>
@@ -1989,7 +2152,7 @@ function renderSummary(){
                   .reduce((a,o) => a + Math.max(o.w, o.d), 0);
   let html = '<div class="kv"><span>Emprise du site</span><b>' + fmt(total,0) + ' m²</b></div>' +
              '<div class="kv"><span>Surfaces zonées</span><b>' + fmt(built,0) + ' m² (' + fmt(built/total*100,0) + ' %)</b></div>' +
-             '<div class="kv"><span>Linéaire de cloisons</span><b>' + fmt(wallLin,1) + ' m</b></div>' +
+             '<div class="kv"><span>Linéaire cloisons</span><b>' + fmt(wallLin,1) + ' m</b></div>' +
              '<div class="kv"><span>Équipements</span><b>' + state.objects.filter(o => o.cat === "equip").length + '</b></div>' +
              '<div class="kv" style="border:0"><span>Flux tracés</span><b>' + state.flux.length + '</b></div>';
   const keys = Object.keys(byZone);
@@ -2003,11 +2166,6 @@ function renderSummary(){
   el.innerHTML = html;
 }
 
-/* =====================================================================
-   7. INTERFACE
-   ===================================================================== */
-
-/* ---------- bibliothèque ---------- */
 function thumb(def){
   const c = document.createElement("canvas"), g = c.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
@@ -2032,7 +2190,7 @@ function buildLibrary(filter){
     items.forEach(d => {
       const b = document.createElement("button");
       b.className = "item"; b.dataset.t = d.id;
-      b.title = (d.note ? d.note + "\n" : "") + "Cliquez pour poser. Maj + clic sur le plan pour en poser plusieurs.";
+      b.title = (d.note ? d.note + "\n" : "") + "Cliquez pour poser. Maj + clic pour en poser plusieurs.";
       b.appendChild(thumb(d));
       const t = document.createElement("div"); t.className = "t";
       t.innerHTML = "<b>" + d.label + "</b><i>" + fmt(d.w,1) + " × " + fmt(d.d,1) + " × " + fmt(d.h,1) + " m</i>";
@@ -2042,11 +2200,11 @@ function buildLibrary(filter){
     });
     det.appendChild(box); lib.appendChild(det);
   });
-  /* famille Flux : bascule l'outil de tracé */
+
   const items = Object.keys(FLUX).filter(k => !q || FLUX[k].label.toLowerCase().indexOf(q) >= 0);
   if (items.length){
     const det = document.createElement("details"); det.className = "fam"; det.open = true;
-    det.innerHTML = "<summary>Flux<em>" + items.length + "</em></summary>";
+    det.innerHTML = "<summary>Flux de circulation<em>" + items.length + "</em></summary>";
     const box = document.createElement("div"); box.className = "items";
     items.forEach(k => {
       const b = document.createElement("button");
@@ -2069,13 +2227,13 @@ function buildLibrary(filter){
   }
 }
 
-/* ---------- pose d'un élément ---------- */
 function startPlacing(type){
+  if (state.navLock){ toast("Plan verrouillé — déverrouillez pour implanter un élément"); return; }
   state.placing = state.placing === type ? null : type;
   setTool("select", true);
   $$("#lib .item").forEach(b => b.classList.toggle("on", b.dataset.t === state.placing));
   if (state.placing){
-    showHint("Cliquez sur le plan pour poser « " + BY_ID[type].label + " ». Maj + clic pour en enchaîner plusieurs, Échap pour annuler.");
+    showHint("Cliquez sur le plan pour poser « " + BY_ID[type].label + " ». Maj + clic pour enchaîner, Échap pour quitter.");
   } else { hideHint(); hideGhost3(); }
   need2D = true; need3D = true;
 }
@@ -2090,16 +2248,16 @@ function placeAt(x, z, keep){
   if (def.color) o.color = def.color;
   state.objects.push(o);
   state.selection = [o.id];
-  if (!keep) startPlacing(state.placing);            // referme le mode pose
+  if (!keep) startPlacing(state.placing);
   refreshAll();
 }
 
-/* ---------- tracé de flux ---------- */
 function addFluxPoint(x, z){
-  if (!state.fluxDraft) state.fluxDraft = {id:uid(), type:state.fluxType || "mp", points:[], width:1};
+  if (!state.fluxDraft) state.fluxDraft = {id:uid(), type:state.fluxType || "entrant", points:[], width:1};
   state.fluxDraft.points.push({x:snapV(x), z:snapV(z)});
-  showHint("Flux « " + FLUX[state.fluxDraft.type].label + " » : " + state.fluxDraft.points.length +
-           " sommet(s). Double-clic ou Entrée pour terminer, Échap pour annuler.");
+  const def = FLUX[state.fluxDraft.type] || FLUX.entrant;
+  showHint("Flux « " + def.label + " » : " + state.fluxDraft.points.length +
+           " sommet(s). Double-clic ou Entrée pour valider, Échap pour abandonner.");
   need2D = true; need3D = true;
 }
 function endFluxDraft(){
@@ -2107,7 +2265,7 @@ function endFluxDraft(){
   state.fluxDraft = null;
   if (f && f.points.length >= 2){
     commit(); state.flux.push(f); state.selection = [f.id];
-    toast("Flux enregistré : " + FLUX[f.type].label);
+    toast("Flux validé : " + (FLUX[f.type] ? FLUX[f.type].label : f.type));
   }
   hideHint(); refreshAll();
 }
@@ -2119,15 +2277,16 @@ function cancelDraft(){
 function showHint(t){ const h = $("#hint"); h.textContent = t; h.classList.remove("hide"); }
 function hideHint(){ $("#hint").classList.add("hide"); }
 
-/* ---------- outils et vues ---------- */
 function setTool(t, silent){
   state.tool = t;
   $$("#tools .btn").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
   if (t !== "flux" && state.fluxDraft) endFluxDraft();
   if (t !== "mesure") state.measure = null;
-  if (t === "flux" && !silent) showHint("Flux « " + FLUX[state.fluxType || "mp"].label +
-      " » : cliquez chaque sommet, double-clic ou Entrée pour terminer.");
-  if (t === "mesure" && !silent) showHint("Cliquez deux points pour relever une distance.");
+  if (t === "flux" && !silent){
+    const def = FLUX[state.fluxType || "entrant"] || FLUX.entrant;
+    showHint("Flux « " + def.label + " » : cliquez chaque point au sol, double-clic pour clore.");
+  }
+  if (t === "mesure" && !silent) showHint("Cliquez 2 points pour mesurer la distance.");
   if (t === "select" && !state.placing) hideHint();
   refreshProps(true); need2D = true;
 }
@@ -2159,7 +2318,6 @@ function renderViewTag(){
   }
 }
 
-/* ---------- panneau de propriétés ---------- */
 let propsKey = "", editCommitted = false;
 function refreshProps(force){
   const key = state.tool + "|" + state.selection.join(",") + "|" + (state.fluxDraft ? "d" : "");
@@ -2173,15 +2331,22 @@ function num(k, v, step, u){
 function buildProps(){
   const el = $("#props"), objs = selectedObjects(), fl = selected().filter(isFlux);
   const tag = $("#seltag");
+  if (state.navLock){
+    el.innerHTML = '<p class="help"><b style="color:var(--acc)">Plan verrouillé.</b><br><br>' +
+      'Molette pour zoomer, cliquer-glisser pour déplacer la vue, et en 3D pour tourner autour du site. ' +
+      'Aucun élément ne peut être sélectionné ni déplacé.<br><br>' +
+      'Le bouton <b>Déverrouiller le plan</b> de la barre d\'outils, ou la touche <kbd>L</kbd>, rétablit l\'édition.</p>';
+    tag.textContent = "verrouillé";
+    return;
+  }
   tag.textContent = state.selection.length ? state.selection.length + " élément" + (state.selection.length>1?"s":"") : "rien";
 
   if (state.tool === "flux"){
     el.innerHTML =
-      '<div class="row"><label>Nature</label><div class="f"><select id="ftype">' +
-      Object.keys(FLUX).map(k => '<option value="' + k + '"' + (k === (state.fluxType||"mp") ? " selected":"") + '>' + FLUX[k].label + '</option>').join("") +
+      '<div class="row"><label>Nature du flux</label><div class="f"><select id="ftype">' +
+      Object.keys(FLUX).map(k => '<option value="' + k + '"' + (k === (state.fluxType||"entrant") ? " selected":"") + '>' + FLUX[k].label + '</option>').join("") +
       '</select></div></div>' +
-      '<p class="help">Un clic par sommet sur le plan ou dans la vue 3D. Double-clic ou <kbd>Entrée</kbd> pour terminer le tracé, <kbd>Échap</kbd> pour l\'abandonner. ' +
-      'Les flux sont analysés en continu par le contrôle de marche en avant.</p>' +
+      '<p class="help">Tracez sur le plan 2D ou 3D. Entrée ou double-clic pour achever le tracé.</p>' +
       '<button class="btn sm" id="fend">Terminer le tracé</button> ' +
       '<button class="btn sm" id="fcancel">Abandonner</button>';
     $("#ftype").addEventListener("change", e => {
@@ -2195,8 +2360,8 @@ function buildProps(){
   }
   if (!state.selection.length){
     el.innerHTML = '<p class="empty">Aucun élément sélectionné.<br><br>' +
-      'Choisissez un élément dans la bibliothèque pour le poser, ou cliquez sur le plan pour sélectionner. ' +
-      '<kbd>Maj</kbd> + clic ajoute à la sélection, un rectangle tracé sur le vide sélectionne en lot.</p>';
+      'Choisissez un équipement ou une zone dans la bibliothèque pour l\'implanter. ' +
+      '<kbd>Maj</kbd> + clic permet une sélection multiple.</p>';
     return;
   }
   if (fl.length === 1 && !objs.length){
@@ -2206,10 +2371,9 @@ function buildProps(){
       Object.keys(FLUX).map(k => '<option value="' + k + '"' + (k === f.type ? " selected":"") + '>' + FLUX[k].label + '</option>').join("") +
       '</select></div></div>' +
       '<div class="row"><label>Épaisseur</label><div class="f"><input type="range" id="p-fw" min="0.5" max="3" step="0.1" value="' + (f.width||1) + '"></div></div>' +
-      '<div class="kv"><span>Sommets</span><b>' + f.points.length + '</b></div>' +
-      '<div class="kv" style="border:0"><span>Longueur développée</span><b>' + fmt(fluxLen(f),1) + ' m</b></div>' +
-      '<p class="help">Faites glisser les points blancs sur le plan 2D pour corriger le tracé.</p>' +
-      '<div class="split"><button class="btn sm" id="p-frev">Inverser le sens</button>' +
+      '<div class="kv"><span>Points de passage</span><b>' + f.points.length + '</b></div>' +
+      '<div class="kv" style="border:0"><span>Longueur totale</span><b>' + fmt(fluxLen(f),1) + ' m</b></div>' +
+      '<div class="split" style="margin-top:10px"><button class="btn sm" id="p-frev">Inverser le sens</button>' +
       '<button class="btn sm danger" id="p-fdel">Supprimer</button></div>';
     $("#p-ftype").addEventListener("change", e => { commit(); f.type = e.target.value; markDirty(); });
     $("#p-fw").addEventListener("input", e => { f.width = +e.target.value; markDirty(); });
@@ -2225,23 +2389,22 @@ function buildProps(){
         ZONE_KEYS.map(k => '<option value="' + k + '"' + (k === o.zone ? " selected":"") + '>' + ZONES[k].label + '</option>').join("") +
       '</select></div></div>' +
       '<div class="row"><label>Dimensions</label><div class="f">' + num("w", o.w) + num("d", o.d) + num("h", o.h) + '</div></div>' +
-      '<div class="row"><label></label><div class="f" style="color:var(--ink-3);font-size:10.5px">largeur X · longueur Z · hauteur Y</div></div>' +
-      '<div class="row"><label>Position</label><div class="f">' + num("x", o.x) + num("z", o.z) + '</div></div>' +
+      '<div class="row"><label>Position (X, Z)</label><div class="f">' + num("x", o.x) + num("z", o.z) + '</div></div>' +
       '<div class="row"><label>Élévation</label><div class="f">' + num("y", o.y || 0) + '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">emprise ' + fmt(o.w*o.d,1) + ' m²</div></div></div>' +
       '<div class="row"><label>Rotation</label><div class="f">' + num("rot", o.rot, 1, "°") +
         '<button class="btn sm" id="rot-m90">−90°</button><button class="btn sm" id="rot-p90">+90°</button></div></div>' +
       '<div class="row"><label></label><div class="f"><input type="range" data-k="rot" min="0" max="359" step="1" value="' + o.rot + '"></div></div>' +
-      '<div class="row"><label>Teinte</label><div class="f"><input type="color" data-k="color" value="' + (o.color || colorOf(o)) + '">' +
-        '<button class="btn sm" id="c-auto">Couleur de zone</button></div></div>' +
-      '<label class="chk"><input type="checkbox" data-k="locked"' + (o.locked ? " checked":"") + '> Verrouiller la position</label>' +
-      (def.note ? '<p class="help"><b style="color:var(--ink-2)">Règle métier —</b> ' + def.note + '</p>' : '') +
-      '<div class="row"><label>Observations</label><div class="f"><textarea data-k="note" rows="2">' + esc(o.note || "") + '</textarea></div></div>' +
+      '<div class="row"><label>Couleur</label><div class="f"><input type="color" data-k="color" value="' + (o.color || colorOf(o)) + '">' +
+        '<button class="btn sm" id="c-auto">Auto</button></div></div>' +
+      '<label class="chk"><input type="checkbox" data-k="locked"' + (o.locked ? " checked":"") + '> Verrouiller l\'élément</label>' +
+      (def.note ? '<p class="help"><b>Règle métier :</b> ' + def.note + '</p>' : '') +
       '<hr class="sep">' +
       '<div class="split"><button class="btn sm" id="p-dup">Dupliquer</button><button class="btn sm" id="p-focus">Centrer la vue</button></div>' +
       '<div class="row" style="margin-top:7px"><label>Série</label><div class="f">' +
         '<span class="unit" data-u="×"><input type="number" id="ar-n" value="3" min="2" max="60" step="1"></span>' +
         '<span class="unit" data-u="m"><input type="number" id="ar-dx" value="' + fmt(o.w + 0.5,2) + '" step="0.1"></span>' +
         '<span class="unit" data-u="m"><input type="number" id="ar-dz" value="0" step="0.1"></span></div></div>' +
+      '<div class="row"><label></label><div class="f" style="color:var(--ink-3);font-size:10.5px">nombre · pas X · pas Z</div></div>' +
       '<button class="btn sm" id="p-array">Répéter en série</button>' +
       '<hr class="sep"><button class="btn sm danger" id="p-del">Supprimer l\'élément</button>';
     $("#rot-m90").addEventListener("click", () => rotateSel(-90));
@@ -2253,40 +2416,47 @@ function buildProps(){
     $("#p-del").addEventListener("click", deleteSelection);
     return;
   }
-  /* sélection multiple */
   el.innerHTML =
-    '<p class="help">' + objs.length + ' éléments' + (fl.length ? ' et ' + fl.length + ' flux' : '') +
+    '<p class="help">' + objs.length + ' élément' + (objs.length>1?'s':'') + (fl.length ? ' et ' + fl.length + ' flux' : '') +
     ' sélectionnés. Les valeurs saisies s\'appliquent à toute la sélection.</p>' +
     '<div class="row"><label>Classe sanitaire</label><div class="f"><select data-k="zone"><option value="">— inchangée —</option>' +
       ZONE_KEYS.map(k => '<option value="' + k + '">' + ZONES[k].label + '</option>').join("") + '</select></div></div>' +
     '<div class="row"><label>Dimensions</label><div class="f">' + num("w","") + num("d","") + num("h","") + '</div></div>' +
     '<div class="row"><label>Rotation</label><div class="f">' + num("rot","",1,"°") +
       '<button class="btn sm" id="rot-m90">−90°</button><button class="btn sm" id="rot-p90">+90°</button></div></div>' +
-    '<div class="row"><label>Teinte</label><div class="f"><input type="color" data-k="color" value="#8fa0b3">' +
-      '<button class="btn sm" id="c-auto">Couleur de zone</button></div></div>' +
+    '<div class="row"><label>Couleur</label><div class="f"><input type="color" data-k="color" value="#8fa0b3">' +
+      '<button class="btn sm" id="c-auto">Auto</button></div></div>' +
     '<hr class="sep"><div class="row"><label>Aligner</label><div class="f">' +
       '<button class="btn sm" data-al="l">Gauche</button><button class="btn sm" data-al="cx">Axe X</button><button class="btn sm" data-al="r">Droite</button></div></div>' +
     '<div class="row"><label></label><div class="f">' +
       '<button class="btn sm" data-al="t">Haut</button><button class="btn sm" data-al="cz">Axe Z</button><button class="btn sm" data-al="b">Bas</button></div></div>' +
     '<div class="row"><label>Répartir</label><div class="f">' +
       '<button class="btn sm" data-al="dx">Sur X</button><button class="btn sm" data-al="dz">Sur Z</button></div></div>' +
+    '<p class="help">La répartition égalise les entraxes entre le premier et le dernier élément. ' +
+    'Les éléments verrouillés ne sont pas déplacés.</p>' +
+    '<hr class="sep"><div class="row" style="margin-bottom:7px"><label>Série</label><div class="f">' +
+      '<span class="unit" data-u="×"><input type="number" id="ar-n" value="3" min="2" max="60" step="1"></span>' +
+      '<span class="unit" data-u="m"><input type="number" id="ar-dx" value="2" step="0.1"></span>' +
+      '<span class="unit" data-u="m"><input type="number" id="ar-dz" value="0" step="0.1"></span></div></div>' +
+    '<button class="btn sm" id="p-array">Répéter en série</button>' +
     '<hr class="sep"><div class="split"><button class="btn sm" id="p-dup">Dupliquer</button>' +
     '<button class="btn sm danger" id="p-del">Supprimer</button></div>';
   $("#rot-m90").addEventListener("click", () => rotateSel(-90));
   $("#rot-p90").addEventListener("click", () => rotateSel(90));
   $("#c-auto").addEventListener("click", () => { commit(); objs.forEach(o => delete o.color); markDirty(); });
+  $("#p-array").addEventListener("click", () => arraySelection(+$("#ar-n").value, +$("#ar-dx").value, +$("#ar-dz").value));
   $("#p-dup").addEventListener("click", duplicateSelection);
   $("#p-del").addEventListener("click", deleteSelection);
   $$("#props [data-al]").forEach(b => b.addEventListener("click", () => alignSel(b.dataset.al)));
 }
+
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function fluxLen(f){
   let L = 0;
   for (let i = 1; i < f.points.length; i++) L += Math.hypot(f.points[i].x-f.points[i-1].x, f.points[i].z-f.points[i-1].z);
   return L;
 }
-/* Délégation : un seul jeu d'écouteurs, posé une fois au démarrage,
-   qui couvre tous les champs data-k reconstruits dynamiquement. */
+
 function wireProps(){
   const el = $("#props");
   el.addEventListener("focusin", () => { editCommitted = false; });
@@ -2302,14 +2472,13 @@ function wireProps(){
 }
 function applyProp(k, raw){
   const objs = selectedObjects();
-  if (raw === "" && k !== "label" && k !== "note") return;
+  if (raw === "" && k !== "label") return;
   objs.forEach(o => {
     if (o.locked && k !== "locked") return;
     switch (k){
       case "label": o.label = raw; break;
       case "zone":  o.zone = raw; break;
       case "color": o.color = raw; break;
-      case "note":  o.note = raw; break;
       case "locked":o.locked = raw; break;
       default: {
         const v = parseFloat(String(raw).replace(",", "."));
@@ -2323,7 +2492,6 @@ function applyProp(k, raw){
   });
   markDirty(); refreshStatus();
 }
-/* Met à jour les champs sans les reconstruire (préserve le focus). */
 function syncPropValues(except){
   const o = selectedObjects()[0]; if (!o) return;
   $$("#props [data-k]").forEach(i => {
@@ -2337,7 +2505,6 @@ function syncPropValues(except){
   });
 }
 
-/* ---------- actions d'édition ---------- */
 function rotateSel(delta){
   const objs = selectedObjects(); if (!objs.length) return;
   commit();
@@ -2350,7 +2517,7 @@ function deleteSelection(){
   state.objects = state.objects.filter(o => state.selection.indexOf(o.id) < 0 || o.locked);
   state.flux = state.flux.filter(f => state.selection.indexOf(f.id) < 0);
   state.selection = [];
-  refreshAll(); toast("Sélection supprimée");
+  refreshAll(); toast("Éléments supprimés");
 }
 function duplicateSelection(){
   const sel = selected(); if (!sel.length) return;
@@ -2363,27 +2530,39 @@ function duplicateSelection(){
   });
   state.selection = ids; refreshAll();
 }
+
+/* Répétition en série : n exemplaires espacés d'un pas constant.
+   Le premier exemplaire est l'original, on crée donc n-1 copies. */
 function arraySelection(n, dx, dz){
-  const objs = selectedObjects(); if (!objs.length || !(n > 1)) return;
+  const objs = selectedObjects();
+  if (!objs.length || !(n > 1)) return;
+  if (!isFinite(dx) || !isFinite(dz) || (!dx && !dz)){ toast("Indiquez un pas en X ou en Z"); return; }
   commit();
   const ids = [];
   objs.forEach(o => {
     for (let i = 1; i < n; i++){
       const c = JSON.parse(JSON.stringify(o));
-      c.id = uid(); c.x = o.x + dx*i; c.z = o.z + dz*i; ids.push(c.id);
-      state.objects.push(c);
+      c.id = uid(); c.x = o.x + dx*i; c.z = o.z + dz*i;
+      ids.push(c.id); state.objects.push(c);
     }
   });
   state.selection = state.selection.concat(ids);
-  refreshAll(); toast((n-1) * objs.length + " copies créées");
+  refreshAll();
+  toast((n-1) * objs.length + " copie" + ((n-1)*objs.length > 1 ? "s" : "") + " créée" + ((n-1)*objs.length > 1 ? "s" : ""));
 }
+
+/* Alignement et répartition. Les bords sont pris sur l'emprise réelle
+   (aabb), donc un élément pivoté s'aligne sur son encombrement vu en plan
+   et non sur ses cotes nominales. */
 function alignSel(mode){
-  const objs = selectedObjects(); if (objs.length < 2) return;
+  const objs = selectedObjects();
+  if (objs.length < 2) return;
   commit();
-  const bs = objs.map(o => ({o, b:aabb(o)}));
+  const bs = objs.map(o => ({o:o, b:aabb(o)}));
   const x0 = Math.min.apply(null, bs.map(e => e.b.x0)), x1 = Math.max.apply(null, bs.map(e => e.b.x1));
   const z0 = Math.min.apply(null, bs.map(e => e.b.z0)), z1 = Math.max.apply(null, bs.map(e => e.b.z1));
   if (mode === "dx" || mode === "dz"){
+    if (objs.length < 3){ toast("La répartition demande au moins trois éléments"); return; }
     const key = mode === "dx" ? "x" : "z";
     const sorted = bs.slice().sort((a,b) => a.o[key] - b.o[key]);
     const a = sorted[0].o[key], b = sorted[sorted.length-1].o[key], st = (b - a) / (sorted.length - 1);
@@ -2392,16 +2571,17 @@ function alignSel(mode){
     bs.forEach(e => {
       if (e.o.locked) return;
       const w = e.b.x1 - e.b.x0, d = e.b.z1 - e.b.z0;
-      if (mode === "l") e.o.x += x0 - e.b.x0;
-      if (mode === "r") e.o.x += x1 - e.b.x1;
-      if (mode === "t") e.o.z += z0 - e.b.z0;
-      if (mode === "b") e.o.z += z1 - e.b.z1;
+      if (mode === "l")  e.o.x += x0 - e.b.x0;
+      if (mode === "r")  e.o.x += x1 - e.b.x1;
+      if (mode === "t")  e.o.z += z0 - e.b.z0;
+      if (mode === "b")  e.o.z += z1 - e.b.z1;
       if (mode === "cx") e.o.x += (x0 + x1)/2 - (e.b.x0 + w/2);
       if (mode === "cz") e.o.z += (z0 + z1)/2 - (e.b.z0 + d/2);
     });
   }
-  markDirty();
+  markDirty(); syncPropValues();
 }
+
 function nudge(dx, dz){
   const objs = selected(); if (!objs.length) return;
   commit();
@@ -2413,17 +2593,37 @@ function nudge(dx, dz){
   markDirty(); syncPropValues();
 }
 
-/* ---------- état de l'interface ---------- */
+/* Verrouillage du plan : mode navigation. La sélection courante est
+   conservée, seules les actions qui modifient l'implantation sont neutralisées. */
+const EDIT_KEYS = /^(Delete|Backspace|r|R|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|f|F|m|M)$/;
+function setNavLock(v){
+  state.navLock = v === undefined ? !state.navLock : !!v;
+  if (state.navLock){
+    if (state.placing || state.fluxDraft || state.measure) cancelDraft();
+    if (state.tool !== "select") setTool("select", true);
+  }
+  const b = $("#navlock");
+  if (b) b.textContent = state.navLock ? "Déverrouiller le plan" : "Verrouiller le plan";
+  if (cv) cv.style.cursor = state.navLock ? "grab" : "default";
+  if (controls) controls.enabled = true;
+  refreshStatus(); refreshProps(true); need2D = true; need3D = true;
+  toast(state.navLock
+    ? "Plan verrouillé : zoom, déplacement et orbite uniquement"
+    : "Plan déverrouillé : édition rétablie");
+}
+
 function refreshStatus(){
   const s = selected();
   $("#selinfo").textContent = !s.length ? "Aucune sélection"
-    : s.length === 1 ? (isFlux(s[0]) ? FLUX[s[0].type].label + " — " + fmt(fluxLen(s[0]),1) + " m"
-        : s[0].label + " — " + fmt(s[0].w,2) + " × " + fmt(s[0].d,2) + " × " + fmt(s[0].h,2) + " m, " + fmt(s[0].rot,0) + "°")
+    : s.length === 1 ? (isFlux(s[0]) ? (FLUX[s[0].type] ? FLUX[s[0].type].label : s[0].type) + " — " + fmt(fluxLen(s[0]),1) + " m"
+        : s[0].label + " — " + fmt(s[0].w,2) + " × " + fmt(s[0].d,2) + " × " + fmt(s[0].h,2) + " m")
     : s.length + " éléments sélectionnés";
   $("#zoominfo").textContent = state.view === "2d" ? "échelle " + fmt(state.cam2.zoom,1) + " px/m" : "";
   $("#undo").disabled = !history.past.length;
   $("#redo").disabled = !history.future.length;
   $("#snap").classList.toggle("on", state.site.snap);
+  $("#navlock").classList.toggle("on", state.navLock);
+  $("#lockinfo").textContent = state.navLock ? "Plan verrouillé" : "";
   renderViewTag();
 }
 function refreshAll(){
@@ -2440,7 +2640,6 @@ function syncSiteInputs(){
   syncZoomInputs();
 }
 
-/* ---------- import / export ---------- */
 function download(blob, name){
   const u = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = u; a.download = name; document.body.appendChild(a); a.click();
@@ -2448,25 +2647,24 @@ function download(blob, name){
 }
 function slug(s){ return (s||"implantation").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
 function exportJSON(){
-  const data = {format:"agroplan.v1", date:new Date().toISOString(),
-                site:state.site, objects:state.objects, flux:state.flux};
+  const data = {format:"agroplan.v1", date:new Date().toISOString(), site:state.site, objects:state.objects, flux:state.flux};
   download(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}), slug(state.site.name) + ".json");
-  toast("Configuration exportée");
+  toast("Projet exporté en JSON");
 }
 function importJSON(text){
   let d;
-  try { d = JSON.parse(text); } catch(e){ return toast("Fichier illisible : JSON invalide", true); }
-  if (!d || !d.site || !Array.isArray(d.objects)) return toast("Ce fichier n'est pas une implantation AgroPlan", true);
+  try { d = JSON.parse(text); } catch(e){ return toast("Fichier invalide", true); }
+  if (!d || !d.site || !Array.isArray(d.objects)) return toast("Format AgroPlan non reconnu", true);
   commit();
-  state.site = Object.assign({name:"Site importé", w:60, d:40, h:7, grid:1, snap:true, axis:"+x"}, d.site);
+  state.site = Object.assign({name:"Site importé", w:74, d:42, h:7, grid:1, snap:true, axis:"+x"}, d.site);
   state.objects = d.objects.map(o => Object.assign({rot:0, y:0, locked:false, zone:"ext", cat:"equip"}, o));
-  state.flux = (d.flux || []).map(f => Object.assign({width:1, type:"mp"}, f));
+  state.flux = (d.flux || []).map(f => Object.assign({width:1, type:"entrant"}, f));
   let max = 0;
   state.objects.concat(state.flux).forEach(o => { const n = parseInt(String(o.id).replace(/\D/g,""),10); if (n > max) max = n; });
   state.seq = max + 1;
   state.selection = []; siteKey = "";
   refreshAll(); fit2D(); if (THREE_OK) fit3D();
-  toast(state.objects.length + " éléments importés");
+  toast(state.objects.length + " éléments chargés");
 }
 function exportPNG(){
   if (state.view === "3d" && THREE_OK){
@@ -2474,7 +2672,7 @@ function exportPNG(){
     renderer.domElement.toBlob(b => download(b, slug(state.site.name) + "-3d.png"));
   } else {
     draw2D(); need2D = true;
-    cv.toBlob(b => download(b, slug(state.site.name) + "-plan.png"));
+    cv.toBlob(b => download(b, slug(state.site.name) + "-plan2d.png"));
   }
   toast("Image exportée");
 }
@@ -2482,39 +2680,29 @@ function exportCSV(){
   const rows = [["Type","Designation","Classe sanitaire","Largeur X (m)","Longueur Z (m)","Hauteur Y (m)","Rotation (deg)","X (m)","Z (m)","Surface (m2)"]];
   state.objects.forEach(o => rows.push([o.type, o.label, ZONES[o.zone] ? ZONES[o.zone].label : o.zone,
     fmt(o.w), fmt(o.d), fmt(o.h), fmt(o.rot,0), fmt(o.x), fmt(o.z), fmt(o.w*o.d)]));
-  state.flux.forEach(f => rows.push(["flux", FLUX[f.type].label, "-", "-", "-", "-", "-", fmt(f.points[0].x), fmt(f.points[0].z), fmt(fluxLen(f)) + " m"]));
+  state.flux.forEach(f => rows.push(["flux", FLUX[f.type] ? FLUX[f.type].label : f.type, "-", "-", "-", "-", "-", fmt(f.points[0].x), fmt(f.points[0].z), fmt(fluxLen(f)) + " m"]));
   const csv = "\ufeff" + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(";")).join("\r\n");
   download(new Blob([csv], {type:"text/csv;charset=utf-8"}), slug(state.site.name) + "-nomenclature.csv");
-  toast("Nomenclature exportée");
+  toast("Nomenclature CSV téléchargée");
 }
 
-/* ---------- légende et aide ---------- */
 function buildLegend(){
   $("#legbody").innerHTML =
     "<h4>Classes sanitaires</h4>" +
     ZONE_KEYS.map(k => '<div class="lg"><i style="background:' + ZONES[k].color + '"></i>' + ZONES[k].label + '</div>').join("") +
-    "<h4>Flux</h4>" +
+    "<h4>Circulation & Flux</h4>" +
     Object.keys(FLUX).map(k => '<div class="lg"><i class="ln" style="border-top-color:' + FLUX[k].color + ';width:14px"></i>' + FLUX[k].label + '</div>').join("");
   $("#keys").innerHTML =
-    '<div class="kv"><span>Poser / sélectionner</span><b>clic</b></div>' +
-    '<div class="kv"><span>Ajouter à la sélection</span><b>Maj + clic</b></div>' +
-    '<div class="kv"><span>Déplacer la vue</span><b>clic droit ou Espace</b></div>' +
+    '<div class="kv"><span>Sélectionner / Poser</span><b>clic</b></div>' +
+    '<div class="kv"><span>Déplacer la vue</span><b>clic droit / Espace</b></div>' +
     '<div class="kv"><span>Zoom</span><b>molette</b></div>' +
-    '<div class="kv"><span>Orbiter (3D)</span><b>clic gauche sur le vide</b></div>' +
-    '<div class="kv"><span>Rotation 90°</span><b>R / Maj + R</b></div>' +
-    '<div class="kv"><span>Dupliquer</span><b>Ctrl + D</b></div>' +
+    '<div class="kv"><span>Orbiter (3D)</span><b>clic gauche libre</b></div>' +
+    '<div class="kv"><span>Rotation 90°</span><b>R / Maj+R</b></div>' +
     '<div class="kv"><span>Supprimer</span><b>Suppr</b></div>' +
-    '<div class="kv"><span>Annuler / rétablir</span><b>Ctrl + Z / Y</b></div>' +
-    '<div class="kv"><span>Tout sélectionner</span><b>Ctrl + A</b></div>' +
-    '<div class="kv"><span>Déplacer d\'un pas</span><b>flèches</b></div>' +
-    '<div class="kv"><span>Outils</span><b>V · F · M</b></div>' +
-    '<div class="kv"><span>Basculer 2D / 3D</span><b>2 / 3</b></div>' +
-    '<div class="kv" style="border:0"><span>Recadrer</span><b>F2</b></div>';
+    '<div class="kv"><span>Annuler / Rétablir</span><b>Ctrl+Z / Y</b></div>' +
+    '<div class="kv"><span>Recadrer</span><b>F2</b></div>';
 }
 
-/* =====================================================================
-   8. AMORÇAGE
-   ===================================================================== */
 function add(type, x, z, over){
   const def = BY_ID[type];
   const o = Object.assign({
@@ -2525,96 +2713,127 @@ function add(type, x, z, over){
   state.objects.push(o);
   return o;
 }
-/* Implantation de démonstration : ligne de plats cuisinés, marche en
-   avant d'ouest en est, zone haute hygiène desservie par sas.          */
+
 function loadDemo(){
   state.objects = []; state.flux = []; state.selection = []; state.seq = 1;
-  state.site = {name:"Atelier de plats cuisinés", w:64, d:40, h:7, grid:1, snap:true, axis:"+x"};
-  siteKey = "";
+  /* Le site déborde le bâtiment de 18 m à l'ouest (manœuvre PL réception),
+     18 m à l'est (manœuvre PL expédition) et 16 m au sud (parking VL).
+     Le bâtiment occupe x 18 → 82, z 0 → 40. */
+  state.site = {name:"Usine de plats cuisinés — plan de site", w:100, d:56, h:7, grid:1, snap:true, axis:"+x"};
 
-  /* enveloppe */
-  add("mur_ext", 32, .12, {w:64, d:.25, label:"Façade nord"});
-  add("mur_ext", 32, 39.88, {w:64, d:.25, label:"Façade sud"});
-  add("mur_ext", .12, 20, {w:.25, d:40, label:"Pignon ouest"});
-  add("mur_ext", 63.88, 20, {w:.25, d:40, label:"Pignon est"});
+  /* --- Enveloppe --- */
+  add("mur_ext", 50,    0.12, {w:64, d:.25, label:"Façade nord"});
+  add("mur_ext", 50,   39.88, {w:64, d:.25, label:"Façade sud"});
+  add("mur_ext", 18.12, 20,   {w:.25, d:40, label:"Pignon ouest"});
+  add("mur_ext", 81.88, 20,   {w:.25, d:40, label:"Pignon est"});
 
-  /* zones, d'ouest en est */
-  add("z_quai_r",  5,  8,  {w:8,  d:12});
-  add("z_recep",   17, 8,  {w:14, d:12});
-  add("z_stock_mp",5,  26, {w:8,  d:14});
-  add("z_vest",    17, 22, {w:10, d:6});
-  add("z_dechet",  16, 33, {w:8,  d:6});
-  add("z_prepa",   33, 9,  {w:14, d:14});
-  add("z_cuisson", 33, 26, {w:14, d:12});
-  add("z_refroid", 47, 26, {w:10, d:12});
-  add("z_condi1",  47, 9,  {w:10, d:14});
-  add("z_condi2",  57, 12, {w:8,  d:20});
-  add("z_expe",    57, 33, {w:8,  d:10});
-  add("z_tech",    33, 36, {w:14, d:5});
-  add("sas_hyg",   25.5, 9, {w:3, d:5, label:"Sas hygiène production"});
-  add("sas_hyg",   42.5, 9, {w:3, d:5, label:"Sas hygiène salle blanche"});
-  add("sas_mat",   50,   18,{w:3, d:2.5, rot:0});
+  /* --- Zones intérieures : marche en avant d'ouest en est --- */
+  add("z_quai_r",     23,   8,   {w:8,  d:12});
+  add("z_recep",      35,   8,   {w:14, d:12});
+  add("z_stock_mp",   23,   26,  {w:8,  d:14});
+  add("z_stock_sec",  35,   17,  {w:10, d:5});
+  add("z_vest",       35,   23,  {w:10, d:6});
+  add("z_dechet",     34,   33,  {w:8,  d:6});
+  add("z_chim_plonge",42,   36,  {w:8,  d:6});
+  add("z_maint",      23,   36.5,{w:8,  d:6});
+  add("z_prepa",      51,   9,   {w:14, d:14});
+  add("z_cuisson",    51,   26,  {w:14, d:12});
+  add("z_refroid",    65,   26,  {w:10, d:12});
+  add("z_condi1",     65,   9,   {w:10, d:14});
+  add("z_condi2",     75,   12,  {w:8,  d:20});
+  add("z_expe",       75,   33,  {w:8,  d:10});
+  add("z_tech",       53,   36,  {w:10, d:5});
+  add("sas_hyg",      43.5, 9,   {w:3,  d:5, label:"Sas hygiène production"});
+  add("sas_hyg",      60.5, 9,   {w:3,  d:5, label:"Sas hygiène salle blanche"});
+  add("sas_mat",      68,   18,  {w:3,  d:2.5, label:"Sas matériel refroidissement → conditionnement"});
 
-  /* cloisons et accès */
-  add("cloison", 26, 2.2, {w:.12, d:4.4, label:"Cloison réception / préparation"});
-  add("cloison", 26, 15.5,{w:.12, d:1,  label:"Cloison réception / préparation"});
-  add("porte_rap", 26, 9, {w:.15, d:2.6, rot:0, label:"Porte rapide vers préparation"});
-  add("cloison", 43, 2.2, {w:.12, d:4.4, label:"Cloison salle blanche"});
-  add("cloison", 43, 15.5,{w:.12, d:1,  label:"Cloison salle blanche"});
-  add("porte_rap", 43, 9, {w:.15, d:2.6, label:"Porte rapide salle blanche"});
-  add("porte_sect", 1.2, 8, {w:.2, d:3, label:"Porte de quai réception"});
-  add("porte_sect", 62.8, 33,{w:.2, d:3, label:"Porte de quai expédition"});
-  add("caniveau", 33, 16.5, {w:14, d:.3});
+  /* --- Cloisonnement et accès --- */
+  add("cloison",    44,   2.2,  {w:.12, d:4.4, label:"Cloison réception / préparation"});
+  add("cloison",    44,   15.5, {w:.12, d:1,   label:"Cloison réception / préparation"});
+  add("porte_rap",  44,   9,    {w:.15, d:2.6, label:"Porte rapide vers préparation"});
+  add("cloison",    61,   2.2,  {w:.12, d:4.4, label:"Cloison salle blanche"});
+  add("cloison",    61,   15.5, {w:.12, d:1,   label:"Cloison salle blanche"});
+  add("porte_rap",  61,   9,    {w:.15, d:2.6, label:"Porte rapide salle blanche"});
+  add("porte_sect", 19.2, 8,    {w:.2,  d:3,   label:"Porte de quai réception"});
+  add("porte_sect", 80.8, 33,   {w:.2,  d:3,   label:"Porte de quai expédition"});
+  add("porte_sect", 34,   39.9, {w:3,   d:.2,  label:"Sortie directe local déchets"});
+  add("caniveau",   51,   16.5, {w:14,  d:.3});
 
-  /* équipements */
-  add("quai", 2.4, 5, {rot:90}); add("quai", 2.4, 11, {rot:90});
-  add("rack", 4, 21.5, {rot:0}); add("rack", 4, 24); add("rack", 4, 26.5); add("rack", 4, 29);
-  add("palette", 13, 5); add("palette", 14.4, 5); add("empl_pal", 13, 11); add("empl_pal", 14.4, 11);
-  add("laveur", 20, 12.5, {rot:0});
-  add("bac_dech", 16, 33);
-  add("table", 29, 5.5); add("table", 29, 7.5);
-  add("cuve", 30, 12); add("petrin", 33.5, 12);
-  add("convoyeur", 36, 6, {w:9, d:.8, rot:0, label:"Convoyeur préparation"});
-  add("four", 33, 22.5, {w:9, d:2.5, label:"Four tunnel"});
-  add("cellule", 47, 22.5); add("tunnel_sur", 47, 29, {w:8, d:2.5});
-  add("trancheur", 45, 5); add("peseuse", 47.5, 5);
-  add("condi", 48, 12, {w:3.5, d:1.5, label:"Operculeuse"});
-  add("convoyeur", 52.5, 12, {w:4, d:.8, label:"Transfert vers conditionnement 2"});
-  add("detect_met", 55.5, 12); add("etiq", 57.5, 12);
-  add("palettiseur", 57, 17);
-  add("rack", 60, 6); add("rack", 60, 8.5);
-  add("frigo", 60, 30, {rot:90});
-  add("poste_info", 20, 3.5); add("poste_info", 57, 22);
-  add("silo", 3, 36);
-  add("evapo", 47, 24, {y:3.4}); add("evapo", 5, 26, {y:3.4});
+  /* --- Équipements intérieurs --- */
+  add("quai", 20.4, 5, {rot:90}); add("quai", 20.4, 11, {rot:90});
+  add("rack", 22, 21.5); add("rack", 22, 24); add("rack", 22, 26.5); add("rack", 22, 29);
+  add("palette", 31, 5); add("palette", 32.4, 5); add("empl_pal", 31, 11); add("empl_pal", 32.4, 11);
+  add("rack", 35, 16); add("rack", 35, 18);
+  add("chariot_elev", 25, 8, {rot:90});
+  add("chargeur_chariot", 21.8, 34);
+  add("laveur", 38, 12.5);
+  add("evier_plonge", 42, 36);
+  add("bac_dech", 34, 33);
+  add("table", 47, 5.5); add("table", 47, 7.5);
+  add("cuve", 48, 12); add("petrin", 51.5, 12);
+  add("convoyeur", 54, 6, {w:9, d:.8, label:"Convoyeur préparation"});
+  add("four", 51, 22.5, {w:9, d:2.5, label:"Four tunnel"});
+  add("cellule", 65, 22.5); add("tunnel_sur", 65, 29, {w:8, d:2.5});
+  add("trancheur", 63, 5); add("peseuse", 65.5, 5);
+  add("condi", 66, 12, {w:3.5, d:1.5, label:"Operculeuse"});
+  add("convoyeur", 70.5, 12, {w:4, d:.8, label:"Transfert vers conditionnement 2"});
+  add("detect_met", 73.5, 12); add("etiq", 75.5, 12);
+  add("palettiseur", 75, 17);
+  add("rack", 78, 6); add("rack", 78, 8.5);
+  add("frigo", 78, 30, {rot:90});
+  add("chariot_elev", 75, 29);
+  add("poste_info", 38, 3.5); add("poste_info", 75, 22);
+  add("evapo", 65, 24, {y:3.4}); add("evapo", 23, 26, {y:3.4});
 
-  /* flux */
+  /* --- Extérieur : voirie PL, parking VL, déchets --- */
+  add("silo", 14, 25);
+  add("benne_dech", 34, 42.5);
+  add("camion", 9.6, 5,  {label:"PL à quai — réception"});
+  add("camion", 9.6, 11, {label:"PL en attente"});
+  add("camion", 90.5, 33,{label:"PL à quai — expédition"});
+  add("camion", 62, 46,  {label:"PL sur aire de stationnement"});
+  add("z_parking", 37, 49, {w:30, d:10});
+  [25, 28, 31, 34, 37, 40, 43, 46, 49].forEach(px => add("place_parking", px, 46.5));
+  [25, 28, 34, 46].forEach(px => add("voiture", px, 46.5));
+
+  /* --- Flux --- */
   state.flux = [
-    {id:uid(), type:"mp",   width:1.2, points:[{x:2,z:8},{x:10,z:8},{x:17,z:8},{x:25.5,z:9},{x:30,z:9}]},
-    {id:uid(), type:"enc",  width:1.2, points:[{x:30,z:9},{x:36,z:9},{x:36,z:22.5},{x:44,z:22.5},{x:47,z:26},{x:50,z:22},{x:50,z:18},{x:50,z:14}]},
-    {id:uid(), type:"pf",   width:1.2, points:[{x:44,z:5},{x:52,z:5},{x:52,z:12},{x:57,z:12},{x:57,z:22},{x:59,z:33},{x:62,z:33}]},
-    {id:uid(), type:"dech", width:.8,  points:[{x:31,z:27},{x:24,z:31},{x:17,z:33},{x:12,z:33}]},
-    {id:uid(), type:"pers", width:.8,  points:[{x:17,z:22},{x:23,z:18},{x:25.5,z:12},{x:25.5,z:9},{x:30,z:11}]},
-    {id:uid(), type:"emb",  width:.8,  points:[{x:2,z:11},{x:12,z:11},{x:18,z:12}]}
+    {id:uid(), type:"entrant", width:1.2, points:[{x:1.5,z:8},{x:10,z:8},{x:19,z:8}]},
+    {id:uid(), type:"mp",      width:1.2, points:[{x:19,z:8},{x:28,z:8},{x:35,z:8},{x:43.5,z:9},{x:48,z:9}]},
+    {id:uid(), type:"enc",     width:1.2, points:[{x:48,z:9},{x:54,z:9},{x:54,z:22.5},{x:62,z:22.5},{x:65,z:26},{x:68,z:22},{x:68,z:18},{x:68,z:14}]},
+    {id:uid(), type:"pf",      width:1.2, points:[{x:62,z:5},{x:70,z:5},{x:70,z:12},{x:75,z:12},{x:75,z:22},{x:77,z:33},{x:80,z:33}]},
+    {id:uid(), type:"sortant", width:1.2, points:[{x:77,z:33},{x:80.8,z:33},{x:90,z:33}]},
+    {id:uid(), type:"dech",    width:.8,  points:[{x:49,z:27},{x:42,z:31},{x:35,z:33},{x:34,z:42.5}]},
+    {id:uid(), type:"pers",    width:.8,  points:[{x:35,z:23},{x:43,z:21},{x:43.5,z:12},{x:43.5,z:9},{x:48,z:11}]},
+    {id:uid(), type:"emb",     width:.8,  points:[{x:20,z:11},{x:30,z:11},{x:36,z:12}]}
   ];
   history.past.length = 0; history.future.length = 0;
   refreshAll(); fit2D(); if (THREE_OK) fit3D();
 }
 
 function bindUI(){
-  /* vues et outils */
   $$("#viewseg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
   $$("#tools .btn").forEach(b => b.addEventListener("click", () => setTool(b.dataset.tool)));
   $("#undo").addEventListener("click", undo);
   $("#redo").addEventListener("click", redo);
-  $("#snap").addEventListener("click", () => { state.site.snap = !state.site.snap; refreshStatus(); toast(state.site.snap ? "Magnétisme actif" : "Magnétisme désactivé"); });
+  $("#snap").addEventListener("click", () => {
+    state.site.snap = !state.site.snap;
+    refreshStatus();
+    toast(state.site.snap ? "Magnétisme activé" : "Magnétisme désactivé");
+  });
   $("#gridstep").addEventListener("change", e => { state.site.grid = +e.target.value; siteKey = ""; markDirty(); });
   $("#fit").addEventListener("click", () => { state.view === "3d" ? fit3D() : fit2D(); });
-  $("#demo").addEventListener("click", () => { if (confirm("Remplacer le plan courant par l'implantation de démonstration ?")) loadDemo(); });
-  $("#clear").addEventListener("click", () => {
-    if (!confirm("Vider entièrement le plan ?")) return;
-    commit(); state.objects = []; state.flux = []; state.selection = []; refreshAll();
+  $("#navlock").addEventListener("click", () => setNavLock());
+
+  $("#demo").addEventListener("click", () => {
+    askConfirm("Charger l'exemple", "Remplacer l'implantation actuelle par le site modèle complet ?", loadDemo);
   });
+  $("#clear").addEventListener("click", () => {
+    askConfirm("Effacer le plan", "Voulez-vous supprimer tous les équipements et flux actuels ?", () => {
+      commit(); state.objects = []; state.flux = []; state.selection = []; refreshAll();
+    });
+  });
+
   $("#export").addEventListener("click", exportJSON);
   $("#png").addEventListener("click", exportPNG);
   $("#csv").addEventListener("click", exportCSV);
@@ -2630,7 +2849,6 @@ function bindUI(){
     b.style.display = on ? "" : "none"; $("#legtog").textContent = on ? "–" : "+";
   });
 
-  /* site */
   const siteNum = (sel, key, min, max) => $(sel).addEventListener("change", e => {
     const v = clamp(parseFloat(String(e.target.value).replace(",", ".")) || min, min, max);
     commit(); state.site[key] = v; e.target.value = v; siteKey = ""; markDirty();
@@ -2644,7 +2862,6 @@ function bindUI(){
   vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux");
   vis("#v-labels","labels"); vis("#v-issues","issues"); vis("#v-shadow","shadows");
 
-  /* glisser-déposer d'un fichier de configuration */
   const st = $("#stage");
   st.addEventListener("dragover", e => { e.preventDefault(); $("#drop").classList.remove("hide"); });
   st.addEventListener("dragleave", e => { if (e.target === st) $("#drop").classList.add("hide"); });
@@ -2654,7 +2871,6 @@ function bindUI(){
     const r = new FileReader(); r.onload = () => importJSON(r.result); r.readAsText(f);
   });
 
-  /* clavier */
   window.addEventListener("keydown", e => {
     const t = e.target.tagName;
     if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT"){
@@ -2662,7 +2878,15 @@ function bindUI(){
       return;
     }
     if (e.code === "Space"){ spaceDown = true; e.preventDefault(); }
+    if ((e.key === "l" || e.key === "L") && !e.ctrlKey && !e.metaKey){ setNavLock(); return; }
+    /* Plan verrouillé : seuls la navigation, les vues et les exports restent
+       actifs. Les raccourcis d'édition sont sans effet. */
+    if (state.navLock && EDIT_KEYS.test(e.key)){
+      if (e.key === "Delete" || e.key === "Backspace") e.preventDefault();
+      toast("Plan verrouillé"); return;
+    }
     const ctrl = e.ctrlKey || e.metaKey;
+    if (state.navLock && ctrl && "dD".indexOf(e.key) >= 0){ e.preventDefault(); toast("Plan verrouillé"); return; }
     if (ctrl && e.key.toLowerCase() === "z"){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if (ctrl && e.key.toLowerCase() === "y"){ e.preventDefault(); redo(); return; }
     if (ctrl && e.key.toLowerCase() === "d"){ e.preventDefault(); duplicateSelection(); return; }
@@ -2694,8 +2918,7 @@ function bindUI(){
   window.addEventListener("keyup", e => { if (e.code === "Space") spaceDown = false; });
   function step(e){ return state.site.grid * (e.shiftKey ? 10 : 1); }
 
-  /* redimensionnement */
-  const ro = new ResizeObserver(() => { resize2D(); resize3D(); });
+  const ro = new ResizeObserver(() => { resize2D(); resize3D(); need2D = true; });
   ro.observe($("#stage"));
   window.addEventListener("resize", () => { resize2D(); resize3D(); });
 }
@@ -2706,12 +2929,18 @@ function boot(){
   init3D(); bind3D();
   loadDemo();
   setTool("select", true); setView("2d");
+  
   requestAnimationFrame(() => {
     resize2D();
     fit2D();
   });
-  animate();                       // boucle unique, active même sans WebGL
-  if (!THREE_OK) toast("Three.js indisponible : la vue 3D est désactivée, le plan 2D reste complet.", true);
+  setTimeout(() => {
+    resize2D();
+    fit2D();
+  }, 100);
+
+  animate();
+  if (!THREE_OK) toast("Three.js indisponible : vue 3D désactivée, plan 2D opérationnel.", true);
 }
 boot();
 </script>
