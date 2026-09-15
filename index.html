@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroPlan — implantation d'usine agroalimentaire 2D / 3D</title>
+<style>
+/* =====================================================================
+   AgroPlan — feuille de style
+   Parti pris : la chrome de l'outil reste graphite désaturée pour ne pas
+   entrer en concurrence avec le code couleur sanitaire du plan (gris /
+   vert / bleu / violet), qui est la seule information colorée utile.
+   Le plan lui-même est sur fond clair : c'est un document technique,
+   destiné à être imprimé et annoté.
+   ===================================================================== */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e141b;          /* fond application */
+  --panel:#151d27;       /* panneaux */
+  --panel-2:#1b2532;     /* surfaces surélevées (champs, onglets) */
+  --line:#26313f;        /* filets */
+  --line-2:#33404f;
+  --ink:#ccd6e4;         /* texte principal */
+  --ink-2:#8494a8;       /* texte secondaire */
+  --ink-3:#5d6c80;       /* texte tertiaire */
+  --acc:#4cc9f0;         /* accent interactif (instrument) */
+  --acc-ink:#04202b;
+  --ok:#3ecf8e;
+  --warn:#f4b740;
+  --crit:#ff5f56;
+  --paper:#eef1f5;       /* fond du plan 2D */
+  --r:5px;
+}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;
+  overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2b3747;border-radius:6px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:#3b4a5e;background-clip:padding-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- ossature ---------- */
+#app{display:grid;grid-template-rows:46px 1fr 24px;grid-template-columns:262px 1fr 326px;height:100vh}
+#bar{grid-column:1/4;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+#left{grid-row:2;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#stage{grid-row:2;position:relative;background:#0a0f14;overflow:hidden}
+#right{grid-row:2;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;min-height:0}
+#status{grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px;background:var(--panel);border-top:1px solid var(--line);color:var(--ink-2);font-size:11.5px}
+
+/* ---------- barre d'outils ---------- */
+.brand{display:flex;align-items:baseline;gap:7px;padding-right:12px;margin-right:4px;border-right:1px solid var(--line);height:26px}
+.brand b{font-size:14px;font-weight:650;letter-spacing:.2px}
+.brand span{font-size:10.5px;color:var(--ink-3)}
+.grp{display:flex;gap:3px;align-items:center;padding-right:8px;margin-right:4px;border-right:1px solid var(--line)}
+.grp:last-of-type{border:0}
+.btn{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+  border-radius:var(--r);padding:5px 9px;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;transition:background .12s,border-color .12s
+}
+.btn:hover{background:#22303f;border-color:var(--line-2)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.38;cursor:not-allowed}
+.btn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--panel-2);color:var(--ink)}
+.btn.sm{padding:3px 7px;font-size:12px}
+.btn.danger:hover{background:#3a1b1c;border-color:#6d2b2b;color:#ffb4b0}
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{background:transparent;border:0;padding:5px 12px;cursor:pointer;color:var(--ink-2);font-weight:600}
+.seg button.on{background:var(--acc);color:var(--acc-ink)}
+.spacer{flex:1}
+.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- bibliothèque ---------- */
+#search{margin:9px;padding:6px 9px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);width:calc(100% - 18px)}
+#search::placeholder{color:var(--ink-3)}
+#lib{overflow-y:auto;padding:0 9px 16px;flex:1;min-height:0}
+.fam{margin-bottom:6px}
+.fam>summary{
+  list-style:none;cursor:pointer;padding:6px 4px;color:var(--ink-2);font-weight:600;font-size:11.5px;
+  display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2
+}
+.fam>summary::-webkit-details-marker{display:none}
+.fam>summary::before{content:"";width:0;height:0;border:4px solid transparent;border-left-color:var(--ink-3);transition:transform .15s;transform-origin:2px 50%}
+.fam[open]>summary::before{transform:rotate(90deg)}
+.fam>summary em{font-style:normal;color:var(--ink-3);font-weight:400;margin-left:auto}
+.items{padding:5px 0}
+.item{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;cursor:pointer;
+  background:transparent;border:1px solid transparent;border-radius:var(--r);padding:4px 6px;color:var(--ink)
+}
+.item:hover{background:var(--panel-2);border-color:var(--line)}
+.item.on{background:#0d3b4c;border-color:var(--acc)}
+.item canvas{flex:none;border-radius:3px;background:#f7f9fb}
+.item .t{min-width:0}
+.item .t b{display:block;font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t i{font-style:normal;color:var(--ink-3);font-size:10.5px}
+
+/* ---------- scène ---------- */
+#c2d{position:absolute;inset:0;display:block;touch-action:none}
+#v3d{position:absolute;inset:0;touch-action:none}
+#v3d canvas{display:block}
+.hide{display:none!important}
+#hint{
+  position:absolute;left:50%;top:12px;transform:translateX(-50%);
+  background:rgba(14,20,27,.94);border:1px solid var(--acc);color:var(--ink);
+  padding:6px 12px;border-radius:99px;font-size:12px;pointer-events:none;z-index:5;
+  box-shadow:0 6px 22px rgba(0,0,0,.45)
+}
+#legend{
+  position:absolute;left:12px;bottom:12px;background:rgba(14,20,27,.92);border:1px solid var(--line);
+  border-radius:var(--r);padding:8px 10px;font-size:11px;z-index:4;max-width:236px;backdrop-filter:blur(4px)
+}
+#legend h4{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-bottom:5px}
+#legend h4+h4{margin-top:8px}
+.lg{display:flex;align-items:center;gap:6px;color:var(--ink-2);padding:1px 0}
+.lg i{width:11px;height:11px;border-radius:2px;flex:none;display:block}
+.lg i.ln{height:0;border-top-width:3px;border-top-style:solid;border-radius:0}
+#legend .tog{position:absolute;right:6px;top:6px}
+#viewtag{
+  position:absolute;right:12px;top:12px;background:rgba(14,20,27,.9);border:1px solid var(--line);
+  border-radius:var(--r);padding:5px 9px;font-size:11px;color:var(--ink-2);z-index:4
+}
+#drop{position:absolute;inset:0;z-index:9;background:rgba(10,15,20,.85);border:2px dashed var(--acc);
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--acc)}
+
+/* ---------- panneau droit ---------- */
+.sec{border-bottom:1px solid var(--line)}
+.sec>summary{
+  list-style:none;cursor:pointer;padding:9px 12px;font-weight:600;font-size:12px;
+  display:flex;align-items:center;gap:7px;background:var(--panel)
+}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary::before{content:"";width:0;height:0;border:4px solid transparent;border-left-color:var(--ink-3);transition:transform .15s;transform-origin:2px 50%}
+.sec[open]>summary::before{transform:rotate(90deg)}
+.sec>summary .tag{margin-left:auto;font-weight:600;font-size:10.5px;padding:1px 6px;border-radius:99px;background:var(--panel-2);color:var(--ink-3)}
+.sec>summary .tag.bad{background:#3a1b1c;color:#ff8f89}
+.sec>summary .tag.mid{background:#3a2f12;color:var(--warn)}
+.sec>summary .tag.good{background:#12302a;color:var(--ok)}
+.body{padding:4px 12px 14px}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.row>label{width:96px;flex:none;color:var(--ink-2);font-size:11.5px}
+.row>.f{flex:1;min-width:0;display:flex;gap:6px}
+input[type=text],input[type=number],select,textarea{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:5px 7px;width:100%;min-width:0
+}
+input[type=number]{-moz-appearance:textfield}
+input:hover,select:hover{border-color:var(--line-2)}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+input[type=color]{padding:1px;height:28px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+input[type=range]{accent-color:var(--acc);width:100%}
+.chk{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;color:var(--ink-2);font-size:12px}
+.chk input{accent-color:var(--acc);width:14px;height:14px}
+.help{color:var(--ink-3);font-size:11px;line-height:1.5;margin:4px 0 8px}
+.empty{color:var(--ink-3);font-size:12px;padding:10px 2px;line-height:1.55}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.unit{position:relative;flex:1}
+.unit input{padding-right:22px}
+.unit::after{content:attr(data-u);position:absolute;right:7px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:10.5px;pointer-events:none}
+hr.sep{border:0;border-top:1px solid var(--line);margin:11px 0}
+.kv{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted var(--line);font-size:12px}
+.kv span{color:var(--ink-2)}
+.kv b{font-weight:600}
+.bar{height:6px;border-radius:3px;background:var(--panel-2);overflow:hidden;margin:3px 0 7px;display:flex}
+.bar i{display:block;height:100%}
+
+/* diagnostics */
+.iss{
+  display:flex;gap:8px;padding:7px 8px;border:1px solid var(--line);border-left-width:3px;
+  border-radius:var(--r);margin-bottom:6px;cursor:pointer;background:var(--panel-2)
+}
+.iss:hover{border-color:var(--line-2)}
+.iss.critique{border-left-color:var(--crit)}
+.iss.majeur{border-left-color:var(--warn)}
+.iss.mineur{border-left-color:var(--acc)}
+.iss b{display:block;font-size:12px;font-weight:600;margin-bottom:2px}
+.iss p{color:var(--ink-2);font-size:11px;line-height:1.45}
+.ok-box{display:flex;gap:8px;align-items:flex-start;background:#12241f;border:1px solid #1d4034;color:#9fe6c6;padding:8px 10px;border-radius:var(--r);font-size:11.5px;line-height:1.5}
+
+.toast{
+  position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:50;
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
+  padding:8px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px
+}
+.toast.bad{border-color:#6d2b2b;color:#ffb4b0}
+kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:3px;padding:0 4px;font:inherit;font-size:10.5px;color:var(--ink-2)}
+#coord{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:var(--acc)}
+#msg{margin-left:auto;color:var(--ink-3)}
+#nothree{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:8;background:rgba(10,15,20,.94);padding:30px;text-align:center;line-height:1.6}
+
+@media (max-width:1180px){#app{grid-template-columns:220px 1fr 288px}}
+@media (max-width:900px){
+  #app{grid-template-columns:1fr}
+  #left,#right{position:absolute;top:46px;bottom:24px;width:280px;z-index:20;box-shadow:0 0 40px rgba(0,0,0,.6)}
+  #left{left:0}#right{right:0}
+  #left.off{transform:translateX(-100%)}#right.off{transform:translateX(100%)}
+  #stage{grid-column:1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============================ BARRE D'OUTILS ============================ -->
+  <header id="bar">
+    <div class="brand"><b>AgroPlan</b><span>implantation agroalimentaire</span></div>
+
+    <div class="grp">
+      <div class="seg" id="viewseg">
+        <button data-view="2d" class="on">Plan 2D</button>
+        <button data-view="3d">Vue 3D</button>
+      </div>
+    </div>
+
+    <div class="grp" id="tools">
+      <button class="btn sm on" data-tool="select" title="Sélectionner et déplacer (V)">Sélection</button>
+      <button class="btn sm" data-tool="flux" title="Tracer un flux (F)">Flux</button>
+      <button class="btn sm" data-tool="mesure" title="Mesurer une distance (M) — plan 2D">Mesure</button>
+    </div>
+
+    <div class="grp">
+      <button class="btn sm" id="undo" title="Annuler (Ctrl+Z)">Annuler</button>
+      <button class="btn sm" id="redo" title="Rétablir (Ctrl+Y)">Rétablir</button>
+    </div>
+
+    <div class="grp">
+      <button class="btn sm" id="snap" title="Magnétisme sur la grille (G)">Magnétisme</button>
+      <select id="gridstep" style="width:88px" title="Pas de grille">
+        <option value="0.25">0,25 m</option><option value="0.5">0,5 m</option>
+        <option value="1" selected>1 m</option><option value="2">2 m</option><option value="5">5 m</option>
+      </select>
+      <button class="btn sm" id="fit" title="Recadrer sur le site (F2)">Recadrer</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="grp">
+      <button class="btn sm" id="demo" title="Charger l'implantation de démonstration">Exemple</button>
+      <button class="btn sm" id="clear" title="Vider le plan">Vider</button>
+    </div>
+    <div class="grp">
+      <button class="btn sm" id="import">Importer JSON</button>
+      <button class="btn sm" id="export">Exporter JSON</button>
+      <button class="btn sm" id="png" title="Image du plan">Image</button>
+      <button class="btn sm" id="csv" title="Nomenclature des éléments">Nomenclature</button>
+    </div>
+    <input type="file" id="file" accept="application/json,.json" class="hide">
+  </header>
+
+  <!-- ============================ BIBLIOTHÈQUE ============================ -->
+  <aside id="left">
+    <input id="search" type="text" placeholder="Rechercher un élément…" autocomplete="off">
+    <div id="lib"></div>
+  </aside>
+
+  <!-- ============================ SCÈNE ============================ -->
+  <main id="stage">
+    <canvas id="c2d"></canvas>
+    <div id="v3d" class="hide"></div>
+    <div id="nothree" class="hide">
+      <div>
+        <b>La vue 3D a besoin de Three.js</b><br>
+        <span style="color:var(--ink-2)">La bibliothèque n'a pas pu être chargée depuis le CDN. Connectez-vous une fois au réseau
+        pour la mettre en cache, ou placez <code>three.min.js</code> à côté de ce fichier.
+        Le plan 2D, l'édition et les exports restent pleinement utilisables.</span>
+      </div>
+    </div>
+    <div id="viewtag"></div>
+    <div id="hint" class="hide"></div>
+    <div id="legend">
+      <button class="btn ghost sm tog" id="legtog" title="Réduire">–</button>
+      <div id="legbody"></div>
+    </div>
+    <div id="drop" class="hide">Déposez un fichier .json d'implantation</div>
+  </main>
+
+  <!-- ============================ PANNEAU DROIT ============================ -->
+  <aside id="right">
+
+    <details class="sec" open id="sec-prop">
+      <summary>Propriétés <span class="tag" id="seltag">rien</span></summary>
+      <div class="body" id="props"></div>
+    </details>
+
+    <details class="sec" open>
+      <summary>Site et affichage</summary>
+      <div class="body">
+        <div class="row"><label>Nom du site</label><div class="f"><input type="text" id="s-name"></div></div>
+        <div class="row"><label>Emprise au sol</label><div class="f">
+          <span class="unit" data-u="m"><input type="number" id="s-w" min="5" max="500" step="1"></span>
+          <span class="unit" data-u="m"><input type="number" id="s-d" min="5" max="500" step="1"></span>
+        </div></div>
+        <div class="row"><label>Sous plafond</label><div class="f">
+          <span class="unit" data-u="m"><input type="number" id="s-h" min="2" max="40" step="0.5"></span>
+        </div></div>
+        <div class="row"><label>Marche en avant</label><div class="f"><select id="s-axis">
+          <option value="+x">Ouest → Est (+X)</option><option value="-x">Est → Ouest (−X)</option>
+          <option value="+z">Nord → Sud (+Z)</option><option value="-z">Sud → Nord (−Z)</option>
+        </select></div></div>
+        <div class="row"><label>Échelle</label><div class="f">
+          <input type="range" id="s-zoom" min="2" max="60" step="0.5">
+          <span class="unit" data-u="px/m" style="max-width:86px"><input type="number" id="s-zoomn" min="2" max="60" step="0.5"></span>
+        </div></div>
+        <hr class="sep">
+        <label class="chk"><input type="checkbox" id="v-grid" checked> Grille métrique et règles</label>
+        <label class="chk"><input type="checkbox" id="v-zones" checked> Zones sanitaires</label>
+        <label class="chk"><input type="checkbox" id="v-flux" checked> Flux</label>
+        <label class="chk"><input type="checkbox" id="v-labels" checked> Étiquettes des éléments</label>
+        <label class="chk"><input type="checkbox" id="v-issues" checked> Repères d'anomalie</label>
+        <label class="chk"><input type="checkbox" id="v-shadow" checked> Ombres portées (3D)</label>
+      </div>
+    </details>
+
+    <details class="sec" open id="sec-diag">
+      <summary>Marche en avant <span class="tag" id="diagtag">—</span></summary>
+      <div class="body" id="diag"></div>
+    </details>
+
+    <details class="sec">
+      <summary>Synthèse des surfaces</summary>
+      <div class="body" id="sum"></div>
+    </details>
+
+    <details class="sec">
+      <summary>Raccourcis</summary>
+      <div class="body" id="keys"></div>
+    </details>
+
+  </aside>
+
+  <!-- ============================ BARRE D'ÉTAT ============================ -->
+  <footer id="status">
+    <span id="coord">x 0,00 m &nbsp; z 0,00 m</span>
+    <span id="selinfo">Aucune sélection</span>
+    <span id="zoominfo"></span>
+    <span id="msg"></span>
+  </footer>
+</div>
+
+<!-- Three.js r128 (build global classique : fonctionne aussi en file:// sans serveur) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- OrbitControls officiel de la même révision. Si le CDN est injoignable,
+     un contrôleur orbital de secours équivalent est défini plus bas. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+"use strict";
+/* =====================================================================
+   AgroPlan — éditeur d'implantation d'usine agroalimentaire
+   ---------------------------------------------------------------------
+   Sommaire
+     1. Constantes métier  : zones sanitaires, familles de flux, catalogue
+     2. État global        : state, historique, invalidation
+     3. Utilitaires        : maths, géométrie orientée (OBB), DOM
+     4. Vue 2D             : rendu Canvas + interactions
+     5. Vue 3D             : scène Three.js + réconciliateur + interactions
+     6. Conformité         : contrôle de la marche en avant
+     7. Interface          : bibliothèque, propriétés, synthèse, E/S
+     8. Amorçage
+   ===================================================================== */
+
+/* =====================================================================
+   1. CONSTANTES MÉTIER
+   ===================================================================== */
+
+/* Classes sanitaires.
+   hyg   : niveau d'hygiène requis (contrôle des contaminations croisées)
+   ordre : rang dans le procédé (contrôle de la marche en avant)      */
+const ZONES = {
+  ext:     {label:"Extérieur / voirie",              color:"#7b8899", hyg:0, ordre:0},
+  grise:   {label:"Zone grise",                      color:"#d08a2c", hyg:1, ordre:1},
+  froid:   {label:"Zone froide",                     color:"#22b8cf", hyg:2, ordre:2},
+  propre:  {label:"Zone propre",                     color:"#3aa76d", hyg:2, ordre:2},
+  blanche: {label:"Zone haute hygiène",              color:"#3d9be9", hyg:3, ordre:3},
+  expe:    {label:"Conditionnement 2 / expédition",  color:"#9b6ef3", hyg:1, ordre:4},
+  tech:    {label:"Locaux techniques et sociaux",    color:"#5d6c80", hyg:0, ordre:0}
+};
+const ZONE_KEYS = Object.keys(ZONES);
+
+/* Familles de flux. produit = flux soumis à la règle de non-retour.
+   propre : niveau de propreté du flux, sert au test de croisement.   */
+const FLUX = {
+  mp:   {label:"Matières premières",       color:"#3d9be9", produit:true,  propre:1},
+  enc:  {label:"En-cours de fabrication",  color:"#f4b740", produit:true,  propre:2},
+  pf:   {label:"Produits finis",           color:"#3ecf8e", produit:true,  propre:3},
+  emb:  {label:"Emballages",               color:"#c9a227", produit:false, propre:2},
+  dech: {label:"Déchets et sous-produits", color:"#ff5f56", produit:false, propre:0},
+  pers: {label:"Personnel",                color:"#b07cf0", produit:false, propre:-1}
+};
+
+/* Catalogue des éléments instanciables.
+   w = largeur (X), d = longueur (Z), h = hauteur (Y), en mètres.
+   shape pilote à la fois le symbole 2D et le volume 3D.              */
+const CATALOG = [
+  /* ---------- Structure ---------- */
+  {id:"mur_ext",    fam:"Structure", cat:"structure", shape:"wall",   label:"Mur périmétrique",              w:12,  d:.25, h:7,   color:"#9aa7b5", zone:"ext",    note:"Bardage ou béton, raccords sol/mur en gorge arrondie."},
+  {id:"cloison",    fam:"Structure", cat:"structure", shape:"wall",   label:"Cloison isotherme 100 mm",      w:8,   d:.10, h:4,   color:"#dbe3ec", zone:"propre", note:"Panneau sandwich PIR, parement lisse nettoyable, joints siliconés alimentaires."},
+  {id:"cloison_v",  fam:"Structure", cat:"structure", shape:"window", label:"Cloison vitrée",                w:4,   d:.08, h:2.5, color:"#8fd3f4", zone:"propre", note:"Vision entre zones sans passage d'air : facilite la supervision."},
+  {id:"porte_batt", fam:"Structure", cat:"structure", shape:"door",   label:"Porte battante va-et-vient",    w:1.4, d:.12, h:2.2, color:"#f4b740", zone:"propre", note:"Ouverture sans contact des mains, oculus obligatoire."},
+  {id:"porte_rap",  fam:"Structure", cat:"structure", shape:"door",   label:"Porte rapide industrielle",     w:2.6, d:.15, h:3,   color:"#4cc9f0", zone:"propre", note:"Limite les transferts d'air et les pertes frigorifiques."},
+  {id:"porte_iso",  fam:"Structure", cat:"structure", shape:"door",   label:"Porte isotherme coulissante",   w:1.8, d:.16, h:2.5, color:"#22b8cf", zone:"froid",  note:"Accès chambre froide, joint périphérique et rideau souple."},
+  {id:"porte_sect", fam:"Structure", cat:"structure", shape:"door",   label:"Porte sectionnelle de quai",    w:3,   d:.2,  h:3.5, color:"#7b8899", zone:"ext",    note:"Associer sas d'étanchéité gonflable côté extérieur."},
+  {id:"oculus",     fam:"Structure", cat:"structure", shape:"window", label:"Fenêtre / oculus",              w:1.2, d:.10, h:1,   color:"#8fd3f4", zone:"propre", y:1.1},
+  {id:"poteau",     fam:"Structure", cat:"structure", shape:"box",    label:"Poteau de structure",           w:.4,  d:.4,  h:7,   color:"#8b93a0", zone:"ext"},
+  {id:"caniveau",   fam:"Structure", cat:"structure", shape:"trench", label:"Caniveau / siphon de sol",      w:6,   d:.3,  h:.06, color:"#6b7a8c", zone:"propre", note:"Pente 1 %, écoulement de la zone propre vers la zone grise, jamais l'inverse."},
+
+  /* ---------- Zones et sas ---------- */
+  {id:"z_quai_r",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Quai de réception",             w:8,  d:12, h:4, zone:"grise",   note:"Contrôle à réception : température, agréage, propreté du camion."},
+  {id:"z_recep",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Réception / déconditionnement", w:12, d:12, h:5, zone:"grise",   note:"Retrait des emballages de transport avant entrée en zone propre."},
+  {id:"z_stock_mp", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage MP réfrigéré",         w:10, d:14, h:5, zone:"froid",   note:"0–4 °C, rotation FEFO, séparation allergènes."},
+  {id:"z_embal",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage emballages",           w:8,  d:6,  h:5, zone:"propre",  note:"Déconditionner les cartons avant l'entrée en zone de conditionnement."},
+  {id:"z_prepa",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Atelier de préparation",        w:14, d:14, h:5, zone:"propre"},
+  {id:"z_cuisson",  fam:"Zones et sas", cat:"zones", shape:"zone", label:"Cuisson / traitement thermique",w:14, d:12, h:5, zone:"propre",  note:"CCP barème temps/température, extraction des buées."},
+  {id:"z_refroid",  fam:"Zones et sas", cat:"zones", shape:"zone", label:"Refroidissement rapide",        w:12, d:12, h:5, zone:"froid",   note:"CCP : 63 → 10 °C en moins de 2 h."},
+  {id:"z_condi1",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Conditionnement primaire",      w:12, d:14, h:4, zone:"blanche", note:"Salle blanche en surpression, air filtré, accès par sas uniquement."},
+  {id:"z_condi2",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Conditionnement secondaire",    w:8,  d:14, h:5, zone:"expe",    note:"Produit déjà protégé : mise en carton, palettisation."},
+  {id:"z_stock_pf", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage produits finis",       w:10, d:10, h:6, zone:"froid"},
+  {id:"z_expe",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Quai d'expédition",             w:8,  d:12, h:4, zone:"expe"},
+  {id:"sas_hyg",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Sas hygiène personnel",         w:3,  d:4,  h:3, zone:"blanche", note:"Lave-bottes, lave-mains sans contact, distributeur de charlottes, marche au pas obligé."},
+  {id:"sas_mat",    fam:"Zones et sas", cat:"zones", shape:"zone", label:"Sas matériel / passe-plat",     w:3,  d:2.5,h:3, zone:"propre",  note:"Transfert des bacs sans rupture de la barrière sanitaire."},
+  {id:"z_vest",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Vestiaires et sanitaires",      w:10, d:6,  h:3, zone:"tech",    note:"Circuit à sens unique : rue → tenue de ville → douche → tenue de travail."},
+  {id:"z_labo",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Laboratoire qualité",           w:6,  d:5,  h:3, zone:"tech"},
+  {id:"z_dechet",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Local déchets",                 w:6,  d:5,  h:4, zone:"grise",   sale:true, note:"Sortie directe sur l'extérieur, réfrigéré, jamais de traversée de zone propre."},
+  {id:"z_lavage",   fam:"Zones et sas", cat:"zones", shape:"zone", label:"Laverie bacs et chariots",      w:6,  d:5,  h:4, zone:"grise",   sale:true},
+  {id:"z_tech",     fam:"Zones et sas", cat:"zones", shape:"zone", label:"Local technique",               w:8,  d:5,  h:4, zone:"tech",    note:"Froid, air comprimé, TGBT : accès depuis l'extérieur de la zone de production."},
+
+  /* ---------- Process ---------- */
+  {id:"cuve",       fam:"Process", cat:"equip", shape:"cylinder", label:"Cuve de mélange inox",        w:2.2,d:2.2,h:2.6, color:"#b6c2cf", zone:"propre", note:"316L, fond bombé, nettoyage NEP."},
+  {id:"petrin",     fam:"Process", cat:"equip", shape:"box",      label:"Pétrin / mélangeur",          w:1.8,d:1.6,h:1.9, color:"#a9b5c2", zone:"propre"},
+  {id:"four",       fam:"Process", cat:"equip", shape:"box",      label:"Four continu (tunnel)",       w:9,  d:2.5,h:2.6, color:"#c4713f", zone:"propre", note:"Enregistrement continu du barème, hotte d'extraction."},
+  {id:"cellule",    fam:"Process", cat:"equip", shape:"box",      label:"Cellule de refroidissement",  w:3,  d:2.5,h:2.6, color:"#7fdbe8", zone:"froid"},
+  {id:"tunnel_sur", fam:"Process", cat:"equip", shape:"box",      label:"Tunnel de surgélation",       w:8,  d:2.5,h:2.8, color:"#6fc9de", zone:"froid"},
+  {id:"trancheur",  fam:"Process", cat:"equip", shape:"box",      label:"Trancheuse / portionneuse",   w:1.6,d:1.2,h:1.6, color:"#b6c2cf", zone:"blanche"},
+  {id:"peseuse",    fam:"Process", cat:"equip", shape:"box",      label:"Peseuse associative",         w:1.5,d:1.2,h:2,   color:"#b6c2cf", zone:"blanche"},
+  {id:"condi",      fam:"Process", cat:"equip", shape:"box",      label:"Operculeuse / flowpack",      w:3.5,d:1.5,h:1.9, color:"#aab6c4", zone:"blanche"},
+  {id:"detect_met", fam:"Process", cat:"equip", shape:"box",      label:"Détecteur de métaux / RX",    w:1.2,d:1,  h:1.8, color:"#ff5f56", zone:"expe",   note:"CCP : test des témoins Fe / non-Fe / inox à chaque prise de poste."},
+  {id:"etiq",       fam:"Process", cat:"equip", shape:"box",      label:"Étiqueteuse / marquage DLC",  w:1.2,d:1,  h:1.7, color:"#aab6c4", zone:"expe"},
+  {id:"palettiseur",fam:"Process", cat:"equip", shape:"box",      label:"Palettiseur / fardeleuse",    w:3,  d:2.5,h:2.4, color:"#9aa7b5", zone:"expe"},
+  {id:"convoyeur",  fam:"Process", cat:"equip", shape:"conveyor", label:"Convoyeur à bande",           w:6,  d:.8, h:.95, color:"#8fa0b3", zone:"propre", note:"Bande alimentaire démontable sans outil."},
+  {id:"table",      fam:"Process", cat:"equip", shape:"table",    label:"Table de travail inox",       w:2,  d:.8, h:.9,  color:"#c3ccd6", zone:"propre"},
+  {id:"cip",        fam:"Process", cat:"equip", shape:"box",      label:"Station NEP (CIP)",           w:2.5,d:1.5,h:2.2, color:"#8fa0b3", zone:"grise"},
+  {id:"laveur",     fam:"Process", cat:"equip", shape:"box",      label:"Tunnel de lavage des bacs",   w:5,  d:1.5,h:2,   color:"#8fa0b3", zone:"grise",  sale:true},
+  {id:"lave_bot",   fam:"Process", cat:"equip", shape:"box",      label:"Lave-bottes et lave-mains",   w:1.6,d:1,  h:1.6, color:"#3ecf8e", zone:"blanche", note:"Implanter en travers du passage, commande fémorale ou cellule."},
+
+  /* ---------- Logistique ---------- */
+  {id:"rack",       fam:"Logistique", cat:"equip", shape:"rack",     label:"Rack palettes 3 niveaux", w:2.7,d:1.1,h:6,   color:"#4f7fb0", zone:"froid"},
+  {id:"empl_pal",   fam:"Logistique", cat:"equip", shape:"footprint",label:"Emplacement palette",     w:1.2,d:.8, h:.05, color:"#7b8899", zone:"grise"},
+  {id:"palette",    fam:"Logistique", cat:"equip", shape:"pallet",   label:"Palette chargée (EUR)",   w:1.2,d:.8, h:1.5, color:"#b98b4e", zone:"grise"},
+  {id:"frigo",      fam:"Logistique", cat:"equip", shape:"box",      label:"Armoire froide / congélateur", w:1.4,d:.9,h:2.1, color:"#7fb8e0", zone:"froid"},
+  {id:"evapo",      fam:"Logistique", cat:"equip", shape:"box",      label:"Évaporateur plafonnier",  w:2,  d:.8, h:.8,  color:"#8fa0b3", zone:"froid", y:3.2, note:"Ne jamais surplomber un produit nu : risque de condensats."},
+  {id:"silo",       fam:"Logistique", cat:"equip", shape:"silo",     label:"Silo à ingrédients",      w:3,  d:3,  h:8,   color:"#c3ccd6", zone:"ext"},
+  {id:"quai",       fam:"Logistique", cat:"equip", shape:"dock",     label:"Niveleur de quai",        w:3.5,d:2.5,h:1.2, color:"#6b7a8c", zone:"ext"},
+  {id:"bac_dech",   fam:"Logistique", cat:"equip", shape:"box",      label:"Bac à déchets 660 L",     w:1.2,d:.8, h:1.2, color:"#ff5f56", zone:"grise", sale:true},
+  {id:"transpal",   fam:"Logistique", cat:"equip", shape:"box",      label:"Transpalette électrique", w:1.8,d:.8, h:1.3, color:"#f4b740", zone:"grise"},
+  {id:"poste_info", fam:"Logistique", cat:"equip", shape:"desk",     label:"Poste informatique",      w:1.4,d:.8, h:1.6, color:"#5d6c80", zone:"propre"}
+];
+const BY_ID = {}; CATALOG.forEach(d => BY_ID[d.id] = d);
+const FAMS = []; CATALOG.forEach(d => { if (FAMS.indexOf(d.fam) < 0) FAMS.push(d.fam); });
+
+/* =====================================================================
+   2. ÉTAT GLOBAL
+   ===================================================================== */
+const state = {
+  site:{name:"Site de transformation", w:60, d:40, h:7, grid:1, snap:true, axis:"+x"},
+  objects:[],            // éléments d'usine (cf. structure de données)
+  flux:[],               // polylignes de flux
+  selection:[],          // tableau d'identifiants
+  seq:1,                 // compteur d'identifiants
+  view:"2d",             // "2d" | "3d"
+  tool:"select",         // "select" | "flux" | "mesure"
+  placing:null,          // type du catalogue en attente de pose
+  fluxDraft:null,        // polyligne de flux en cours de tracé
+  measure:null,          // {a:{x,z}, b:{x,z}} en cours
+  fluxType:"mp",         // nature du prochain flux tracé
+  cam2:{x:30, z:20, zoom:14},   // caméra 2D : centre visé (m) + échelle (px/m)
+  show:{grid:true, zones:true, flux:true, labels:true, issues:true, shadows:true},
+  issues:[]
+};
+const history = {past:[], future:[]};
+
+/* Invalidation : les deux vues sont des projections pures de `state`. */
+let need2D = true, need3D = true, needDiag = true;
+function markDirty(){ need2D = true; need3D = true; needDiag = true; }
+
+function snapshot(){
+  return JSON.stringify({site:state.site, objects:state.objects, flux:state.flux, seq:state.seq});
+}
+function restore(json){
+  const s = JSON.parse(json);
+  state.site = s.site; state.objects = s.objects; state.flux = s.flux; state.seq = s.seq;
+  state.selection = state.selection.filter(id => byId(id));
+  markDirty();
+}
+/* À appeler AVANT toute mutation destinée à être annulable. */
+function commit(){
+  history.past.push(snapshot());
+  if (history.past.length > 80) history.past.shift();
+  history.future.length = 0;
+  markDirty();
+}
+function undo(){
+  if (!history.past.length) return toast("Rien à annuler");
+  history.future.push(snapshot());
+  restore(history.past.pop());
+  refreshAll();
+}
+function redo(){
+  if (!history.future.length) return toast("Rien à rétablir");
+  history.past.push(snapshot());
+  restore(history.future.pop());
+  refreshAll();
+}
+
+/* =====================================================================
+   3. UTILITAIRES
+   ===================================================================== */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const rad = d => d * Math.PI / 180;
+const uid = () => "o" + (state.seq++);
+const fmt = (v,n) => Number(v).toFixed(n === undefined ? 2 : n).replace(".", ",");
+
+function byId(id){
+  for (let i = 0; i < state.objects.length; i++) if (state.objects[i].id === id) return state.objects[i];
+  for (let i = 0; i < state.flux.length; i++)    if (state.flux[i].id === id)    return state.flux[i];
+  return null;
+}
+function selected(){ return state.selection.map(byId).filter(Boolean); }
+function selectedObjects(){ return selected().filter(o => !o.points); }
+function isFlux(o){ return !!(o && o.points); }
+
+/* Magnétisme sur la grille. */
+function snapV(v){ const g = state.site.grid; return state.site.snap ? Math.round(v / g) * g : Math.round(v * 1000) / 1000; }
+
+/* Rotation d'un vecteur local (px,pz) de `deg` degrés autour de l'origine.
+   Convention : X vers la droite, Z vers le bas du plan (sens horaire à l'écran). */
+function rot2(px, pz, deg){
+  const a = rad(deg), c = Math.cos(a), s = Math.sin(a);
+  return {x: px * c - pz * s, z: px * s + pz * c};
+}
+/* Les 4 sommets d'un élément, en coordonnées monde. */
+function corners(o){
+  const hw = o.w / 2, hd = o.d / 2;
+  return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(p => {
+    const r = rot2(p[0], p[1], o.rot);
+    return {x: o.x + r.x, z: o.z + r.z};
+  });
+}
+/* Boîte englobante alignée aux axes. */
+function aabb(o){
+  const c = corners(o);
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  c.forEach(p => { x0 = Math.min(x0,p.x); x1 = Math.max(x1,p.x); z0 = Math.min(z0,p.z); z1 = Math.max(z1,p.z); });
+  return {x0,x1,z0,z1};
+}
+/* Test point / rectangle orienté : on repasse le point en repère local. */
+function hitObj(px, pz, o, pad){
+  const l = rot2(px - o.x, pz - o.z, -o.rot), m = pad || 0;
+  return Math.abs(l.x) <= o.w / 2 + m && Math.abs(l.z) <= o.d / 2 + m;
+}
+/* Recouvrement de deux rectangles orientés (théorème de l'axe séparateur). */
+function overlapOBB(a, b){
+  const ca = corners(a), cb = corners(b);
+  const axes = [];
+  [a,b].forEach(o => {
+    const r1 = rot2(1,0,o.rot), r2 = rot2(0,1,o.rot);
+    axes.push(r1, r2);
+  });
+  for (const ax of axes){
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    ca.forEach(p => { const d = p.x*ax.x + p.z*ax.z; a0 = Math.min(a0,d); a1 = Math.max(a1,d); });
+    cb.forEach(p => { const d = p.x*ax.x + p.z*ax.z; b0 = Math.min(b0,d); b1 = Math.max(b1,d); });
+    if (a1 < b0 + 1e-9 || b1 < a0 + 1e-9) return false;  // axe séparateur trouvé
+  }
+  return true;
+}
+/* Intersection stricte de deux segments (extrémités exclues). */
+function segCross(p1, p2, p3, p4){
+  const d1x = p2.x-p1.x, d1z = p2.z-p1.z, d2x = p4.x-p3.x, d2z = p4.z-p3.z;
+  const den = d1x*d2z - d1z*d2x;
+  if (Math.abs(den) < 1e-9) return null;                  // parallèles
+  const t = ((p3.x-p1.x)*d2z - (p3.z-p1.z)*d2x) / den;
+  const u = ((p3.x-p1.x)*d1z - (p3.z-p1.z)*d1x) / den;
+  const e = 1e-4;
+  if (t <= e || t >= 1-e || u <= e || u >= 1-e) return null;
+  return {x: p1.x + t*d1x, z: p1.z + t*d1z};
+}
+/* Distance d'un point à un segment. */
+function distSeg(p, a, b){
+  const dx = b.x-a.x, dz = b.z-a.z, l2 = dx*dx + dz*dz;
+  if (l2 < 1e-12) return Math.hypot(p.x-a.x, p.z-a.z);
+  const t = clamp(((p.x-a.x)*dx + (p.z-a.z)*dz) / l2, 0, 1);
+  return Math.hypot(p.x - (a.x + t*dx), p.z - (a.z + t*dz));
+}
+/* Composante d'un déplacement le long de l'axe de marche en avant. */
+function alongAxis(dx, dz){
+  switch (state.site.axis){
+    case "+x": return dx; case "-x": return -dx;
+    case "+z": return dz; default:   return -dz;
+  }
+}
+function zoneOf(o){ return ZONES[o.zone] || ZONES.ext; }
+function colorOf(o){
+  if (o.color) return o.color;
+  return zoneOf(o).color;
+}
+function shade(hex, k){                  // éclaircit (k>0) ou assombrit (k<0)
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+  const f = v => clamp(Math.round(k > 0 ? v + (255-v)*k : v * (1+k)), 0, 255);
+  return "#" + ((1<<24) + (f(r)<<16) + (f(g)<<8) + f(b)).toString(16).slice(1);
+}
+function hexA(hex, a){
+  const n = parseInt(hex.slice(1), 16);
+  return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
+}
+let toastTimer = null;
+function toast(msg, bad){
+  const t = document.createElement("div");
+  t.className = "toast" + (bad ? " bad" : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 2600);
+  $("#msg").textContent = msg;
+}
+
+/* =====================================================================
+   4. VUE 2D — plan technique en projection orthogonale
+   ---------------------------------------------------------------------
+   Repère : X vers la droite, Z vers le bas. C'est exactement le repère
+   utilisé par la vue 3D, ce qui évite toute conversion entre les deux.
+   ===================================================================== */
+const cv = $("#c2d"), ctx = cv.getContext("2d");
+let W2 = 0, H2 = 0;                       // dimensions CSS du canevas
+const RULER = 18;                         // largeur des règles graduées
+
+function resize2D(){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  W2 = r.width; H2 = r.height;
+  cv.width = Math.max(1, Math.round(r.width * dpr));
+  cv.height = Math.max(1, Math.round(r.height * dpr));
+  need2D = true;
+}
+/* Monde (m) → écran (px CSS) */
+function w2s(x, z){
+  const c = state.cam2;
+  return {x: (x - c.x) * c.zoom + W2 / 2, y: (z - c.z) * c.zoom + H2 / 2};
+}
+/* Écran (px CSS) → monde (m) */
+function s2w(px, py){
+  const c = state.cam2;
+  return {x: (px - W2 / 2) / c.zoom + c.x, z: (py - H2 / 2) / c.zoom + c.z};
+}
+function mousePt(e){
+  const r = cv.getBoundingClientRect();
+  return s2w(e.clientX - r.left, e.clientY - r.top);
+}
+function layerOf(o){
+  if (o.cat === "zones") return 0;
+  if (BY_ID[o.type] && BY_ID[o.type].shape === "trench") return 1;
+  return o.cat === "structure" ? 2 : 3;
+}
+function drawOrder(){
+  return state.objects.map((o,i) => [o,i]).sort((a,b) => layerOf(a[0]) - layerOf(b[0]) || a[1] - b[1]).map(p => p[0]);
+}
+
+/* ---------------------------------------------------------------------
+   Symboles : dessinés dans le repère local de l'élément, centré en (0,0),
+   en pixels. La même fonction sert aux vignettes de la bibliothèque.
+   --------------------------------------------------------------------- */
+function drawShape(g, def, o, W, H, thumb){
+  const col = colorOf(o), z = zoneOf(o);
+  const x = -W/2, y = -H/2;
+  g.lineJoin = "miter";
+  switch (def.shape){
+    case "zone": {
+      g.fillStyle = hexA(z.color, .14); g.fillRect(x, y, W, H);
+      g.strokeStyle = z.color; g.lineWidth = 1.6; g.setLineDash([7,4]);
+      g.strokeRect(x, y, W, H); g.setLineDash([]);
+      const t = Math.min(14, W/4, H/4);                 // équerres de coin
+      g.lineWidth = 2.4; g.beginPath();
+      [[x,y,1,1],[x+W,y,-1,1],[x+W,y+H,-1,-1],[x,y+H,1,-1]].forEach(c => {
+        g.moveTo(c[0]+c[2]*t, c[1]); g.lineTo(c[0], c[1]); g.lineTo(c[0], c[1]+c[3]*t);
+      });
+      g.stroke(); break;
+    }
+    case "wall": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = "#3f4855"; g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      if (Math.min(W,H) > 5){                            // hachure de coupe
+        g.save(); g.beginPath(); g.rect(x,y,W,H); g.clip();
+        g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = .8; g.beginPath();
+        for (let i = -H; i < W; i += 6){ g.moveTo(x+i, y+H); g.lineTo(x+i+H, y); }
+        g.stroke(); g.restore();
+      }
+      break;
+    }
+    case "door": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      g.strokeStyle = hexA(col,.85); g.lineWidth = 1.2; g.setLineDash([3,3]);
+      g.beginPath(); g.moveTo(x, y); g.arc(x, y, Math.min(W, 40), 0, Math.PI/2); g.stroke();
+      g.setLineDash([]); break;
+    }
+    case "window": {
+      g.fillStyle = hexA(col,.55); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x+W, y); g.moveTo(x, y+H); g.lineTo(x+W, y+H); g.stroke();
+      break;
+    }
+    case "cylinder": case "silo": {
+      const r = Math.min(W,H)/2;
+      g.fillStyle = col; g.beginPath(); g.arc(0,0,r,0,6.2832); g.fill();
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.stroke();
+      g.beginPath();
+      if (def.shape === "silo"){ g.arc(0,0,r*.6,0,6.2832); }
+      else { g.moveTo(-r*.7,0); g.lineTo(r*.7,0); g.moveTo(0,-r*.7); g.lineTo(0,r*.7); }
+      g.stroke(); break;
+    }
+    case "conveyor": {
+      g.fillStyle = shade(col,.18); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.lineWidth = .9; g.strokeStyle = shade(col,-.25); g.beginPath();
+      const st = Math.max(5, W/16);
+      for (let i = st; i < W; i += st){ g.moveTo(x+i, y+1.5); g.lineTo(x+i, y+H-1.5); }
+      g.stroke(); break;
+    }
+    case "rack": {
+      g.fillStyle = hexA(col,.35); g.fillRect(x, y, W, H);
+      g.strokeStyle = col; g.lineWidth = 1.4; g.strokeRect(x, y, W, H);
+      g.lineWidth = 1; g.beginPath();
+      g.moveTo(x,y); g.lineTo(x+W,y+H); g.moveTo(x+W,y); g.lineTo(x,y+H);
+      g.moveTo(x+W/3,y); g.lineTo(x+W/3,y+H); g.moveTo(x+2*W/3,y); g.lineTo(x+2*W/3,y+H);
+      g.stroke(); break;
+    }
+    case "pallet": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      g.beginPath();
+      for (let i = 1; i < 4; i++){ g.moveTo(x, y + i*H/4); g.lineTo(x+W, y + i*H/4); }
+      g.stroke(); break;
+    }
+    case "footprint": {
+      g.fillStyle = hexA(col,.18); g.fillRect(x, y, W, H);
+      g.strokeStyle = col; g.lineWidth = 1.2; g.setLineDash([4,3]); g.strokeRect(x, y, W, H); g.setLineDash([]);
+      break;
+    }
+    case "trench": {
+      g.fillStyle = hexA(col,.5); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.2); g.lineWidth = 1; g.setLineDash([5,4]);
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x+W, 0); g.stroke(); g.setLineDash([]);
+      break;
+    }
+    case "dock": {
+      g.fillStyle = shade(col,.1); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.4; g.strokeRect(x, y, W, H);
+      g.fillStyle = hexA("#f4b740",.9); g.beginPath();
+      g.moveTo(x+W*.25, y+H*.25); g.lineTo(x+W*.75, y+H*.5); g.lineTo(x+W*.25, y+H*.75); g.closePath(); g.fill();
+      break;
+    }
+    case "table": {
+      const r = Math.min(4, W/6, H/6);
+      g.fillStyle = shade(col,.12); g.beginPath();
+      if (g.roundRect) g.roundRect(x, y, W, H, r); else g.rect(x, y, W, H);
+      g.fill(); g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.stroke(); break;
+    }
+    case "desk": {
+      g.fillStyle = shade(col,.2); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = shade(col,-.2); g.fillRect(x+W*.15, y+H*.1, W*.7, H*.28); break;
+    }
+    default: {                                            // machine générique
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      if (W > 12 && H > 12){
+        g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1;
+        g.strokeRect(x+3, y+3, W-6, H-6);
+      }
+    }
+  }
+  /* Pastille de classe sanitaire, hors zones et hors vignettes */
+  if (!thumb && def.shape !== "zone" && Math.min(W,H) > 16){
+    g.fillStyle = z.color; g.beginPath(); g.arc(W/2-4, -H/2+4, 2.6, 0, 6.2832); g.fill();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Rendu complet du plan
+   --------------------------------------------------------------------- */
+function draw2D(){
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W2, H2);
+  const c = state.cam2, S = state.site;
+
+  /* fond hors emprise */
+  ctx.fillStyle = "#d7dce3"; ctx.fillRect(0, 0, W2, H2);
+  /* dalle */
+  const a = w2s(0,0), b = w2s(S.w, S.d);
+  ctx.fillStyle = "#eef1f5";
+  ctx.fillRect(a.x, a.y, b.x-a.x, b.y-a.y);
+  ctx.strokeStyle = "#98a3b3"; ctx.lineWidth = 1.5; ctx.strokeRect(a.x, a.y, b.x-a.x, b.y-a.y);
+
+  if (state.show.grid) drawGrid(a, b);
+  if (state.show.zones) drawOrder().filter(o => o.cat === "zones").forEach(drawObj2D);
+  drawOrder().filter(o => o.cat !== "zones").forEach(drawObj2D);
+  if (state.show.flux){ state.flux.forEach(drawFlux2D); if (state.fluxDraft) drawFlux2D(state.fluxDraft, true); }
+  if (state.show.issues) drawIssues2D();
+  drawSelection2D();
+  if (drag && drag.mode === "marquee") drawMarquee();
+  if (state.measure) drawMeasure();
+  if (state.placing) drawGhost();
+  if (state.show.grid) drawRulers();
+  drawScaleBar();
+}
+
+function drawGrid(a, b){
+  const c = state.cam2, S = state.site;
+  let step = S.grid;
+  while (step * c.zoom < 7) step *= 2;                    // densité lisible
+  ctx.save(); ctx.beginPath(); ctx.rect(a.x, a.y, b.x-a.x, b.y-a.y); ctx.clip();
+  for (let pass = 0; pass < 2; pass++){
+    const s = pass ? step * 5 : step;
+    ctx.beginPath(); ctx.strokeStyle = pass ? "#b3bdcb" : "#dbe0e8"; ctx.lineWidth = 1;
+    for (let x = 0; x <= S.w + 1e-6; x += s){ const p = w2s(x, 0); ctx.moveTo(p.x, a.y); ctx.lineTo(p.x, b.y); }
+    for (let z = 0; z <= S.d + 1e-6; z += s){ const p = w2s(0, z); ctx.moveTo(a.x, p.y); ctx.lineTo(b.x, p.y); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawObj2D(o){
+  const def = BY_ID[o.type] || {shape:"box"};
+  const p = w2s(o.x, o.z), c = state.cam2;
+  const W = o.w * c.zoom, H = o.d * c.zoom;
+  if (p.x + W + H < -50 || p.x - W - H > W2 + 50 || p.y + W + H < -50 || p.y - W - H > H2 + 50) return;
+  ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(rad(o.rot));
+  drawShape(ctx, def, o, W, H, false);
+  ctx.restore();
+
+  if (!state.show.labels) return;
+  ctx.textBaseline = "middle";
+  if (o.cat === "zones"){
+    if (Math.min(W,H) < 34) return;
+    const bb = aabb(o), tl = w2s(bb.x0, bb.z0);
+    ctx.font = "600 11px system-ui,sans-serif"; ctx.textAlign = "left";
+    const t = o.label, wtxt = ctx.measureText(t).width;
+    ctx.fillStyle = hexA(zoneOf(o).color, .92);
+    ctx.fillRect(tl.x + 4, tl.y + 4, wtxt + 10, 16);
+    ctx.fillStyle = "#fff"; ctx.fillText(t, tl.x + 9, tl.y + 12.5);
+    if (c.zoom > 7){
+      ctx.fillStyle = "#5a6676"; ctx.font = "10px system-ui,sans-serif";
+      ctx.fillText(fmt(o.w,1) + " × " + fmt(o.d,1) + " m — " + fmt(o.w*o.d,0) + " m²", tl.x + 6, tl.y + 30);
+    }
+  } else if (Math.max(W,H) > 26 && c.zoom > 5){
+    ctx.font = "10px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#38424f";
+    const t = o.label.length > 22 ? o.label.slice(0,21) + "…" : o.label;
+    const off = Math.max(W,H)/2 + 8;
+    ctx.fillStyle = "rgba(238,241,245,.82)";
+    const tw = ctx.measureText(t).width;
+    ctx.fillRect(p.x - tw/2 - 3, p.y + off - 7, tw + 6, 13);
+    ctx.fillStyle = "#38424f"; ctx.fillText(t, p.x, p.y + off);
+  }
+}
+
+function drawFlux2D(f, draft){
+  const def = FLUX[f.type], c = state.cam2;
+  if (f.points.length < 1) return;
+  const pts = f.points.map(p => w2s(p.x, p.z));
+  const sel = state.selection.indexOf(f.id) >= 0;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  /* liseré blanc pour la lisibilité sur les zones colorées */
+  ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = (f.width || 1) * 5 + 4;
+  ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke();
+  ctx.strokeStyle = def.color; ctx.lineWidth = (f.width || 1) * 5;
+  if (draft) ctx.setLineDash([9,6]);
+  ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke();
+  ctx.setLineDash([]);
+  /* têtes de flèche à mi-segment */
+  ctx.fillStyle = def.color;
+  for (let i = 1; i < pts.length; i++){
+    const A = pts[i-1], B = pts[i], L = Math.hypot(B.x-A.x, B.y-A.y);
+    if (L < 26) continue;
+    const ang = Math.atan2(B.y-A.y, B.x-A.x), mx = (A.x+B.x)/2, my = (A.y+B.y)/2, s = 7;
+    ctx.save(); ctx.translate(mx,my); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(s,0); ctx.lineTo(-s*.8,s*.72); ctx.lineTo(-s*.8,-s*.72); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  /* poignées de sommet quand le flux est sélectionné */
+  if (sel || draft){
+    pts.forEach(p => {
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 4.5, 0, 6.2832); ctx.fill(); ctx.stroke();
+    });
+  }
+  if (state.show.labels && pts.length > 1 && c.zoom > 4){
+    const A = pts[0], B = pts[1];
+    ctx.font = "600 10px system-ui,sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    const t = def.label, tw = ctx.measureText(t).width;
+    ctx.fillStyle = def.color; ctx.fillRect(A.x + 6, A.y - 8, tw + 8, 15);
+    ctx.fillStyle = "#fff"; ctx.fillText(t, A.x + 10, A.y);
+  }
+}
+
+function drawSelection2D(){
+  const sel = selected(); if (!sel.length) return;
+  sel.forEach(o => {
+    if (isFlux(o)) return;
+    const cs = corners(o).map(p => w2s(p.x, p.z));
+    ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 2;
+    ctx.beginPath(); cs.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.stroke();
+  });
+  const objs = selectedObjects();
+  if (objs.length === 1 && !objs[0].locked){
+    const o = objs[0], cs = corners(o).map(p => w2s(p.x, p.z));
+    /* poignées d'angle */
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 2;
+    cs.forEach(p => { ctx.beginPath(); ctx.rect(p.x-4, p.y-4, 8, 8); ctx.fill(); ctx.stroke(); });
+    /* poignée de rotation, au-dessus du milieu de l'arête « haute » locale */
+    const hp = rotHandlePos(o), s = w2s(hp.x, hp.z);
+    const mid = {x:(cs[0].x+cs[1].x)/2, y:(cs[0].y+cs[1].y)/2};
+    ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(mid.x, mid.y); ctx.lineTo(s.x, s.y); ctx.stroke();
+    ctx.fillStyle = "#0b7ea8"; ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, 6.2832); ctx.fill();
+    /* cotes */
+    ctx.font = "600 10px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const p = w2s(o.x, o.z);
+    const t = fmt(o.w,2) + " × " + fmt(o.d,2) + " m";
+    const tw = ctx.measureText(t).width;
+    ctx.fillStyle = "rgba(11,126,168,.95)"; ctx.fillRect(p.x-tw/2-5, p.y-8, tw+10, 16);
+    ctx.fillStyle = "#fff"; ctx.fillText(t, p.x, p.y);
+  }
+}
+function rotHandlePos(o){
+  const off = (o.d/2) + 26 / state.cam2.zoom;
+  const r = rot2(0, -off, o.rot);
+  return {x: o.x + r.x, z: o.z + r.z};
+}
+
+function drawMarquee(){
+  const A = w2s(drag.a.x, drag.a.z), B = w2s(drag.b.x, drag.b.z);
+  ctx.fillStyle = "rgba(11,126,168,.14)"; ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 1;
+  ctx.setLineDash([5,3]);
+  ctx.fillRect(A.x, A.y, B.x-A.x, B.y-A.y); ctx.strokeRect(A.x, A.y, B.x-A.x, B.y-A.y);
+  ctx.setLineDash([]);
+}
+
+function drawGhost(){
+  if (!hover) return;
+  const def = BY_ID[state.placing]; if (!def) return;
+  const o = Object.assign({}, def, {x:snapV(hover.x), z:snapV(hover.z), rot:0, label:def.label});
+  const p = w2s(o.x, o.z);
+  ctx.save(); ctx.globalAlpha = .6; ctx.translate(p.x, p.y);
+  drawShape(ctx, def, o, o.w*state.cam2.zoom, o.d*state.cam2.zoom, false);
+  ctx.restore();
+  ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(p.x-14,p.y); ctx.lineTo(p.x+14,p.y); ctx.moveTo(p.x,p.y-14); ctx.lineTo(p.x,p.y+14);
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawMeasure(){
+  const m = state.measure; if (!m.b) return;
+  const A = w2s(m.a.x, m.a.z), B = w2s(m.b.x, m.b.z);
+  const dist = Math.hypot(m.b.x-m.a.x, m.b.z-m.a.z);
+  ctx.strokeStyle = "#b8392f"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+  [A,B].forEach(p => { ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,6.2832); ctx.fillStyle="#b8392f"; ctx.fill(); });
+  const t = fmt(dist,2) + " m";
+  ctx.font = "600 11px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const tw = ctx.measureText(t).width, mx = (A.x+B.x)/2, my = (A.y+B.y)/2;
+  ctx.fillStyle = "#b8392f"; ctx.fillRect(mx-tw/2-5, my-18, tw+10, 16);
+  ctx.fillStyle = "#fff"; ctx.fillText(t, mx, my-10);
+}
+
+function drawIssues2D(){
+  state.issues.forEach(is => {
+    if (is.x === undefined) return;
+    const p = w2s(is.x, is.z), col = is.sev === "critique" ? "#ff5f56" : is.sev === "majeur" ? "#e59a10" : "#4cc9f0";
+    ctx.fillStyle = col; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 6.2832); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.font = "700 11px system-ui,sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("!", p.x, p.y + .5);
+  });
+}
+
+function drawRulers(){
+  const S = state.site, c = state.cam2;
+  let step = S.grid; while (step * c.zoom < 44) step *= 2;
+  ctx.fillStyle = "rgba(21,29,39,.94)";
+  ctx.fillRect(0, 0, W2, RULER); ctx.fillRect(0, 0, RULER, H2);
+  ctx.strokeStyle = "#26313f"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,RULER+.5); ctx.lineTo(W2,RULER+.5); ctx.moveTo(RULER+.5,0); ctx.lineTo(RULER+.5,H2); ctx.stroke();
+  ctx.fillStyle = "#8494a8"; ctx.font = "9.5px ui-monospace,Menlo,Consolas,monospace";
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  for (let x = 0; x <= S.w + 1e-6; x += step){
+    const p = w2s(x, 0); if (p.x < RULER || p.x > W2) continue;
+    ctx.fillRect(p.x, RULER-4, 1, 4); ctx.fillText(x, p.x + 2, RULER/2);
+  }
+  for (let z = 0; z <= S.d + 1e-6; z += step){
+    const p = w2s(0, z); if (p.y < RULER || p.y > H2) continue;
+    ctx.fillRect(RULER-4, p.y, 4, 1);
+    ctx.save(); ctx.translate(RULER/2, p.y); ctx.rotate(-Math.PI/2);
+    ctx.textAlign = "left"; ctx.fillText(z, 2, 0); ctx.restore();
+  }
+  ctx.fillStyle = "#5d6c80"; ctx.textAlign = "center"; ctx.fillText("m", RULER/2, RULER/2);
+}
+
+function drawScaleBar(){
+  const c = state.cam2;
+  let m = 1; const target = 110;
+  const steps = [1,2,5,10,20,25,50,100];
+  for (const s of steps){ if (s * c.zoom <= target) m = s; }
+  const px = m * c.zoom, x0 = W2 - px - 18, y0 = H2 - 22;
+  ctx.fillStyle = "rgba(21,29,39,.9)"; ctx.fillRect(x0 - 10, y0 - 13, px + 20, 26);
+  ctx.strokeStyle = "#ccd6e4"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, y0+4); ctx.lineTo(x0+px, y0+4);
+  ctx.moveTo(x0, y0); ctx.lineTo(x0, y0+8); ctx.moveTo(x0+px, y0); ctx.lineTo(x0+px, y0+8); ctx.stroke();
+  ctx.fillStyle = "#ccd6e4"; ctx.font = "10px system-ui,sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(m + " m", x0 + px/2, y0 + 1);
+}
+
+/* ---------------------------------------------------------------------
+   Interactions 2D
+   --------------------------------------------------------------------- */
+let drag = null, hover = null, spaceDown = false;
+
+/* Élément situé sous le point (px,pz), du plus haut au plus bas. */
+function pick(px, pz){
+  const tol = 6 / state.cam2.zoom;
+  /* sommets de flux sélectionnés d'abord */
+  for (const f of state.flux){
+    if (state.selection.indexOf(f.id) < 0) continue;
+    for (let i = 0; i < f.points.length; i++)
+      if (Math.hypot(f.points[i].x - px, f.points[i].z - pz) < tol * 1.4)
+        return {obj:f, mode:"fluxpt", idx:i};
+  }
+  const ord = drawOrder();
+  for (let i = ord.length - 1; i >= 0; i--){
+    const o = ord[i];
+    if (o.cat === "zones" && !state.show.zones) continue;
+    if (o.cat !== "zones" && hitObj(px, pz, o)) return {obj:o, mode:"move"};
+  }
+  if (state.show.flux){
+    for (let i = state.flux.length - 1; i >= 0; i--){
+      const f = state.flux[i];
+      for (let k = 1; k < f.points.length; k++)
+        if (distSeg({x:px,z:pz}, f.points[k-1], f.points[k]) < tol) return {obj:f, mode:"move"};
+    }
+  }
+  if (state.show.zones){
+    for (let i = ord.length - 1; i >= 0; i--){
+      const o = ord[i];
+      if (o.cat === "zones" && hitObj(px, pz, o)) return {obj:o, mode:"move"};
+    }
+  }
+  return null;
+}
+/* Poignée d'édition sous le curseur (sélection unique). */
+function pickHandle(px, pz){
+  const objs = selectedObjects();
+  if (objs.length !== 1 || objs[0].locked) return null;
+  const o = objs[0], tol = 7 / state.cam2.zoom;
+  const hp = rotHandlePos(o);
+  if (Math.hypot(hp.x - px, hp.z - pz) < tol) return {obj:o, mode:"rotate"};
+  const cs = corners(o);
+  for (let i = 0; i < 4; i++)
+    if (Math.hypot(cs[i].x - px, cs[i].z - pz) < tol) return {obj:o, mode:"resize", idx:i};
+  return null;
+}
+
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  const p = mousePt(e), pan = e.button === 1 || e.button === 2 || spaceDown || e.altKey;
+
+  if (pan){ drag = {mode:"pan", sx:e.clientX, sy:e.clientY, cx:state.cam2.x, cz:state.cam2.z}; return; }
+  if (e.button !== 0) return;
+
+  /* pose d'un élément de la bibliothèque */
+  if (state.placing){ placeAt(p.x, p.z, e.shiftKey); return; }
+
+  /* outil mesure */
+  if (state.tool === "mesure"){
+    state.measure = {a:{x:snapV(p.x), z:snapV(p.z)}};
+    drag = {mode:"measure"};
+    need2D = true; return;
+  }
+  /* outil flux */
+  if (state.tool === "flux"){ addFluxPoint(p.x, p.z); return; }
+
+  /* outil sélection */
+  const h = pickHandle(p.x, p.z);
+  if (h){
+    /* l'instantané d'annulation n'est pris qu'au premier mouvement réel */
+    drag = {mode:h.mode, obj:h.obj, idx:h.idx, start:p, pending:true,
+            orig:JSON.parse(JSON.stringify(h.obj))};
+    return;
+  }
+  const t = pick(p.x, p.z);
+  if (t){
+    if (e.shiftKey){
+      const i = state.selection.indexOf(t.obj.id);
+      if (i >= 0) state.selection.splice(i,1); else state.selection.push(t.obj.id);
+    } else if (state.selection.indexOf(t.obj.id) < 0){
+      state.selection = [t.obj.id];
+    }
+    refreshProps();
+    if (t.mode === "fluxpt"){
+      drag = {mode:"fluxpt", obj:t.obj, idx:t.idx, pending:true};
+    } else {
+      drag = {mode:"move", start:p, pending:true,
+              origs:selected().map(o => JSON.parse(JSON.stringify(o)))};
+    }
+  } else {
+    if (!e.shiftKey){ state.selection = []; refreshProps(); }
+    drag = {mode:"marquee", a:p, b:p, add:e.shiftKey};
+  }
+  need2D = true;
+});
+
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect();
+  const p = s2w(e.clientX - r.left, e.clientY - r.top);
+  hover = p;
+  $("#coord").textContent = "x " + fmt(p.x) + " m   z " + fmt(p.z) + " m";
+  if (state.placing || state.fluxDraft || state.measure) need2D = true;
+
+  if (!drag){
+    const h = pickHandle(p.x, p.z);
+    cv.style.cursor = h ? (h.mode === "rotate" ? "grab" : "nwse-resize")
+                        : (state.placing || state.tool === "flux") ? "crosshair"
+                        : pick(p.x, p.z) ? "move" : "default";
+    return;
+  }
+  /* premier mouvement effectif : on empile l'état précédent pour Ctrl+Z */
+  if (drag.pending && drag.mode !== "pan" && drag.mode !== "marquee"){ commit(); drag.pending = false; }
+  switch (drag.mode){
+    case "pan": {
+      const z = state.cam2.zoom;
+      state.cam2.x = drag.cx - (e.clientX - drag.sx) / z;
+      state.cam2.z = drag.cz - (e.clientY - drag.sy) / z;
+      break;
+    }
+    case "marquee": drag.b = p; break;
+    case "measure": if (state.measure) state.measure.b = {x:snapV(p.x), z:snapV(p.z)}; break;
+    case "fluxpt": {
+      drag.obj.points[drag.idx] = {x:snapV(p.x), z:snapV(p.z)}; needDiag = true; break;
+    }
+    case "move": {
+      const o0 = drag.origs[0];
+      let dx = p.x - drag.start.x, dz = p.z - drag.start.z;
+      if (o0 && !isFlux(o0)){                             // aligne la 1re entité sur la grille
+        dx = snapV(o0.x + dx) - o0.x; dz = snapV(o0.z + dz) - o0.z;
+      } else { dx = snapV(dx); dz = snapV(dz); }
+      if (e.shiftKey){ if (Math.abs(dx) > Math.abs(dz)) dz = 0; else dx = 0; }   // contrainte orthogonale
+      drag.origs.forEach(orig => {
+        const o = byId(orig.id); if (!o || o.locked) return;
+        if (isFlux(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
+        else { o.x = orig.x + dx; o.z = orig.z + dz; }
+      });
+      needDiag = true; break;
+    }
+    case "rotate": {
+      const o = drag.obj;
+      let ang = Math.atan2(p.z - o.z, p.x - o.x) * 180 / Math.PI + 90;
+      if (state.site.snap || e.shiftKey) ang = Math.round(ang / 15) * 15;
+      o.rot = ((Math.round(ang * 10) / 10) % 360 + 360) % 360;
+      refreshProps(); needDiag = true; break;
+    }
+    case "resize": {
+      const o = drag.obj, og = drag.orig;
+      const sp = {x:snapV(p.x), z:snapV(p.z)};
+      const loc = rot2(sp.x - og.x, sp.z - og.z, -og.rot);           // point en repère local d'origine
+      const hw = og.w/2, hd = og.d/2;
+      const fixed = [{x:hw,z:hd},{x:-hw,z:hd},{x:-hw,z:-hd},{x:hw,z:-hd}][drag.idx];  // coin opposé, local
+      const nw = Math.max(.1, Math.abs(loc.x - fixed.x));
+      const nd = Math.max(.1, Math.abs(loc.z - fixed.z));
+      const cx = (loc.x + fixed.x)/2, cz = (loc.z + fixed.z)/2;      // nouveau centre, local
+      const wc = rot2(cx, cz, og.rot);
+      o.w = Math.round(nw*100)/100; o.d = Math.round(nd*100)/100;
+      o.x = Math.round((og.x + wc.x)*1000)/1000; o.z = Math.round((og.z + wc.z)*1000)/1000;
+      refreshProps(); needDiag = true; break;
+    }
+  }
+  need2D = true; need3D = true;
+});
+
+cv.addEventListener("pointerup", e => {
+  if (drag && drag.mode === "marquee"){
+    const x0 = Math.min(drag.a.x, drag.b.x), x1 = Math.max(drag.a.x, drag.b.x);
+    const z0 = Math.min(drag.a.z, drag.b.z), z1 = Math.max(drag.a.z, drag.b.z);
+    if (Math.abs(x1-x0) > .2 || Math.abs(z1-z0) > .2){
+      const hits = state.objects.filter(o => {
+        const b = aabb(o); return b.x1 >= x0 && b.x0 <= x1 && b.z1 >= z0 && b.z0 <= z1;
+      }).map(o => o.id);
+      state.flux.forEach(f => { if (f.points.some(q => q.x >= x0 && q.x <= x1 && q.z >= z0 && q.z <= z1)) hits.push(f.id); });
+      state.selection = drag.add ? state.selection.concat(hits.filter(id => state.selection.indexOf(id) < 0)) : hits;
+      refreshProps();
+    }
+  }
+  if (drag && drag.mode === "measure" && state.measure && !state.measure.b) state.measure = null;
+  drag = null; need2D = true; refreshStatus();
+});
+
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const before = s2w(mx, my);
+  const k = Math.pow(1.0016, -e.deltaY);
+  state.cam2.zoom = clamp(state.cam2.zoom * k, 2, 60);
+  const after = s2w(mx, my);
+  state.cam2.x += before.x - after.x; state.cam2.z += before.z - after.z;
+  syncZoomInputs(); need2D = true;
+}, {passive:false});
+
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("dblclick", () => { if (state.fluxDraft) endFluxDraft(); });
+
+function fit2D(){
+  if (W2 < 10){ const r = $("#stage").getBoundingClientRect(); W2 = r.width; H2 = r.height; }
+  const S = state.site;
+  const zx = (W2 - 60) / S.w, zz = (H2 - 60) / S.d;
+  state.cam2.zoom = clamp(Math.min(zx, zz), 2, 60);
+  state.cam2.x = S.w/2; state.cam2.z = S.d/2;
+  syncZoomInputs(); need2D = true;
+}
+function focusOn(x, z){
+  state.cam2.x = x; state.cam2.z = z; need2D = true;
+  if (state.view === "3d" && typeof focus3D === "function") focus3D(x, z);
+}
+
+/* =====================================================================
+   5. VUE 3D — Three.js
+   ---------------------------------------------------------------------
+   Même repère que le plan : X droite, Z bas (caméra de dessus up = 0,0,-1).
+   Seule correspondance à retenir : mesh.rotation.y = -rot (degrés → rad),
+   parce que la rotation Y de Three tourne dans le sens trigonométrique
+   alors que le plan tourne dans le sens horaire à l'écran.
+   ===================================================================== */
+const THREE_OK = (typeof THREE !== "undefined");
+let scene, renderer, camP, camO, cam3, controls, sunLight, floorMesh, gridHelp, ghost3;
+const meshes = new Map();          // id élément → Object3D   (réconciliation)
+const fluxMeshes = new Map();      // id flux    → Object3D
+const matCache = new Map();
+let selBoxes = [], projection = "perspective", orthoSpan = 60;
+
+/* --- Contrôleur orbital de secours : activé seulement si le CDN
+       OrbitControls n'a pas pu être chargé. Même API minimale. --------- */
+function MiniOrbit(object, dom){
+  const s = this;
+  s.object = object; s.domElement = dom; s.enabled = true;
+  s.target = new THREE.Vector3(); s.enableDamping = true; s.dampingFactor = .09;
+  s.minDistance = 3; s.maxDistance = 600; s.maxPolarAngle = Math.PI/2 - .03;
+  let sphT = new THREE.Spherical(), sph = new THREE.Spherical(), pan = new THREE.Vector3();
+  let mode = 0, px = 0, py = 0, scale = 1;
+  const off = new THREE.Vector3().copy(object.position).sub(s.target);
+  sph.setFromVector3(off); sphT.copy(sph);
+  dom.addEventListener("pointerdown", e => {
+    if (!s.enabled) return;
+    mode = (e.button === 0 && !e.shiftKey) ? 1 : 2; px = e.clientX; py = e.clientY;
+    dom.setPointerCapture(e.pointerId);
+  });
+  dom.addEventListener("pointermove", e => {
+    if (!mode || !s.enabled) return;
+    const dx = e.clientX - px, dy = e.clientY - py; px = e.clientX; py = e.clientY;
+    if (mode === 1){ sphT.theta -= dx * .005; sphT.phi = clamp(sphT.phi - dy * .005, .02, s.maxPolarAngle); }
+    else {
+      const d = s.object.isOrthographicCamera ? orthoSpan / 400 : sph.radius * .0016;
+      const v = new THREE.Vector3();
+      v.setFromMatrixColumn(s.object.matrix, 0).multiplyScalar(-dx * d); pan.add(v);
+      v.setFromMatrixColumn(s.object.matrix, 1).multiplyScalar( dy * d); pan.add(v);
+    }
+  });
+  const stop = e => { mode = 0; try{ dom.releasePointerCapture(e.pointerId); }catch(_){} };
+  dom.addEventListener("pointerup", stop); dom.addEventListener("pointercancel", stop);
+  dom.addEventListener("wheel", e => {
+    if (!s.enabled) return; e.preventDefault();
+    scale *= Math.pow(.999, e.deltaY);
+  }, {passive:false});
+  s.update = function(){
+    s.target.add(pan); pan.multiplyScalar(0);
+    if (s.object.isOrthographicCamera){
+      s.object.zoom = clamp(s.object.zoom * scale, .05, 20); s.object.updateProjectionMatrix();
+    } else sphT.radius = clamp(sphT.radius / scale, s.minDistance, s.maxDistance);
+    scale = 1;
+    const k = s.enableDamping ? s.dampingFactor : 1;
+    sph.theta += (sphT.theta - sph.theta) * k;
+    sph.phi   += (sphT.phi   - sph.phi)   * k;
+    sph.radius+= (sphT.radius- sph.radius)* k;
+    s.object.position.copy(s.target).add(new THREE.Vector3().setFromSpherical(sph));
+    s.object.lookAt(s.target);
+  };
+  s.sync = function(){                      // après changement de caméra
+    const o = new THREE.Vector3().copy(s.object.position).sub(s.target);
+    sph.setFromVector3(o); sphT.copy(sph);
+  };
+}
+
+function mat(color, opts){
+  const key = color + "|" + JSON.stringify(opts || {});
+  if (matCache.has(key)) return matCache.get(key);
+  const m = new THREE.MeshLambertMaterial(Object.assign({color:new THREE.Color(color)}, opts || {}));
+  matCache.set(key, m); return m;
+}
+function box(w, h, d, color, opts){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, opts));
+  m.castShadow = true; m.receiveShadow = true; return m;
+}
+
+function init3D(){
+  if (!THREE_OK){ $("#nothree").classList.remove("hide"); return; }
+  const host = $("#v3d");
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color("#0f151c");
+
+  renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+  host.appendChild(renderer.domElement);
+
+  camP = new THREE.PerspectiveCamera(48, 1, .1, 2000);
+  camO = new THREE.OrthographicCamera(-1, 1, 1, -1, -500, 2000);
+  cam3 = camP;
+  camP.position.set(-24, 34, -26); camO.position.copy(camP.position);
+
+  const Ctrl = (typeof THREE.OrbitControls === "function") ? THREE.OrbitControls : MiniOrbit;
+  controls = new Ctrl(cam3, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = .09;
+  controls.minDistance = 3; controls.maxDistance = 600;
+  controls.maxPolarAngle = Math.PI/2 - .03;
+  if ("screenSpacePanning" in controls) controls.screenSpacePanning = false;
+
+  scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x55606e, .85));
+  sunLight = new THREE.DirectionalLight(0xffffff, .78);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.bias = -0.0009;
+  scene.add(sunLight, sunLight.target);
+
+  buildSite3D();
+  focus3D(state.site.w/2, state.site.d/2);
+}
+
+/* Dalle, grille et éclairage : reconstruits quand l'emprise change. */
+let siteKey = "";
+function buildSite3D(){
+  const S = state.site, key = S.w + "x" + S.d;
+  if (key === siteKey) return; siteKey = key;
+  if (floorMesh){ scene.remove(floorMesh); floorMesh.geometry.dispose(); }
+  if (gridHelp){ scene.remove(gridHelp); gridHelp.geometry.dispose(); }
+
+  floorMesh = new THREE.Mesh(new THREE.BoxGeometry(S.w, .2, S.d),
+              new THREE.MeshLambertMaterial({color:0xe6ebf1}));
+  floorMesh.position.set(S.w/2, -.1, S.d/2);
+  floorMesh.receiveShadow = true; floorMesh.name = "__floor";
+  scene.add(floorMesh);
+
+  const span = Math.max(S.w, S.d);
+  gridHelp = new THREE.GridHelper(span, Math.round(span / Math.max(1, S.grid)), 0x9aa7b5, 0xc4ccd6);
+  gridHelp.position.set(S.w/2, .012, S.d/2);
+  gridHelp.material.transparent = true; gridHelp.material.opacity = .55;
+  scene.add(gridHelp);
+
+  const d = sunLight.shadow.camera;
+  const r = span * .8;
+  d.left = -r; d.right = r; d.top = r; d.bottom = -r; d.near = 1; d.far = span * 4 + 80;
+  d.updateProjectionMatrix();
+  sunLight.position.set(S.w * .3, span * 1.1, -S.d * .5);
+  sunLight.target.position.set(S.w/2, 0, S.d/2);
+  orthoSpan = span * 1.1;
+  resize3D();
+}
+
+/* ---------------------------------------------------------------------
+   Construction du volume d'un élément
+   --------------------------------------------------------------------- */
+function build3D(o){
+  const def = BY_ID[o.type] || {shape:"box"};
+  const g = new THREE.Group();
+  const col = colorOf(o), zc = zoneOf(o).color;
+  const w = o.w, d = o.d, h = Math.max(.02, o.h);
+
+  switch (def.shape){
+    case "zone": {
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(w, .06, d),
+                  mat(zc, {transparent:true, opacity:.34}));
+      pad.position.y = .03; pad.receiveShadow = true; g.add(pad);
+      const vol = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+                  mat(zc, {transparent:true, opacity:.07, depthWrite:false}));
+      vol.position.y = h/2; g.add(vol);
+      const e = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)),
+        new THREE.LineBasicMaterial({color:new THREE.Color(zc), transparent:true, opacity:.55}));
+      e.position.y = h/2; g.add(e);
+      break;
+    }
+    case "wall": {
+      const m = box(w, h, d, col); m.position.y = h/2; g.add(m); break;
+    }
+    case "window": {
+      const m = box(w, h, d, col, {transparent:true, opacity:.4}); m.position.y = h/2; g.add(m);
+      const f = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)),
+                new THREE.LineBasicMaterial({color:0x7b8899}));
+      f.position.y = h/2; g.add(f); break;
+    }
+    case "door": {
+      const m = box(w, h, d, col); m.position.y = h/2; g.add(m);
+      const sill = box(w * 1.06, .04, d * 2.4, shade(col,-.3)); sill.position.y = .02; g.add(sill);
+      break;
+    }
+    case "cylinder": case "silo": {
+      const r = Math.min(w,d)/2;
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h * .82, 24), mat(col));
+      body.position.y = h * .41 + h * .18; body.castShadow = body.receiveShadow = true; g.add(body);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h * .18, 24), mat(shade(col,-.15)));
+      cone.rotation.x = Math.PI; cone.position.y = h * .09; cone.castShadow = true; g.add(cone);
+      const top = new THREE.Mesh(new THREE.ConeGeometry(r * 1.02, h * .1, 24), mat(shade(col,-.08)));
+      top.position.y = h * .99; g.add(top);
+      break;
+    }
+    case "conveyor": {
+      const legH = h * .72;
+      const belt = box(w, h * .14, d, shade(col,-.25)); belt.position.y = legH + h*.07; g.add(belt);
+      const rail = box(w, h * .1, d * 1.12, shade(col,.25)); rail.position.y = legH + h*.2; g.add(rail);
+      for (let i = 0; i < 4; i++){
+        const lg = box(.07, legH, .07, shade(col,-.4));
+        lg.position.set((i%2?1:-1)*(w/2-.2), legH/2, (i<2?1:-1)*(d/2-.12)); g.add(lg);
+      }
+      break;
+    }
+    case "rack": {
+      const lv = 3;
+      for (let i = 0; i <= lv; i++){
+        const sh = box(w, .06, d, shade(col,.1)); sh.position.y = i * h/lv; g.add(sh);
+      }
+      for (let i = 0; i < 4; i++){
+        const p = box(.1, h, .1, col);
+        p.position.set((i%2?1:-1)*(w/2-.05), h/2, (i<2?1:-1)*(d/2-.05)); g.add(p);
+      }
+      break;
+    }
+    case "pallet": {
+      const pal = box(w, .15, d, "#b98b4e"); pal.position.y = .075; g.add(pal);
+      const load = box(w*.94, h-.15, d*.94, "#cfd6de"); load.position.y = .15 + (h-.15)/2; g.add(load);
+      break;
+    }
+    case "footprint": {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, .03, d), mat(col, {transparent:true, opacity:.55}));
+      m.position.y = .015; m.receiveShadow = true; g.add(m);
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, .03, d)),
+                new THREE.LineBasicMaterial({color:new THREE.Color(col)}));
+      e.position.y = .015; g.add(e); break;
+    }
+    case "trench": {
+      const m = box(w, Math.max(.05, h), d, shade(col,-.2)); m.position.y = -.02; g.add(m); break;
+    }
+    case "dock": {
+      const p = box(w, h*.5, d, col); p.position.y = h*.25; g.add(p);
+      const r = box(w, h*.14, d*.16, "#2f3845"); r.position.set(0, h*.6, -d/2+d*.08); g.add(r);
+      const b1 = box(w*.14, h*.5, .18, "#ffcf4a"); b1.position.set(-w/2+w*.09, h*.75, -d/2); g.add(b1);
+      const b2 = b1.clone(); b2.position.x = w/2-w*.09; g.add(b2);
+      break;
+    }
+    case "table": {
+      const top = box(w, .06, d, shade(col,.1)); top.position.y = h-.03; g.add(top);
+      for (let i = 0; i < 4; i++){
+        const lg = box(.06, h, .06, shade(col,-.2));
+        lg.position.set((i%2?1:-1)*(w/2-.08), h/2, (i<2?1:-1)*(d/2-.08)); g.add(lg);
+      }
+      break;
+    }
+    case "desk": {
+      const top = box(w, .05, d, "#8a939f"); top.position.y = .74; g.add(top);
+      const scr = box(w*.5, h-.85, .05, "#28303c"); scr.position.set(0, .78 + (h-.85)/2, -d*.25); g.add(scr);
+      const leg = box(w*.8, .7, d*.7, shade(col,.05)); leg.position.y = .35; g.add(leg);
+      break;
+    }
+    default: {
+      const m = box(w, h, d, col); m.position.y = h/2; g.add(m);
+      if (w > .6 && d > .4 && h > .5){                    // bandeau de commande
+        const p = box(w*.3, h*.16, .04, "#2b3441");
+        p.position.set(w*.26, h*.72, d/2 + .02); g.add(p);
+      }
+    }
+  }
+  /* étiquette flottante */
+  const lab = makeLabel(o.label, def.shape === "zone" ? zc : "#1d2733");
+  lab.position.y = (def.shape === "zone" ? Math.min(h, 3.2) : h) + .55;
+  lab.name = "__label"; g.add(lab);
+
+  g.userData.geoKey = geoKey(o);
+  return g;
+}
+function geoKey(o){
+  return [o.type, o.w, o.d, o.h, o.color || "", o.zone, o.label].join("|");
+}
+function makeLabel(text, color){
+  const c = document.createElement("canvas"), g = c.getContext("2d");
+  const f = "600 30px system-ui,sans-serif"; g.font = f;
+  const w = Math.min(520, g.measureText(text).width + 26);
+  c.width = w; c.height = 46; g.font = f;
+  g.fillStyle = "rgba(255,255,255,.92)";
+  g.strokeStyle = color; g.lineWidth = 3;
+  g.fillRect(0, 0, c.width, c.height); g.strokeRect(1.5, 1.5, c.width-3, c.height-3);
+  g.fillStyle = color; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(text, c.width/2, c.height/2 + 1);
+  const tex = new THREE.CanvasTexture(c);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false, transparent:true}));
+  sp.scale.set(c.width/46 * 1.05, 1.05, 1);
+  sp.renderOrder = 10;
+  return sp;
+}
+
+/* Flux : rubans plats posés au sol + flèches directionnelles. */
+function buildFlux3D(f){
+  const g = new THREE.Group(), def = FLUX[f.type], wdt = (f.width || 1) * .34;
+  for (let i = 1; i < f.points.length; i++){
+    const A = f.points[i-1], B = f.points[i];
+    const dx = B.x - A.x, dz = B.z - A.z, L = Math.hypot(dx, dz);
+    if (L < 1e-4) continue;
+    const ang = Math.atan2(dz, dx);
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(L, .03, wdt),
+                mat(def.color, {transparent:true, opacity:.92}));
+    seg.position.set((A.x+B.x)/2, .05, (A.z+B.z)/2);
+    seg.rotation.y = -ang; g.add(seg);
+    if (L > 1.4){
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(wdt*1.05, wdt*2.2, 12), mat(def.color));
+      cone.position.set((A.x+B.x)/2, .12, (A.z+B.z)/2);
+      cone.rotation.set(0, -ang, -Math.PI/2); g.add(cone);
+    }
+  }
+  f.points.forEach(p => {
+    const n = new THREE.Mesh(new THREE.CylinderGeometry(wdt*.75, wdt*.75, .05, 12), mat(def.color));
+    n.position.set(p.x, .06, p.z); g.add(n);
+  });
+  g.userData.geoKey = f.type + "|" + f.width + "|" + JSON.stringify(f.points);
+  return g;
+}
+
+/* ---------------------------------------------------------------------
+   Réconciliation état → scène : rien n'est reconstruit inutilement
+   --------------------------------------------------------------------- */
+/* Les matériaux proviennent d'un cache partagé : on ne libère que les
+   géométries et les textures d'étiquette, propres à chaque objet. */
+function disposeTree(g){
+  g.traverse(n => {
+    if (n.geometry) n.geometry.dispose();
+    if (n.material && n.material.map) n.material.map.dispose();
+  });
+}
+function sync3D(){
+  if (!THREE_OK) return;
+  buildSite3D();
+  floorMesh.visible = true;
+  gridHelp.visible = state.show.grid;
+  sunLight.castShadow = state.show.shadows;
+
+  const alive = new Set();
+  state.objects.forEach(o => {
+    alive.add(o.id);
+    let m = meshes.get(o.id);
+    if (!m || m.userData.geoKey !== geoKey(o)){
+      if (m){ scene.remove(m); disposeTree(m); }
+      m = build3D(o); scene.add(m); meshes.set(o.id, m);
+    }
+    m.position.set(o.x, o.y || 0, o.z);
+    m.rotation.y = -rad(o.rot);
+    m.visible = (o.cat !== "zones") || state.show.zones;
+    const lab = m.getObjectByName("__label");
+    if (lab) lab.visible = state.show.labels;
+    m.traverse(n => { if (n.isMesh) n.userData.oid = o.id; });
+  });
+  meshes.forEach((m, id) => {
+    if (!alive.has(id)){ scene.remove(m); disposeTree(m); meshes.delete(id); }
+  });
+
+  const aliveF = new Set();
+  const list = state.fluxDraft ? state.flux.concat([state.fluxDraft]) : state.flux;
+  list.forEach(f => {
+    aliveF.add(f.id);
+    let m = fluxMeshes.get(f.id);
+    const k = f.type + "|" + f.width + "|" + JSON.stringify(f.points);
+    if (!m || m.userData.geoKey !== k){
+      if (m){ scene.remove(m); disposeTree(m); }
+      m = buildFlux3D(f); scene.add(m); fluxMeshes.set(f.id, m);
+    }
+    m.visible = state.show.flux;
+  });
+  fluxMeshes.forEach((m, id) => {
+    if (!aliveF.has(id)){ scene.remove(m); disposeTree(m); fluxMeshes.delete(id); }
+  });
+
+  updateSelBoxes();
+}
+function updateSelBoxes(){
+  selBoxes.forEach(b => scene.remove(b));
+  selBoxes = [];
+  selectedObjects().forEach(o => {
+    const h = Math.max(.1, o.h);
+    const e = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(o.w + .06, h + .06, o.d + .06)),
+      new THREE.LineBasicMaterial({color:0x4cc9f0, depthTest:false}));
+    e.position.set(o.x, (o.y || 0) + h/2, o.z);
+    e.rotation.y = -rad(o.rot); e.renderOrder = 9;
+    scene.add(e); selBoxes.push(e);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Caméra
+   --------------------------------------------------------------------- */
+function resize3D(){
+  if (!THREE_OK || !renderer) return;
+  const r = $("#stage").getBoundingClientRect();
+  renderer.setSize(r.width, r.height);
+  camP.aspect = r.width / r.height; camP.updateProjectionMatrix();
+  const a = r.width / r.height, s = orthoSpan / 2;
+  camO.left = -s * a; camO.right = s * a; camO.top = s; camO.bottom = -s;
+  camO.updateProjectionMatrix();
+}
+function setProjection(p){
+  if (!THREE_OK) return;
+  projection = p;
+  const from = cam3, to = (p === "iso") ? camO : camP;
+  to.position.copy(from.position); to.quaternion.copy(from.quaternion);
+  cam3 = to; controls.object = to;
+  if (controls.sync) controls.sync();
+  resize3D(); controls.update(); need3D = true;
+}
+function focus3D(x, z){
+  if (!THREE_OK) return;
+  const off = new THREE.Vector3().copy(cam3.position).sub(controls.target);
+  if (off.length() < 1) off.set(-22, 30, -24);
+  controls.target.set(x, 0, z);
+  cam3.position.copy(controls.target).add(off);
+  if (controls.sync) controls.sync();
+  controls.update();
+}
+function fit3D(){
+  if (!THREE_OK) return;
+  const S = state.site, span = Math.max(S.w, S.d);
+  controls.target.set(S.w/2, 0, S.d/2);
+  cam3.position.set(S.w/2 - span*.55, span*.72, S.d/2 - span*.62);
+  camO.zoom = 1; camO.updateProjectionMatrix();
+  if (controls.sync) controls.sync();
+  controls.update(); need3D = true;
+}
+
+/* ---------------------------------------------------------------------
+   Interactions 3D : sélection, glisser au sol (plan Y = 0), pose
+   --------------------------------------------------------------------- */
+const ray = THREE_OK ? new THREE.Raycaster() : null;
+const groundPlane = THREE_OK ? new THREE.Plane(new THREE.Vector3(0,1,0), 0) : null;
+let drag3 = null;
+
+function ndc(e){
+  const r = renderer.domElement.getBoundingClientRect();
+  return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+}
+function groundAt(e){
+  ray.setFromCamera(ndc(e), cam3);
+  const v = new THREE.Vector3();
+  return ray.ray.intersectPlane(groundPlane, v) ? {x:v.x, z:v.z} : null;
+}
+function pick3(e){
+  ray.setFromCamera(ndc(e), cam3);
+  const hits = ray.intersectObjects(scene.children, true);
+  for (const h of hits){
+    if (h.object.type === "Sprite" || h.object.type === "LineSegments") continue;
+    let n = h.object, id = null;
+    while (n && !id){ id = n.userData && n.userData.oid; n = n.parent; }
+    if (id){
+      const o = byId(id);
+      if (o && o.cat === "zones" && !state.show.zones) continue;
+      if (o) return {obj:o, point:h.point};
+    }
+  }
+  return null;
+}
+
+function bind3D(){
+  if (!THREE_OK) return;
+  const host = $("#v3d");
+  /* phase de capture sur le conteneur : on décide AVANT OrbitControls */
+  host.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    const g = groundAt(e);
+    if (state.placing){
+      if (g) placeAt(g.x, g.z, e.shiftKey);
+      e.stopPropagation(); return;
+    }
+    if (state.tool === "flux"){
+      if (g) addFluxPoint(g.x, g.z);
+      e.stopPropagation(); return;
+    }
+    const t = pick3(e);
+    if (!t) return;                                    // vide → OrbitControls orbite
+    if (e.shiftKey){
+      const i = state.selection.indexOf(t.obj.id);
+      if (i >= 0) state.selection.splice(i,1); else state.selection.push(t.obj.id);
+    } else if (state.selection.indexOf(t.obj.id) < 0){
+      state.selection = [t.obj.id];
+    }
+    refreshProps(); updateSelBoxes();
+    if (!t.obj.locked && g){
+      drag3 = {start:g, pending:true, origs:selected().map(o => JSON.parse(JSON.stringify(o)))};
+      controls.enabled = false;
+    }
+    e.stopPropagation();
+  }, true);
+
+  host.addEventListener("pointermove", e => {
+    const g = groundAt(e);
+    if (g) $("#coord").textContent = "x " + fmt(g.x) + " m   z " + fmt(g.z) + " m";
+    if (state.placing && g){ moveGhost3(g.x, g.z); need3D = true; }
+    if (!drag3 || !g) return;
+    if (drag3.pending){ commit(); drag3.pending = false; }
+    const o0 = drag3.origs[0];
+    let dx = g.x - drag3.start.x, dz = g.z - drag3.start.z;
+    if (o0 && !isFlux(o0)){ dx = snapV(o0.x + dx) - o0.x; dz = snapV(o0.z + dz) - o0.z; }
+    else { dx = snapV(dx); dz = snapV(dz); }
+    if (e.shiftKey){ if (Math.abs(dx) > Math.abs(dz)) dz = 0; else dx = 0; }
+    drag3.origs.forEach(orig => {
+      const o = byId(orig.id); if (!o || o.locked) return;
+      if (isFlux(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
+      else { o.x = orig.x + dx; o.z = orig.z + dz; }
+    });
+    need3D = true; need2D = true; needDiag = true;
+  }, true);
+
+  const end = () => { if (drag3){ drag3 = null; controls.enabled = true; refreshProps(); } };
+  host.addEventListener("pointerup", end, true);
+  host.addEventListener("pointercancel", end, true);
+  host.addEventListener("contextmenu", e => e.preventDefault());
+  host.addEventListener("dblclick", () => { if (state.fluxDraft) endFluxDraft(); });
+}
+
+function moveGhost3(x, z){
+  const def = BY_ID[state.placing]; if (!def) return;
+  const key = state.placing;
+  if (!ghost3 || ghost3.userData.k !== key){
+    if (ghost3){ scene.remove(ghost3); disposeTree(ghost3); }
+    const o = Object.assign({}, def, {x:0, z:0, rot:0, label:def.label});
+    ghost3 = build3D(o); ghost3.userData.k = key;
+    ghost3.traverse(n => {
+      if (n.material){ n.material = n.material.clone(); n.material.transparent = true; n.material.opacity = .45; }
+      n.castShadow = false;
+    });
+    scene.add(ghost3);
+  }
+  ghost3.visible = true;
+  ghost3.position.set(snapV(x), def.y || 0, snapV(z));
+}
+function hideGhost3(){ if (ghost3) ghost3.visible = false; }
+
+function animate(){
+  requestAnimationFrame(animate);
+  if (state.view === "3d" && THREE_OK){
+    if (need3D){ sync3D(); need3D = false; }
+    controls.update();
+    renderer.render(scene, cam3);
+  }
+  if (state.view === "2d" && need2D){ draw2D(); need2D = false; }
+  if (needDiag){ needDiag = false; runDiagnostics(); }
+}
+
+/* =====================================================================
+   6. CONFORMITÉ — contrôle de la marche en avant
+   ---------------------------------------------------------------------
+   Six familles de tests, rejoués à chaque modification du plan :
+     A. retour en arrière d'un flux produit sur l'axe du procédé
+     B. croisement de flux incompatibles
+     C. remontée vers une zone amont / franchissement sans sas
+     D. chevauchement de zones de niveaux d'hygiène différents
+     E. matériel « sale » implanté en zone propre ou haute hygiène
+     F. zone haute hygiène sans sas d'accès, éléments hors emprise
+   ===================================================================== */
+function sampleFlux(f, step){
+  const out = [];
+  let total = 0;
+  for (let i = 1; i < f.points.length; i++)
+    total += Math.hypot(f.points[i].x - f.points[i-1].x, f.points[i].z - f.points[i-1].z);
+  const st = Math.max(step, total / 400);               // plafonne le nombre d'échantillons
+  for (let i = 1; i < f.points.length; i++){
+    const a = f.points[i-1], b = f.points[i];
+    const L = Math.hypot(b.x-a.x, b.z-a.z), n = Math.max(1, Math.ceil(L / st));
+    for (let k = 0; k < n; k++) out.push({x: a.x + (b.x-a.x)*k/n, z: a.z + (b.z-a.z)*k/n});
+  }
+  if (f.points.length) out.push(f.points[f.points.length-1]);
+  return out;
+}
+function crossSeverity(a, b){
+  if (a === b) return null;
+  if (a === "dech" || b === "dech") return "critique";
+  if ((a === "mp" && b === "pf") || (a === "pf" && b === "mp")) return "critique";
+  if (a === "pers" || b === "pers") return "mineur";
+  return Math.abs(FLUX[a].propre - FLUX[b].propre) >= 1 ? "majeur" : null;
+}
+const SAS_TYPES = ["sas_hyg","sas_mat","porte_batt","porte_rap","porte_iso","porte_sect"];
+
+function runDiagnostics(){
+  const issues = [], S = state.site;
+  const zones = state.objects.filter(o => o.cat === "zones");
+  /* Un sas est un ouvrage de franchissement, pas une étape du procédé :
+     on l'écarte de la séquence de zones pour ne pas créer de faux
+     « retour en arrière » à chaque passage de barrière sanitaire. */
+  const seq = zones.filter(z => z.type !== "sas_hyg" && z.type !== "sas_mat");
+  const zoneAt = (x, z) => {                             // la dernière zone dessinée l'emporte
+    let f = null;
+    for (const zo of seq) if (hitObj(x, z, zo)) f = zo;
+    return f;
+  };
+  const push = o => { if (issues.length < 60) issues.push(o); };
+
+  /* --- A & C : parcours de chaque flux --- */
+  state.flux.forEach(f => {
+    const def = FLUX[f.type];
+    if (def.produit){
+      for (let i = 1; i < f.points.length; i++){
+        const a = f.points[i-1], b = f.points[i];
+        const adv = alongAxis(b.x - a.x, b.z - a.z);
+        if (adv < -0.75) push({
+          sev:"critique", ref:f.id, x:(a.x+b.x)/2, z:(a.z+b.z)/2,
+          titre:"Retour en arrière — " + def.label,
+          detail:"Le tronçon " + i + " remonte de " + fmt(-adv,1) + " m à contre-sens de l'axe de marche en avant. Réorganiser l'enchaînement ou séparer physiquement les deux tronçons."
+        });
+      }
+    }
+    const samples = sampleFlux(f, .6);
+    let cur = null;
+    samples.forEach(p => {
+      const zo = zoneAt(p.x, p.z);
+      if (!zo) return;                                   // hors zone : on garde la référence
+      const key = zo.zone, curKey = cur ? cur.zone : null;
+      if (key === curKey){ cur = zo; return; }
+      if (cur){
+        const A = ZONES[curKey], B = ZONES[key];
+        if (def.produit && B.ordre < A.ordre - .01) push({
+          sev:"majeur", ref:f.id, x:p.x, z:p.z,
+          titre:"Remontée de zone — " + def.label,
+          detail:"Passage de « " + cur.label + " » vers « " + zo.label + " », en amont dans le procédé."
+        });
+        if (B.hyg > A.hyg){
+          const near = state.objects.some(o => SAS_TYPES.indexOf(o.type) >= 0
+            && Math.hypot(o.x - p.x, o.z - p.z) < 4.5);
+          if (!near) push({
+            sev:"majeur", ref:f.id, x:p.x, z:p.z,
+            titre:"Franchissement sans sas",
+            detail:"Le flux « " + def.label + " » entre en " + ZONES[key].label.toLowerCase() +
+                   " sans sas ni porte à moins de 4,5 m. Implanter un sas hygiène ou une porte rapide au droit du passage."
+          });
+        }
+      }
+      cur = zo;
+    });
+  });
+
+  /* --- B : croisements de flux --- */
+  for (let i = 0; i < state.flux.length; i++){
+    for (let j = i; j < state.flux.length; j++){
+      const A = state.flux[i], B = state.flux[j];
+      const sev = i === j ? (FLUX[A.type].produit ? "mineur" : null) : crossSeverity(A.type, B.type);
+      if (!sev) continue;
+      for (let a = 1; a < A.points.length; a++){
+        for (let b = 1; b < B.points.length; b++){
+          if (i === j && Math.abs(a - b) < 2) continue;
+          const c = segCross(A.points[a-1], A.points[a], B.points[b-1], B.points[b]);
+          if (!c) continue;
+          push({
+            sev:sev, ref:A.id, x:c.x, z:c.z,
+            titre: i === j ? "Flux qui se recoupe — " + FLUX[A.type].label
+                           : "Croisement " + FLUX[A.type].label.toLowerCase() + " / " + FLUX[B.type].label.toLowerCase(),
+            detail: i === j ? "Le tracé repasse sur lui-même : vérifier qu'il n'y a pas de rétro-circulation de produit."
+                            : "Contamination croisée possible en x " + fmt(c.x,1) + " / z " + fmt(c.z,1) +
+                              " m. Décaler le passage, décaler l'horaire ou créer un couloir dédié."
+          });
+        }
+      }
+    }
+  }
+
+  /* --- D : chevauchement de zones --- */
+  const realZones = zones.filter(z => z.type !== "sas_hyg" && z.type !== "sas_mat");
+  for (let i = 0; i < realZones.length; i++){
+    for (let j = i+1; j < realZones.length; j++){
+      const a = realZones[i], b = realZones[j];
+      if (Math.abs(ZONES[a.zone].hyg - ZONES[b.zone].hyg) < 1) continue;
+      if (overlapOBB(a, b)) push({
+        sev:"majeur", ref:a.id, x:(a.x+b.x)/2, z:(a.z+b.z)/2,
+        titre:"Zones superposées",
+        detail:"« " + a.label + " » et « " + b.label + " » se recouvrent alors que leurs niveaux d'hygiène diffèrent. Séparer par une cloison ou un sas."
+      });
+    }
+  }
+
+  /* --- E : matériel sale en zone propre --- */
+  state.objects.forEach(o => {
+    const def = BY_ID[o.type];
+    if (!def || !def.sale || o.cat === "zones") return;
+    const zo = zoneAt(o.x, o.z); if (!zo) return;
+    const h = ZONES[zo.zone].hyg;
+    if (h >= 2) push({
+      sev: h >= 3 ? "critique" : "majeur", ref:o.id, x:o.x, z:o.z,
+      titre:"Point sale en zone protégée",
+      detail:"« " + o.label + " » est implanté dans « " + zo.label + " ». Le sortir de la zone ou l'isoler dans un local dédié en dépression."
+    });
+  });
+
+  /* --- F : desserte des zones haute hygiène + emprise --- */
+  zones.filter(z => ZONES[z.zone].hyg >= 3 && z.type !== "sas_hyg").forEach(z => {
+    const ok = state.objects.some(o => SAS_TYPES.indexOf(o.type) >= 0 && overlapOBB(
+      o, {x:z.x, z:z.z, w:z.w + 3, d:z.d + 3, rot:z.rot}));
+    if (!ok) push({
+      sev:"majeur", ref:z.id, x:z.x, z:z.z,
+      titre:"Zone haute hygiène sans sas",
+      detail:"« " + z.label + " » n'a ni sas hygiène ni porte sur son périmètre. L'accès du personnel doit se faire par un sas équipé (lave-bottes, lave-mains sans contact)."
+    });
+  });
+  state.objects.forEach(o => {
+    const b = aabb(o);
+    if (b.x0 < -.01 || b.z0 < -.01 || b.x1 > S.w + .01 || b.z1 > S.d + .01) push({
+      sev:"mineur", ref:o.id, x:o.x, z:o.z,
+      titre:"Élément hors emprise",
+      detail:"« " + o.label + " » dépasse les limites du bâtiment (" + fmt(S.w,0) + " × " + fmt(S.d,0) + " m)."
+    });
+  });
+
+  const rank = {critique:0, majeur:1, mineur:2};
+  issues.sort((a,b) => rank[a.sev] - rank[b.sev]);
+  state.issues = issues;
+  renderDiag(); renderSummary(); need2D = true;
+}
+
+function renderDiag(){
+  const el = $("#diag"), tag = $("#diagtag"), n = state.issues.length;
+  const crit = state.issues.filter(i => i.sev === "critique").length;
+  const maj  = state.issues.filter(i => i.sev === "majeur").length;
+  tag.textContent = n ? (crit + maj ? crit + " critique" + (crit>1?"s":"") + " · " + maj + " majeur" + (maj>1?"s":"") : n + " mineur" + (n>1?"s":"")) : "conforme";
+  tag.className = "tag " + (crit ? "bad" : maj ? "mid" : "good");
+
+  if (!state.flux.length && !n){
+    el.innerHTML = '<p class="help">Tracez au moins un flux pour vérifier la marche en avant : outil <b>Flux</b>, un clic par sommet, double-clic pour terminer.</p>';
+    return;
+  }
+  if (!n){
+    el.innerHTML = '<div class="ok-box"><span>✓</span><div>Aucune anomalie détectée sur ' + state.flux.length +
+      ' flux et ' + state.objects.filter(o=>o.cat==="zones").length + ' zones. Les contrôles rejouent à chaque modification.</div></div>';
+    return;
+  }
+  el.innerHTML = state.issues.map((i, k) =>
+    '<div class="iss ' + i.sev + '" data-i="' + k + '"><div><b>' + i.titre + '</b><p>' + i.detail + '</p></div></div>').join("");
+  $$("#diag .iss").forEach(d => d.addEventListener("click", () => {
+    const i = state.issues[+d.dataset.i];
+    if (i.ref && byId(i.ref)){ state.selection = [i.ref]; refreshProps(true); }
+    focusOn(i.x, i.z); need2D = true; need3D = true;
+  }));
+}
+
+function renderSummary(){
+  const S = state.site, el = $("#sum");
+  const zones = state.objects.filter(o => o.cat === "zones");
+  const byZone = {};
+  zones.forEach(z => { byZone[z.zone] = (byZone[z.zone] || 0) + z.w * z.d; });
+  const total = S.w * S.d, built = Object.values(byZone).reduce((a,b) => a+b, 0);
+  const wallLin = state.objects.filter(o => (BY_ID[o.type]||{}).shape === "wall")
+                  .reduce((a,o) => a + Math.max(o.w, o.d), 0);
+  let html = '<div class="kv"><span>Emprise du site</span><b>' + fmt(total,0) + ' m²</b></div>' +
+             '<div class="kv"><span>Surfaces zonées</span><b>' + fmt(built,0) + ' m² (' + fmt(built/total*100,0) + ' %)</b></div>' +
+             '<div class="kv"><span>Linéaire de cloisons</span><b>' + fmt(wallLin,1) + ' m</b></div>' +
+             '<div class="kv"><span>Équipements</span><b>' + state.objects.filter(o => o.cat === "equip").length + '</b></div>' +
+             '<div class="kv" style="border:0"><span>Flux tracés</span><b>' + state.flux.length + '</b></div>';
+  const keys = Object.keys(byZone);
+  if (keys.length){
+    html += '<div class="bar">' + keys.map(k =>
+      '<i style="width:' + (byZone[k]/built*100) + '%;background:' + ZONES[k].color + '"></i>').join("") + '</div>';
+    html += keys.sort((a,b) => byZone[b]-byZone[a]).map(k =>
+      '<div class="lg"><i style="background:' + ZONES[k].color + '"></i>' + ZONES[k].label +
+      '<b style="margin-left:auto;color:var(--ink)">' + fmt(byZone[k],0) + ' m²</b></div>').join("");
+  }
+  el.innerHTML = html;
+}
+
+/* =====================================================================
+   7. INTERFACE
+   ===================================================================== */
+
+/* ---------- bibliothèque ---------- */
+function thumb(def){
+  const c = document.createElement("canvas"), g = c.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  c.style.width = "34px"; c.style.height = "26px";
+  c.width = 34 * dpr; c.height = 26 * dpr; g.scale(dpr, dpr);
+  const k = Math.min(28 / def.w, 20 / def.d);
+  g.translate(17, 13);
+  drawShape(g, def, Object.assign({rot:0, zone:def.zone}, def), Math.max(3, def.w*k), Math.max(3, def.d*k), true);
+  return c;
+}
+function buildLibrary(filter){
+  const lib = $("#lib"); lib.innerHTML = "";
+  const q = (filter || "").trim().toLowerCase();
+  FAMS.forEach(fam => {
+    const items = CATALOG.filter(d => d.fam === fam &&
+      (!q || (d.label + " " + d.fam + " " + (d.note||"")).toLowerCase().indexOf(q) >= 0));
+    if (!items.length) return;
+    const det = document.createElement("details");
+    det.className = "fam"; det.open = true;
+    det.innerHTML = "<summary>" + fam + "<em>" + items.length + "</em></summary>";
+    const box = document.createElement("div"); box.className = "items";
+    items.forEach(d => {
+      const b = document.createElement("button");
+      b.className = "item"; b.dataset.t = d.id;
+      b.title = (d.note ? d.note + "\n" : "") + "Cliquez pour poser. Maj + clic sur le plan pour en poser plusieurs.";
+      b.appendChild(thumb(d));
+      const t = document.createElement("div"); t.className = "t";
+      t.innerHTML = "<b>" + d.label + "</b><i>" + fmt(d.w,1) + " × " + fmt(d.d,1) + " × " + fmt(d.h,1) + " m</i>";
+      b.appendChild(t);
+      b.addEventListener("click", () => startPlacing(d.id));
+      box.appendChild(b);
+    });
+    det.appendChild(box); lib.appendChild(det);
+  });
+  /* famille Flux : bascule l'outil de tracé */
+  const items = Object.keys(FLUX).filter(k => !q || FLUX[k].label.toLowerCase().indexOf(q) >= 0);
+  if (items.length){
+    const det = document.createElement("details"); det.className = "fam"; det.open = true;
+    det.innerHTML = "<summary>Flux<em>" + items.length + "</em></summary>";
+    const box = document.createElement("div"); box.className = "items";
+    items.forEach(k => {
+      const b = document.createElement("button");
+      b.className = "item"; b.dataset.f = k;
+      b.title = "Tracer un flux : un clic par sommet, double-clic ou Entrée pour terminer.";
+      const c = document.createElement("canvas"), g = c.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      c.style.width = "34px"; c.style.height = "26px"; c.width = 34*dpr; c.height = 26*dpr; g.scale(dpr,dpr);
+      g.strokeStyle = FLUX[k].color; g.lineWidth = 3.5; g.lineCap = "round";
+      g.beginPath(); g.moveTo(5,19); g.lineTo(15,8); g.lineTo(29,8); g.stroke();
+      g.fillStyle = FLUX[k].color; g.beginPath(); g.moveTo(29,8); g.lineTo(23,4.5); g.lineTo(23,11.5); g.fill();
+      b.appendChild(c);
+      const t = document.createElement("div"); t.className = "t";
+      t.innerHTML = "<b>" + FLUX[k].label + "</b><i>polyligne</i>";
+      b.appendChild(t);
+      b.addEventListener("click", () => { state.fluxType = k; setTool("flux"); });
+      box.appendChild(b);
+    });
+    det.appendChild(box); lib.appendChild(det);
+  }
+}
+
+/* ---------- pose d'un élément ---------- */
+function startPlacing(type){
+  state.placing = state.placing === type ? null : type;
+  setTool("select", true);
+  $$("#lib .item").forEach(b => b.classList.toggle("on", b.dataset.t === state.placing));
+  if (state.placing){
+    showHint("Cliquez sur le plan pour poser « " + BY_ID[type].label + " ». Maj + clic pour en enchaîner plusieurs, Échap pour annuler.");
+  } else { hideHint(); hideGhost3(); }
+  need2D = true; need3D = true;
+}
+function placeAt(x, z, keep){
+  const def = BY_ID[state.placing]; if (!def) return;
+  commit();
+  const o = {
+    id:uid(), type:def.id, cat:def.cat, label:def.label, zone:def.zone || "ext",
+    x:snapV(x), z:snapV(z), y:def.y || 0,
+    w:def.w, d:def.d, h:def.h, rot:0, locked:false, note:def.note || ""
+  };
+  if (def.color) o.color = def.color;
+  state.objects.push(o);
+  state.selection = [o.id];
+  if (!keep) startPlacing(state.placing);            // referme le mode pose
+  refreshAll();
+}
+
+/* ---------- tracé de flux ---------- */
+function addFluxPoint(x, z){
+  if (!state.fluxDraft) state.fluxDraft = {id:uid(), type:state.fluxType || "mp", points:[], width:1};
+  state.fluxDraft.points.push({x:snapV(x), z:snapV(z)});
+  showHint("Flux « " + FLUX[state.fluxDraft.type].label + " » : " + state.fluxDraft.points.length +
+           " sommet(s). Double-clic ou Entrée pour terminer, Échap pour annuler.");
+  need2D = true; need3D = true;
+}
+function endFluxDraft(){
+  const f = state.fluxDraft;
+  state.fluxDraft = null;
+  if (f && f.points.length >= 2){
+    commit(); state.flux.push(f); state.selection = [f.id];
+    toast("Flux enregistré : " + FLUX[f.type].label);
+  }
+  hideHint(); refreshAll();
+}
+function cancelDraft(){
+  state.fluxDraft = null; state.measure = null;
+  if (state.placing) startPlacing(state.placing); else hideHint();
+  need2D = true; need3D = true;
+}
+function showHint(t){ const h = $("#hint"); h.textContent = t; h.classList.remove("hide"); }
+function hideHint(){ $("#hint").classList.add("hide"); }
+
+/* ---------- outils et vues ---------- */
+function setTool(t, silent){
+  state.tool = t;
+  $$("#tools .btn").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
+  if (t !== "flux" && state.fluxDraft) endFluxDraft();
+  if (t !== "mesure") state.measure = null;
+  if (t === "flux" && !silent) showHint("Flux « " + FLUX[state.fluxType || "mp"].label +
+      " » : cliquez chaque sommet, double-clic ou Entrée pour terminer.");
+  if (t === "mesure" && !silent) showHint("Cliquez deux points pour relever une distance.");
+  if (t === "select" && !state.placing) hideHint();
+  refreshProps(true); need2D = true;
+}
+function setView(v){
+  $("#nothree").classList.toggle("hide", !(v === "3d" && !THREE_OK));
+  if (v === "3d" && THREE_OK){ focus3D(state.cam2.x, state.cam2.z); resize3D(); need3D = true; }
+  if (v === "2d" && THREE_OK && controls){ state.cam2.x = controls.target.x; state.cam2.z = controls.target.z; need2D = true; }
+  state.view = v;
+  $("#c2d").classList.toggle("hide", v !== "2d");
+  $("#v3d").classList.toggle("hide", v !== "3d");
+  $$("#viewseg button").forEach(b => b.classList.toggle("on", b.dataset.view === v));
+  renderViewTag();
+  if (v === "2d") resize2D();
+}
+function renderViewTag(){
+  const el = $("#viewtag");
+  if (state.view === "2d"){
+    el.innerHTML = "Plan 2D — 1 px = " + fmt(1/state.cam2.zoom,3) + " m";
+  } else {
+    el.innerHTML = 'Vue 3D <button class="btn ghost sm" id="pj-p">Perspective</button>' +
+                   '<button class="btn ghost sm" id="pj-i">Isométrique</button>' +
+                   '<button class="btn ghost sm" id="pj-f">Recadrer</button>';
+    const set = (id, fn) => { const b = $(id); if (b) b.addEventListener("click", fn); };
+    set("#pj-p", () => { setProjection("perspective"); renderViewTag(); });
+    set("#pj-i", () => { setProjection("iso"); renderViewTag(); });
+    set("#pj-f", fit3D);
+    const on = projection === "iso" ? "#pj-i" : "#pj-p";
+    if ($(on)) $(on).classList.add("on");
+  }
+}
+
+/* ---------- panneau de propriétés ---------- */
+let propsKey = "", editCommitted = false;
+function refreshProps(force){
+  const key = state.tool + "|" + state.selection.join(",") + "|" + (state.fluxDraft ? "d" : "");
+  if (!force && key === propsKey){ syncPropValues(); return; }
+  propsKey = key; buildProps();
+}
+function num(k, v, step, u){
+  return '<span class="unit" data-u="' + (u || "m") + '"><input type="number" data-k="' + k +
+         '" value="' + v + '" step="' + (step || .1) + '"></span>';
+}
+function buildProps(){
+  const el = $("#props"), objs = selectedObjects(), fl = selected().filter(isFlux);
+  const tag = $("#seltag");
+  tag.textContent = state.selection.length ? state.selection.length + " élément" + (state.selection.length>1?"s":"") : "rien";
+
+  if (state.tool === "flux"){
+    el.innerHTML =
+      '<div class="row"><label>Nature</label><div class="f"><select id="ftype">' +
+      Object.keys(FLUX).map(k => '<option value="' + k + '"' + (k === (state.fluxType||"mp") ? " selected":"") + '>' + FLUX[k].label + '</option>').join("") +
+      '</select></div></div>' +
+      '<p class="help">Un clic par sommet sur le plan ou dans la vue 3D. Double-clic ou <kbd>Entrée</kbd> pour terminer le tracé, <kbd>Échap</kbd> pour l\'abandonner. ' +
+      'Les flux sont analysés en continu par le contrôle de marche en avant.</p>' +
+      '<button class="btn sm" id="fend">Terminer le tracé</button> ' +
+      '<button class="btn sm" id="fcancel">Abandonner</button>';
+    $("#ftype").addEventListener("change", e => {
+      state.fluxType = e.target.value;
+      if (state.fluxDraft) state.fluxDraft.type = e.target.value;
+      need2D = true; need3D = true;
+    });
+    $("#fend").addEventListener("click", endFluxDraft);
+    $("#fcancel").addEventListener("click", cancelDraft);
+    return;
+  }
+  if (!state.selection.length){
+    el.innerHTML = '<p class="empty">Aucun élément sélectionné.<br><br>' +
+      'Choisissez un élément dans la bibliothèque pour le poser, ou cliquez sur le plan pour sélectionner. ' +
+      '<kbd>Maj</kbd> + clic ajoute à la sélection, un rectangle tracé sur le vide sélectionne en lot.</p>';
+    return;
+  }
+  if (fl.length === 1 && !objs.length){
+    const f = fl[0];
+    el.innerHTML =
+      '<div class="row"><label>Nature</label><div class="f"><select id="p-ftype">' +
+      Object.keys(FLUX).map(k => '<option value="' + k + '"' + (k === f.type ? " selected":"") + '>' + FLUX[k].label + '</option>').join("") +
+      '</select></div></div>' +
+      '<div class="row"><label>Épaisseur</label><div class="f"><input type="range" id="p-fw" min="0.5" max="3" step="0.1" value="' + (f.width||1) + '"></div></div>' +
+      '<div class="kv"><span>Sommets</span><b>' + f.points.length + '</b></div>' +
+      '<div class="kv" style="border:0"><span>Longueur développée</span><b>' + fmt(fluxLen(f),1) + ' m</b></div>' +
+      '<p class="help">Faites glisser les points blancs sur le plan 2D pour corriger le tracé.</p>' +
+      '<div class="split"><button class="btn sm" id="p-frev">Inverser le sens</button>' +
+      '<button class="btn sm danger" id="p-fdel">Supprimer</button></div>';
+    $("#p-ftype").addEventListener("change", e => { commit(); f.type = e.target.value; markDirty(); });
+    $("#p-fw").addEventListener("input", e => { f.width = +e.target.value; markDirty(); });
+    $("#p-frev").addEventListener("click", () => { commit(); f.points.reverse(); markDirty(); });
+    $("#p-fdel").addEventListener("click", deleteSelection);
+    return;
+  }
+  if (objs.length === 1){
+    const o = objs[0], def = BY_ID[o.type] || {};
+    el.innerHTML =
+      '<div class="row"><label>Désignation</label><div class="f"><input type="text" data-k="label" value="' + esc(o.label) + '"></div></div>' +
+      '<div class="row"><label>Classe sanitaire</label><div class="f"><select data-k="zone">' +
+        ZONE_KEYS.map(k => '<option value="' + k + '"' + (k === o.zone ? " selected":"") + '>' + ZONES[k].label + '</option>').join("") +
+      '</select></div></div>' +
+      '<div class="row"><label>Dimensions</label><div class="f">' + num("w", o.w) + num("d", o.d) + num("h", o.h) + '</div></div>' +
+      '<div class="row"><label></label><div class="f" style="color:var(--ink-3);font-size:10.5px">largeur X · longueur Z · hauteur Y</div></div>' +
+      '<div class="row"><label>Position</label><div class="f">' + num("x", o.x) + num("z", o.z) + '</div></div>' +
+      '<div class="row"><label>Élévation</label><div class="f">' + num("y", o.y || 0) + '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">emprise ' + fmt(o.w*o.d,1) + ' m²</div></div></div>' +
+      '<div class="row"><label>Rotation</label><div class="f">' + num("rot", o.rot, 1, "°") +
+        '<button class="btn sm" id="rot-m90">−90°</button><button class="btn sm" id="rot-p90">+90°</button></div></div>' +
+      '<div class="row"><label></label><div class="f"><input type="range" data-k="rot" min="0" max="359" step="1" value="' + o.rot + '"></div></div>' +
+      '<div class="row"><label>Teinte</label><div class="f"><input type="color" data-k="color" value="' + (o.color || colorOf(o)) + '">' +
+        '<button class="btn sm" id="c-auto">Couleur de zone</button></div></div>' +
+      '<label class="chk"><input type="checkbox" data-k="locked"' + (o.locked ? " checked":"") + '> Verrouiller la position</label>' +
+      (def.note ? '<p class="help"><b style="color:var(--ink-2)">Règle métier —</b> ' + def.note + '</p>' : '') +
+      '<div class="row"><label>Observations</label><div class="f"><textarea data-k="note" rows="2">' + esc(o.note || "") + '</textarea></div></div>' +
+      '<hr class="sep">' +
+      '<div class="split"><button class="btn sm" id="p-dup">Dupliquer</button><button class="btn sm" id="p-focus">Centrer la vue</button></div>' +
+      '<div class="row" style="margin-top:7px"><label>Série</label><div class="f">' +
+        '<span class="unit" data-u="×"><input type="number" id="ar-n" value="3" min="2" max="60" step="1"></span>' +
+        '<span class="unit" data-u="m"><input type="number" id="ar-dx" value="' + fmt(o.w + 0.5,2) + '" step="0.1"></span>' +
+        '<span class="unit" data-u="m"><input type="number" id="ar-dz" value="0" step="0.1"></span></div></div>' +
+      '<button class="btn sm" id="p-array">Répéter en série</button>' +
+      '<hr class="sep"><button class="btn sm danger" id="p-del">Supprimer l\'élément</button>';
+    $("#rot-m90").addEventListener("click", () => rotateSel(-90));
+    $("#rot-p90").addEventListener("click", () => rotateSel(90));
+    $("#c-auto").addEventListener("click", () => { commit(); objs.forEach(o => delete o.color); markDirty(); refreshProps(true); });
+    $("#p-dup").addEventListener("click", duplicateSelection);
+    $("#p-focus").addEventListener("click", () => focusOn(o.x, o.z));
+    $("#p-array").addEventListener("click", () => arraySelection(+$("#ar-n").value, +$("#ar-dx").value, +$("#ar-dz").value));
+    $("#p-del").addEventListener("click", deleteSelection);
+    return;
+  }
+  /* sélection multiple */
+  el.innerHTML =
+    '<p class="help">' + objs.length + ' éléments' + (fl.length ? ' et ' + fl.length + ' flux' : '') +
+    ' sélectionnés. Les valeurs saisies s\'appliquent à toute la sélection.</p>' +
+    '<div class="row"><label>Classe sanitaire</label><div class="f"><select data-k="zone"><option value="">— inchangée —</option>' +
+      ZONE_KEYS.map(k => '<option value="' + k + '">' + ZONES[k].label + '</option>').join("") + '</select></div></div>' +
+    '<div class="row"><label>Dimensions</label><div class="f">' + num("w","") + num("d","") + num("h","") + '</div></div>' +
+    '<div class="row"><label>Rotation</label><div class="f">' + num("rot","",1,"°") +
+      '<button class="btn sm" id="rot-m90">−90°</button><button class="btn sm" id="rot-p90">+90°</button></div></div>' +
+    '<div class="row"><label>Teinte</label><div class="f"><input type="color" data-k="color" value="#8fa0b3">' +
+      '<button class="btn sm" id="c-auto">Couleur de zone</button></div></div>' +
+    '<hr class="sep"><div class="row"><label>Aligner</label><div class="f">' +
+      '<button class="btn sm" data-al="l">Gauche</button><button class="btn sm" data-al="cx">Axe X</button><button class="btn sm" data-al="r">Droite</button></div></div>' +
+    '<div class="row"><label></label><div class="f">' +
+      '<button class="btn sm" data-al="t">Haut</button><button class="btn sm" data-al="cz">Axe Z</button><button class="btn sm" data-al="b">Bas</button></div></div>' +
+    '<div class="row"><label>Répartir</label><div class="f">' +
+      '<button class="btn sm" data-al="dx">Sur X</button><button class="btn sm" data-al="dz">Sur Z</button></div></div>' +
+    '<hr class="sep"><div class="split"><button class="btn sm" id="p-dup">Dupliquer</button>' +
+    '<button class="btn sm danger" id="p-del">Supprimer</button></div>';
+  $("#rot-m90").addEventListener("click", () => rotateSel(-90));
+  $("#rot-p90").addEventListener("click", () => rotateSel(90));
+  $("#c-auto").addEventListener("click", () => { commit(); objs.forEach(o => delete o.color); markDirty(); });
+  $("#p-dup").addEventListener("click", duplicateSelection);
+  $("#p-del").addEventListener("click", deleteSelection);
+  $$("#props [data-al]").forEach(b => b.addEventListener("click", () => alignSel(b.dataset.al)));
+}
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fluxLen(f){
+  let L = 0;
+  for (let i = 1; i < f.points.length; i++) L += Math.hypot(f.points[i].x-f.points[i-1].x, f.points[i].z-f.points[i-1].z);
+  return L;
+}
+/* Délégation : un seul jeu d'écouteurs, posé une fois au démarrage,
+   qui couvre tous les champs data-k reconstruits dynamiquement. */
+function wireProps(){
+  const el = $("#props");
+  el.addEventListener("focusin", () => { editCommitted = false; });
+  const apply = e => {
+    const k = e.target.dataset.k; if (!k) return;
+    if (!editCommitted){ commit(); editCommitted = true; }
+    const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    applyProp(k, v);
+    if (k === "rot") syncPropValues(e.target);
+  };
+  el.addEventListener("input", apply);
+  el.addEventListener("change", apply);
+}
+function applyProp(k, raw){
+  const objs = selectedObjects();
+  if (raw === "" && k !== "label" && k !== "note") return;
+  objs.forEach(o => {
+    if (o.locked && k !== "locked") return;
+    switch (k){
+      case "label": o.label = raw; break;
+      case "zone":  o.zone = raw; break;
+      case "color": o.color = raw; break;
+      case "note":  o.note = raw; break;
+      case "locked":o.locked = raw; break;
+      default: {
+        const v = parseFloat(String(raw).replace(",", "."));
+        if (isNaN(v)) return;
+        if (k === "w" || k === "d") o[k] = Math.max(.05, v);
+        else if (k === "h") o.h = Math.max(.02, v);
+        else if (k === "rot") o.rot = ((v % 360) + 360) % 360;
+        else o[k] = v;
+      }
+    }
+  });
+  markDirty(); refreshStatus();
+}
+/* Met à jour les champs sans les reconstruire (préserve le focus). */
+function syncPropValues(except){
+  const o = selectedObjects()[0]; if (!o) return;
+  $$("#props [data-k]").forEach(i => {
+    if (i === except || i === document.activeElement) return;
+    const k = i.dataset.k, v = o[k];
+    if (v === undefined) return;
+    if (i.type === "checkbox") i.checked = !!v;
+    else if (i.type === "number") i.value = Math.round(v * 1000) / 1000;
+    else if (i.type === "range") i.value = v;
+    else if (i.type !== "color") i.value = v;
+  });
+}
+
+/* ---------- actions d'édition ---------- */
+function rotateSel(delta){
+  const objs = selectedObjects(); if (!objs.length) return;
+  commit();
+  objs.forEach(o => { if (!o.locked) o.rot = ((o.rot + delta) % 360 + 360) % 360; });
+  markDirty(); refreshProps(true);
+}
+function deleteSelection(){
+  if (!state.selection.length) return;
+  commit();
+  state.objects = state.objects.filter(o => state.selection.indexOf(o.id) < 0 || o.locked);
+  state.flux = state.flux.filter(f => state.selection.indexOf(f.id) < 0);
+  state.selection = [];
+  refreshAll(); toast("Sélection supprimée");
+}
+function duplicateSelection(){
+  const sel = selected(); if (!sel.length) return;
+  commit();
+  const ids = [];
+  sel.forEach(o => {
+    const c = JSON.parse(JSON.stringify(o)); c.id = uid(); ids.push(c.id);
+    if (isFlux(c)){ c.points = c.points.map(p => ({x:p.x + state.site.grid, z:p.z + state.site.grid})); state.flux.push(c); }
+    else { c.x += state.site.grid; c.z += state.site.grid; c.locked = false; state.objects.push(c); }
+  });
+  state.selection = ids; refreshAll();
+}
+function arraySelection(n, dx, dz){
+  const objs = selectedObjects(); if (!objs.length || !(n > 1)) return;
+  commit();
+  const ids = [];
+  objs.forEach(o => {
+    for (let i = 1; i < n; i++){
+      const c = JSON.parse(JSON.stringify(o));
+      c.id = uid(); c.x = o.x + dx*i; c.z = o.z + dz*i; ids.push(c.id);
+      state.objects.push(c);
+    }
+  });
+  state.selection = state.selection.concat(ids);
+  refreshAll(); toast((n-1) * objs.length + " copies créées");
+}
+function alignSel(mode){
+  const objs = selectedObjects(); if (objs.length < 2) return;
+  commit();
+  const bs = objs.map(o => ({o, b:aabb(o)}));
+  const x0 = Math.min.apply(null, bs.map(e => e.b.x0)), x1 = Math.max.apply(null, bs.map(e => e.b.x1));
+  const z0 = Math.min.apply(null, bs.map(e => e.b.z0)), z1 = Math.max.apply(null, bs.map(e => e.b.z1));
+  if (mode === "dx" || mode === "dz"){
+    const key = mode === "dx" ? "x" : "z";
+    const sorted = bs.slice().sort((a,b) => a.o[key] - b.o[key]);
+    const a = sorted[0].o[key], b = sorted[sorted.length-1].o[key], st = (b - a) / (sorted.length - 1);
+    sorted.forEach((e,i) => { if (!e.o.locked) e.o[key] = a + st*i; });
+  } else {
+    bs.forEach(e => {
+      if (e.o.locked) return;
+      const w = e.b.x1 - e.b.x0, d = e.b.z1 - e.b.z0;
+      if (mode === "l") e.o.x += x0 - e.b.x0;
+      if (mode === "r") e.o.x += x1 - e.b.x1;
+      if (mode === "t") e.o.z += z0 - e.b.z0;
+      if (mode === "b") e.o.z += z1 - e.b.z1;
+      if (mode === "cx") e.o.x += (x0 + x1)/2 - (e.b.x0 + w/2);
+      if (mode === "cz") e.o.z += (z0 + z1)/2 - (e.b.z0 + d/2);
+    });
+  }
+  markDirty();
+}
+function nudge(dx, dz){
+  const objs = selected(); if (!objs.length) return;
+  commit();
+  objs.forEach(o => {
+    if (o.locked) return;
+    if (isFlux(o)) o.points = o.points.map(p => ({x:p.x+dx, z:p.z+dz}));
+    else { o.x += dx; o.z += dz; }
+  });
+  markDirty(); syncPropValues();
+}
+
+/* ---------- état de l'interface ---------- */
+function refreshStatus(){
+  const s = selected();
+  $("#selinfo").textContent = !s.length ? "Aucune sélection"
+    : s.length === 1 ? (isFlux(s[0]) ? FLUX[s[0].type].label + " — " + fmt(fluxLen(s[0]),1) + " m"
+        : s[0].label + " — " + fmt(s[0].w,2) + " × " + fmt(s[0].d,2) + " × " + fmt(s[0].h,2) + " m, " + fmt(s[0].rot,0) + "°")
+    : s.length + " éléments sélectionnés";
+  $("#zoominfo").textContent = state.view === "2d" ? "échelle " + fmt(state.cam2.zoom,1) + " px/m" : "";
+  $("#undo").disabled = !history.past.length;
+  $("#redo").disabled = !history.future.length;
+  $("#snap").classList.toggle("on", state.site.snap);
+  renderViewTag();
+}
+function refreshAll(){
+  markDirty(); refreshProps(true); refreshStatus(); renderSummary(); syncSiteInputs();
+}
+function syncZoomInputs(){
+  $("#s-zoom").value = state.cam2.zoom; $("#s-zoomn").value = Math.round(state.cam2.zoom*10)/10;
+  refreshStatus();
+}
+function syncSiteInputs(){
+  const S = state.site;
+  $("#s-name").value = S.name; $("#s-w").value = S.w; $("#s-d").value = S.d; $("#s-h").value = S.h;
+  $("#s-axis").value = S.axis; $("#gridstep").value = S.grid;
+  syncZoomInputs();
+}
+
+/* ---------- import / export ---------- */
+function download(blob, name){
+  const u = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = u; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 200);
+}
+function slug(s){ return (s||"implantation").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+function exportJSON(){
+  const data = {format:"agroplan.v1", date:new Date().toISOString(),
+                site:state.site, objects:state.objects, flux:state.flux};
+  download(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}), slug(state.site.name) + ".json");
+  toast("Configuration exportée");
+}
+function importJSON(text){
+  let d;
+  try { d = JSON.parse(text); } catch(e){ return toast("Fichier illisible : JSON invalide", true); }
+  if (!d || !d.site || !Array.isArray(d.objects)) return toast("Ce fichier n'est pas une implantation AgroPlan", true);
+  commit();
+  state.site = Object.assign({name:"Site importé", w:60, d:40, h:7, grid:1, snap:true, axis:"+x"}, d.site);
+  state.objects = d.objects.map(o => Object.assign({rot:0, y:0, locked:false, zone:"ext", cat:"equip"}, o));
+  state.flux = (d.flux || []).map(f => Object.assign({width:1, type:"mp"}, f));
+  let max = 0;
+  state.objects.concat(state.flux).forEach(o => { const n = parseInt(String(o.id).replace(/\D/g,""),10); if (n > max) max = n; });
+  state.seq = max + 1;
+  state.selection = []; siteKey = "";
+  refreshAll(); fit2D(); if (THREE_OK) fit3D();
+  toast(state.objects.length + " éléments importés");
+}
+function exportPNG(){
+  if (state.view === "3d" && THREE_OK){
+    sync3D(); renderer.render(scene, cam3);
+    renderer.domElement.toBlob(b => download(b, slug(state.site.name) + "-3d.png"));
+  } else {
+    draw2D(); need2D = true;
+    cv.toBlob(b => download(b, slug(state.site.name) + "-plan.png"));
+  }
+  toast("Image exportée");
+}
+function exportCSV(){
+  const rows = [["Type","Designation","Classe sanitaire","Largeur X (m)","Longueur Z (m)","Hauteur Y (m)","Rotation (deg)","X (m)","Z (m)","Surface (m2)"]];
+  state.objects.forEach(o => rows.push([o.type, o.label, ZONES[o.zone] ? ZONES[o.zone].label : o.zone,
+    fmt(o.w), fmt(o.d), fmt(o.h), fmt(o.rot,0), fmt(o.x), fmt(o.z), fmt(o.w*o.d)]));
+  state.flux.forEach(f => rows.push(["flux", FLUX[f.type].label, "-", "-", "-", "-", "-", fmt(f.points[0].x), fmt(f.points[0].z), fmt(fluxLen(f)) + " m"]));
+  const csv = "\ufeff" + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(";")).join("\r\n");
+  download(new Blob([csv], {type:"text/csv;charset=utf-8"}), slug(state.site.name) + "-nomenclature.csv");
+  toast("Nomenclature exportée");
+}
+
+/* ---------- légende et aide ---------- */
+function buildLegend(){
+  $("#legbody").innerHTML =
+    "<h4>Classes sanitaires</h4>" +
+    ZONE_KEYS.map(k => '<div class="lg"><i style="background:' + ZONES[k].color + '"></i>' + ZONES[k].label + '</div>').join("") +
+    "<h4>Flux</h4>" +
+    Object.keys(FLUX).map(k => '<div class="lg"><i class="ln" style="border-top-color:' + FLUX[k].color + ';width:14px"></i>' + FLUX[k].label + '</div>').join("");
+  $("#keys").innerHTML =
+    '<div class="kv"><span>Poser / sélectionner</span><b>clic</b></div>' +
+    '<div class="kv"><span>Ajouter à la sélection</span><b>Maj + clic</b></div>' +
+    '<div class="kv"><span>Déplacer la vue</span><b>clic droit ou Espace</b></div>' +
+    '<div class="kv"><span>Zoom</span><b>molette</b></div>' +
+    '<div class="kv"><span>Orbiter (3D)</span><b>clic gauche sur le vide</b></div>' +
+    '<div class="kv"><span>Rotation 90°</span><b>R / Maj + R</b></div>' +
+    '<div class="kv"><span>Dupliquer</span><b>Ctrl + D</b></div>' +
+    '<div class="kv"><span>Supprimer</span><b>Suppr</b></div>' +
+    '<div class="kv"><span>Annuler / rétablir</span><b>Ctrl + Z / Y</b></div>' +
+    '<div class="kv"><span>Tout sélectionner</span><b>Ctrl + A</b></div>' +
+    '<div class="kv"><span>Déplacer d\'un pas</span><b>flèches</b></div>' +
+    '<div class="kv"><span>Outils</span><b>V · F · M</b></div>' +
+    '<div class="kv"><span>Basculer 2D / 3D</span><b>2 / 3</b></div>' +
+    '<div class="kv" style="border:0"><span>Recadrer</span><b>F2</b></div>';
+}
+
+/* =====================================================================
+   8. AMORÇAGE
+   ===================================================================== */
+function add(type, x, z, over){
+  const def = BY_ID[type];
+  const o = Object.assign({
+    id:uid(), type:type, cat:def.cat, label:def.label, zone:def.zone || "ext",
+    x:x, z:z, y:def.y || 0, w:def.w, d:def.d, h:def.h, rot:0, locked:false, note:def.note || ""
+  }, over || {});
+  if (def.color && !o.color) o.color = def.color;
+  state.objects.push(o);
+  return o;
+}
+/* Implantation de démonstration : ligne de plats cuisinés, marche en
+   avant d'ouest en est, zone haute hygiène desservie par sas.          */
+function loadDemo(){
+  state.objects = []; state.flux = []; state.selection = []; state.seq = 1;
+  state.site = {name:"Atelier de plats cuisinés", w:64, d:40, h:7, grid:1, snap:true, axis:"+x"};
+  siteKey = "";
+
+  /* enveloppe */
+  add("mur_ext", 32, .12, {w:64, d:.25, label:"Façade nord"});
+  add("mur_ext", 32, 39.88, {w:64, d:.25, label:"Façade sud"});
+  add("mur_ext", .12, 20, {w:.25, d:40, label:"Pignon ouest"});
+  add("mur_ext", 63.88, 20, {w:.25, d:40, label:"Pignon est"});
+
+  /* zones, d'ouest en est */
+  add("z_quai_r",  5,  8,  {w:8,  d:12});
+  add("z_recep",   17, 8,  {w:14, d:12});
+  add("z_stock_mp",5,  26, {w:8,  d:14});
+  add("z_vest",    17, 22, {w:10, d:6});
+  add("z_dechet",  16, 33, {w:8,  d:6});
+  add("z_prepa",   33, 9,  {w:14, d:14});
+  add("z_cuisson", 33, 26, {w:14, d:12});
+  add("z_refroid", 47, 26, {w:10, d:12});
+  add("z_condi1",  47, 9,  {w:10, d:14});
+  add("z_condi2",  57, 12, {w:8,  d:20});
+  add("z_expe",    57, 33, {w:8,  d:10});
+  add("z_tech",    33, 36, {w:14, d:5});
+  add("sas_hyg",   25.5, 9, {w:3, d:5, label:"Sas hygiène production"});
+  add("sas_hyg",   42.5, 9, {w:3, d:5, label:"Sas hygiène salle blanche"});
+  add("sas_mat",   50,   18,{w:3, d:2.5, rot:0});
+
+  /* cloisons et accès */
+  add("cloison", 26, 2.2, {w:.12, d:4.4, label:"Cloison réception / préparation"});
+  add("cloison", 26, 15.5,{w:.12, d:1,  label:"Cloison réception / préparation"});
+  add("porte_rap", 26, 9, {w:.15, d:2.6, rot:0, label:"Porte rapide vers préparation"});
+  add("cloison", 43, 2.2, {w:.12, d:4.4, label:"Cloison salle blanche"});
+  add("cloison", 43, 15.5,{w:.12, d:1,  label:"Cloison salle blanche"});
+  add("porte_rap", 43, 9, {w:.15, d:2.6, label:"Porte rapide salle blanche"});
+  add("porte_sect", 1.2, 8, {w:.2, d:3, label:"Porte de quai réception"});
+  add("porte_sect", 62.8, 33,{w:.2, d:3, label:"Porte de quai expédition"});
+  add("caniveau", 33, 16.5, {w:14, d:.3});
+
+  /* équipements */
+  add("quai", 2.4, 5, {rot:90}); add("quai", 2.4, 11, {rot:90});
+  add("rack", 4, 21.5, {rot:0}); add("rack", 4, 24); add("rack", 4, 26.5); add("rack", 4, 29);
+  add("palette", 13, 5); add("palette", 14.4, 5); add("empl_pal", 13, 11); add("empl_pal", 14.4, 11);
+  add("laveur", 20, 12.5, {rot:0});
+  add("bac_dech", 16, 33);
+  add("table", 29, 5.5); add("table", 29, 7.5);
+  add("cuve", 30, 12); add("petrin", 33.5, 12);
+  add("convoyeur", 36, 6, {w:9, d:.8, rot:0, label:"Convoyeur préparation"});
+  add("four", 33, 22.5, {w:9, d:2.5, label:"Four tunnel"});
+  add("cellule", 47, 22.5); add("tunnel_sur", 47, 29, {w:8, d:2.5});
+  add("trancheur", 45, 5); add("peseuse", 47.5, 5);
+  add("condi", 48, 12, {w:3.5, d:1.5, label:"Operculeuse"});
+  add("convoyeur", 52.5, 12, {w:4, d:.8, label:"Transfert vers conditionnement 2"});
+  add("detect_met", 55.5, 12); add("etiq", 57.5, 12);
+  add("palettiseur", 57, 17);
+  add("rack", 60, 6); add("rack", 60, 8.5);
+  add("frigo", 60, 30, {rot:90});
+  add("poste_info", 20, 3.5); add("poste_info", 57, 22);
+  add("silo", 3, 36);
+  add("evapo", 47, 24, {y:3.4}); add("evapo", 5, 26, {y:3.4});
+
+  /* flux */
+  state.flux = [
+    {id:uid(), type:"mp",   width:1.2, points:[{x:2,z:8},{x:10,z:8},{x:17,z:8},{x:25.5,z:9},{x:30,z:9}]},
+    {id:uid(), type:"enc",  width:1.2, points:[{x:30,z:9},{x:36,z:9},{x:36,z:22.5},{x:44,z:22.5},{x:47,z:26},{x:50,z:22},{x:50,z:18},{x:50,z:14}]},
+    {id:uid(), type:"pf",   width:1.2, points:[{x:44,z:5},{x:52,z:5},{x:52,z:12},{x:57,z:12},{x:57,z:22},{x:59,z:33},{x:62,z:33}]},
+    {id:uid(), type:"dech", width:.8,  points:[{x:31,z:27},{x:24,z:31},{x:17,z:33},{x:12,z:33}]},
+    {id:uid(), type:"pers", width:.8,  points:[{x:17,z:22},{x:23,z:18},{x:25.5,z:12},{x:25.5,z:9},{x:30,z:11}]},
+    {id:uid(), type:"emb",  width:.8,  points:[{x:2,z:11},{x:12,z:11},{x:18,z:12}]}
+  ];
+  history.past.length = 0; history.future.length = 0;
+  refreshAll(); fit2D(); if (THREE_OK) fit3D();
+}
+
+function bindUI(){
+  /* vues et outils */
+  $$("#viewseg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+  $$("#tools .btn").forEach(b => b.addEventListener("click", () => setTool(b.dataset.tool)));
+  $("#undo").addEventListener("click", undo);
+  $("#redo").addEventListener("click", redo);
+  $("#snap").addEventListener("click", () => { state.site.snap = !state.site.snap; refreshStatus(); toast(state.site.snap ? "Magnétisme actif" : "Magnétisme désactivé"); });
+  $("#gridstep").addEventListener("change", e => { state.site.grid = +e.target.value; siteKey = ""; markDirty(); });
+  $("#fit").addEventListener("click", () => { state.view === "3d" ? fit3D() : fit2D(); });
+  $("#demo").addEventListener("click", () => { if (confirm("Remplacer le plan courant par l'implantation de démonstration ?")) loadDemo(); });
+  $("#clear").addEventListener("click", () => {
+    if (!confirm("Vider entièrement le plan ?")) return;
+    commit(); state.objects = []; state.flux = []; state.selection = []; refreshAll();
+  });
+  $("#export").addEventListener("click", exportJSON);
+  $("#png").addEventListener("click", exportPNG);
+  $("#csv").addEventListener("click", exportCSV);
+  $("#import").addEventListener("click", () => $("#file").click());
+  $("#file").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = () => importJSON(r.result); r.readAsText(f);
+    e.target.value = "";
+  });
+  $("#search").addEventListener("input", e => buildLibrary(e.target.value));
+  $("#legtog").addEventListener("click", () => {
+    const b = $("#legbody"); const on = b.style.display === "none";
+    b.style.display = on ? "" : "none"; $("#legtog").textContent = on ? "–" : "+";
+  });
+
+  /* site */
+  const siteNum = (sel, key, min, max) => $(sel).addEventListener("change", e => {
+    const v = clamp(parseFloat(String(e.target.value).replace(",", ".")) || min, min, max);
+    commit(); state.site[key] = v; e.target.value = v; siteKey = ""; markDirty();
+  });
+  $("#s-name").addEventListener("change", e => { state.site.name = e.target.value; });
+  siteNum("#s-w", "w", 5, 500); siteNum("#s-d", "d", 5, 500); siteNum("#s-h", "h", 2, 40);
+  $("#s-axis").addEventListener("change", e => { state.site.axis = e.target.value; markDirty(); });
+  $("#s-zoom").addEventListener("input", e => { state.cam2.zoom = +e.target.value; syncZoomInputs(); need2D = true; });
+  $("#s-zoomn").addEventListener("change", e => { state.cam2.zoom = clamp(+e.target.value, 2, 60); syncZoomInputs(); need2D = true; });
+  const vis = (sel, key) => $(sel).addEventListener("change", e => { state.show[key] = e.target.checked; markDirty(); });
+  vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux");
+  vis("#v-labels","labels"); vis("#v-issues","issues"); vis("#v-shadow","shadows");
+
+  /* glisser-déposer d'un fichier de configuration */
+  const st = $("#stage");
+  st.addEventListener("dragover", e => { e.preventDefault(); $("#drop").classList.remove("hide"); });
+  st.addEventListener("dragleave", e => { if (e.target === st) $("#drop").classList.add("hide"); });
+  st.addEventListener("drop", e => {
+    e.preventDefault(); $("#drop").classList.add("hide");
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = () => importJSON(r.result); r.readAsText(f);
+  });
+
+  /* clavier */
+  window.addEventListener("keydown", e => {
+    const t = e.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT"){
+      if (e.key === "Escape") e.target.blur();
+      return;
+    }
+    if (e.code === "Space"){ spaceDown = true; e.preventDefault(); }
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key.toLowerCase() === "z"){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (ctrl && e.key.toLowerCase() === "y"){ e.preventDefault(); redo(); return; }
+    if (ctrl && e.key.toLowerCase() === "d"){ e.preventDefault(); duplicateSelection(); return; }
+    if (ctrl && e.key.toLowerCase() === "s"){ e.preventDefault(); exportJSON(); return; }
+    if (ctrl && e.key.toLowerCase() === "a"){
+      e.preventDefault();
+      state.selection = state.objects.map(o => o.id).concat(state.flux.map(f => f.id));
+      refreshProps(true); refreshStatus(); need2D = true; need3D = true; return;
+    }
+    switch (e.key){
+      case "Delete": case "Backspace": e.preventDefault(); deleteSelection(); break;
+      case "Escape": if (state.fluxDraft || state.placing || state.measure) cancelDraft();
+                     else { state.selection = []; refreshProps(true); refreshStatus(); need2D = true; need3D = true; } break;
+      case "Enter": if (state.fluxDraft) endFluxDraft(); break;
+      case "r": case "R": rotateSel(e.shiftKey ? -90 : 90); break;
+      case "v": case "V": setTool("select"); break;
+      case "f": case "F": setTool("flux"); break;
+      case "m": case "M": setTool("mesure"); break;
+      case "2": setView("2d"); break;
+      case "3": setView("3d"); break;
+      case "g": case "G": state.site.snap = !state.site.snap; refreshStatus(); break;
+      case "F2": e.preventDefault(); state.view === "3d" ? fit3D() : fit2D(); break;
+      case "ArrowLeft":  e.preventDefault(); nudge(-step(e), 0); break;
+      case "ArrowRight": e.preventDefault(); nudge( step(e), 0); break;
+      case "ArrowUp":    e.preventDefault(); nudge(0, -step(e)); break;
+      case "ArrowDown":  e.preventDefault(); nudge(0,  step(e)); break;
+    }
+  });
+  window.addEventListener("keyup", e => { if (e.code === "Space") spaceDown = false; });
+  function step(e){ return state.site.grid * (e.shiftKey ? 10 : 1); }
+
+  /* redimensionnement */
+  const ro = new ResizeObserver(() => { resize2D(); resize3D(); });
+  ro.observe($("#stage"));
+  window.addEventListener("resize", () => { resize2D(); resize3D(); });
+}
+
+function boot(){
+  buildLibrary(); buildLegend(); bindUI(); wireProps();
+  resize2D();
+  init3D(); bind3D();
+  loadDemo();
+  setTool("select", true); setView("2d");
+  animate();                       // boucle unique, active même sans WebGL
+  if (!THREE_OK) toast("Three.js indisponible : la vue 3D est désactivée, le plan 2D reste complet.", true);
+}
+boot();
+</script>
+</body>
+</html>
