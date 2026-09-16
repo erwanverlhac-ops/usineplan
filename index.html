@@ -148,6 +148,14 @@ input[type=range]{accent-color:var(--acc);width:100%}
 .help{color:var(--ink-3);font-size:11px;line-height:1.5;margin:4px 0 8px}
 .empty{color:var(--ink-3);font-size:12px;padding:10px 2px;line-height:1.55}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.voltab{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px}
+.voltab th{text-align:right;color:var(--ink-3);font-weight:600;padding:3px 4px;border-bottom:1px solid var(--line)}
+.voltab th:first-child{text-align:left}
+.voltab td{padding:2px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.voltab td:first-child{text-align:left;white-space:normal;line-height:1.25}
+.voltab td i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.voltab input.hsp{width:52px;padding:1px 4px;text-align:right;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--ink)}
+.voltab input.hsp:focus{border-color:var(--acc);outline:none}
 .unit{position:relative;flex:1}
 .unit input{padding-right:22px}
 .unit::after{content:attr(data-u);position:absolute;right:7px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:10.5px;pointer-events:none}
@@ -219,6 +227,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <div class="grp" id="tools">
       <button class="btn sm on" data-tool="select" title="Sélectionner et déplacer (V)">Sélection</button>
       <button class="btn sm" data-tool="flux" title="Tracer un flux (F)">Flux</button>
+      <button class="btn sm" data-tool="tuyau" title="Tracer un réseau de tuyauterie (T) — cliquez un équipement pour l'y raccorder">Tuyauterie</button>
       <button class="btn sm" data-tool="mesure" title="Mesurer une distance (M) — plan 2D">Mesure</button>
     </div>
 
@@ -305,6 +314,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <label class="chk"><input type="checkbox" id="v-grid" checked> Grille métrique et règles</label>
         <label class="chk"><input type="checkbox" id="v-zones" checked> Zones sanitaires</label>
         <label class="chk"><input type="checkbox" id="v-flux" checked> Flux de circulation</label>
+        <label class="chk"><input type="checkbox" id="v-pipes" checked> Réseaux et tuyauterie</label>
         <label class="chk"><input type="checkbox" id="v-labels" checked> Étiquettes des éléments</label>
         <label class="chk"><input type="checkbox" id="v-issues" checked> Repères d'anomalie</label>
         <label class="chk"><input type="checkbox" id="v-shadow" checked> Ombres portées (3D)</label>
@@ -314,6 +324,11 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <details class="sec" open id="sec-diag">
       <summary>Marche en avant <span class="tag" id="diagtag">—</span></summary>
       <div class="body" id="diag"></div>
+    </details>
+
+    <details class="sec" id="sec-vol">
+      <summary>Volumes et hauteurs <span class="tag" id="voltag">—</span></summary>
+      <div class="body" id="vol"></div>
     </details>
 
     <details class="sec">
@@ -385,6 +400,10 @@ const CATALOG = [
   {id:"bat_xl", fam:"Bâtiments", cat:"structure", shape:"building", label:"Bloc bâtiment 80 × 50 m", w:80, d:50, h:9,  color:"#9aa7b4", zone:"ext", note:"Bloc préconstruit. Au-delà de 1 000 m², vérifier le découpage en cellules coupe-feu."},
   {id:"bat_libre",fam:"Bâtiments",cat:"structure",shape:"building", label:"Bloc bâtiment sur mesure", w:30, d:20, h:7,  color:"#8fa0b3", zone:"ext", note:"Saisissez directement la largeur, la longueur et la hauteur voulues."},
   {id:"auvent", fam:"Bâtiments", cat:"structure", shape:"canopy",   label:"Auvent de quai",          w:18, d:5,  h:5,  color:"#78909c", zone:"ext", note:"Protège les quais des intempéries : évite la rupture de la chaîne du froid au transfert."},
+  {id:"route",     fam:"Bâtiments", cat:"structure", shape:"road",       label:"Route (double sens)",     w:40, d:6,  h:.02, color:"#3a4350", zone:"ext", note:"6 m pour un double sens, 3,50 m en sens unique. Séparer les flux PL des accès VL et piétons."},
+  {id:"voie_pl",   fam:"Bâtiments", cat:"structure", shape:"road",       label:"Voie lourde PL",          w:40, d:8,  h:.02, color:"#333c48", zone:"ext", lourde:true, note:"Chaussée dimensionnée pour 44 t. Rayon intérieur de giration de 12 m minimum en virage."},
+  {id:"giratoire", fam:"Bâtiments", cat:"structure", shape:"roundabout", label:"Aire de retournement PL", w:26, d:26, h:.02, color:"#3a4350", zone:"ext", note:"26 m de diamètre extérieur au minimum pour retourner un semi-remorque sans manœuvre."},
+  {id:"trottoir",  fam:"Bâtiments", cat:"structure", shape:"walkway",    label:"Cheminement piéton",      w:30, d:1.5,h:.14, color:"#b6bfc9", zone:"ext", note:"Séparé des voies PL par une bordure. Largeur utile de 1,40 m, continu du parking aux vestiaires."},
   /* Structure */
   {id:"mur_ext",    fam:"Structure", cat:"structure", shape:"wall",   label:"Mur périmétrique",              w:12,  d:.25, h:7,   color:"#9aa7b5", zone:"ext",    note:"Bardage ou béton, raccords sol/mur en gorge arrondie."},
   {id:"cloison",    fam:"Structure", cat:"structure", shape:"wall",   label:"Cloison isotherme 100 mm",      w:8,   d:.10, h:4,   color:"#dbe3ec", zone:"propre", note:"Panneau sandwich PIR, parement lisse nettoyable, joints siliconés alimentaires."},
@@ -439,6 +458,20 @@ const CATALOG = [
   {id:"laveur",     fam:"Process", cat:"equip", shape:"box",      label:"Tunnel de lavage des bacs",   w:5,  d:1.5,h:2,   color:"#8fa0b3", zone:"grise",  sale:true},
   {id:"lave_bot",   fam:"Process", cat:"equip", shape:"box",      label:"Lave-bottes et lave-mains",   w:1.6,d:1,  h:1.6, color:"#3ecf8e", zone:"blanche", note:"Implanter en travers du passage, commande fémorale ou cellule."},
 
+  /* Boulangerie et pâtisserie */
+  {id:"petrin_spi",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"spiral_mixer", label:"Pétrin spiral 160 kg",       w:1.6,d:1.2,h:1.7, color:"#b6c2cf", zone:"propre", note:"Protection de cuve asservie à la rotation. Prévoir 1,2 m de dégagement pour la sortie de cuve amovible."},
+  {id:"batteur",     fam:"Boulangerie et pâtisserie", cat:"equip", shape:"planetary",    label:"Batteur-mélangeur planétaire",w:1,  d:1.1,h:1.6, color:"#aab6c4", zone:"propre", note:"Cuve et outils démontables sans outillage, passage au lavage après chaque appareil sensible (crème, œuf)."},
+  {id:"mel_poudre",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"hopper",       label:"Mélangeur de poudres",       w:2.2,d:1.6,h:2.8, color:"#c3ccd6", zone:"propre", note:"Captation des poussières au point d'émission. Farines et sucres glace : atmosphère explosive, zonage ATEX et mise à la terre."},
+  {id:"laminoir",    fam:"Boulangerie et pâtisserie", cat:"equip", shape:"sheeter",      label:"Laminoir à pâte",            w:3.6,d:1.2,h:1.3, color:"#b6c2cf", zone:"propre", note:"Racleurs et farineur réglés au plus juste. Nettoyage des rouleaux en fin de série, tables rabattables pour dégager le passage."},
+  {id:"extrudeur",   fam:"Boulangerie et pâtisserie", cat:"equip", shape:"extruder",     label:"Extrudeur de bande de pâte", w:2.4,d:1.4,h:2.2, color:"#aab6c4", zone:"propre", note:"Régularité de la bande contrôlée en sortie. Trémie fermée, aucun contact main-produit en marche."},
+  {id:"plieuse",     fam:"Boulangerie et pâtisserie", cat:"equip", shape:"folder",       label:"Plieuse de pâte",            w:2.6,d:1.4,h:1.6, color:"#aab6c4", zone:"propre", note:"Tours de pliage à sec : farinage maîtrisé pour éviter l'empoussièrement de la ligne."},
+  {id:"doreuse",     fam:"Boulangerie et pâtisserie", cat:"equip", shape:"sprayer",      label:"Doreuse (dorure à l'œuf)",   w:1.8,d:1.2,h:1.5, color:"#d9b45c", zone:"propre", note:"Œuf liquide : produit très sensible. Bac réfrigéré, recirculation filtrée, vidange et nettoyage complets à chaque fin de série."},
+  {id:"doseuse",     fam:"Boulangerie et pâtisserie", cat:"equip", shape:"doser",        label:"Doseuse volumétrique",       w:1.6,d:1.2,h:1.8, color:"#b6c2cf", zone:"propre", note:"Contrôle du grammage en début de série et à chaque changement de recette."},
+  {id:"four_rot",    fam:"Boulangerie et pâtisserie", cat:"equip", shape:"rotary_oven",  label:"Four rotatif à chariot",     w:2.2,d:2.4,h:2.6, color:"#c4713f", zone:"propre", note:"Hotte de captation de buée au-dessus de la porte, 1,2 m de dégagement pour la manœuvre du chariot."},
+  {id:"robot_grille",fam:"Boulangerie et pâtisserie", cat:"equip", shape:"robot_cell",   label:"Robot de préhension de grilles", w:3.5,d:3,h:2.6, color:"#7f8fa3", zone:"propre", note:"Cellule d'enfournement et de défournement des grilles. Carter grillagé sur les quatre faces, arrêt d'urgence et asservissement des portes."},
+  {id:"echelle_pat", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"trolley",      label:"Échelle de pâtisserie",      w:.8, d:.65,h:1.8, color:"#c3ccd6", zone:"propre", note:"18 niveaux au pas de 80 mm. Ne jamais laisser une échelle chargée en circulation ni sous une gaine."},
+  {id:"pal_beurre",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"butter",       label:"Palette de beurre plaque",   w:1.2,d:.8, h:1.2, color:"#e8d9a0", zone:"froid",  note:"Beurre de tourage en plaques. Tempérage à 12-14 °C avant laminage, jamais à température ambiante d'atelier."},
+
   /* Logistique */
   {id:"rack",       fam:"Logistique", cat:"equip", shape:"rack",        label:"Rack palettes 3 niveaux", w:2.7,d:1.1,h:6,   color:"#4f7fb0", zone:"froid"},
   {id:"empl_pal",   fam:"Logistique", cat:"equip", shape:"footprint",   label:"Emplacement palette",     w:1.2,d:.8, h:.05, color:"#7b8899", zone:"grise"},
@@ -466,6 +499,23 @@ const CATALOG = [
   {id:"ria",         fam:"Utilités et sécurité",cat:"equip",shape:"extinguisher",label:"RIA (robinet incendie)",   w:.7, d:.3, h:1.4, color:"#b71c1c", zone:"tech", note:"Couverture de toute la surface par au moins un jet. Ne jamais encombrer l'accès au dévidoir."}
 ];
 const BY_ID = {}; CATALOG.forEach(d => BY_ID[d.id] = d);
+/* Réseaux de tuyauterie. Chaque famille porte sa couleur de repérage,
+   son diamètre courant et la hauteur d'axe à laquelle elle chemine :
+   les fluides propres passent en hauteur, les évacuations au sol. */
+const RESEAUX = {
+  eau_f:  {label:"Eau froide potable",       color:"#29b6f6", dia:50,  y:3.4,  dash:null,        note:"Réseau bouclé, purges en point bas, protection anti-retour sur chaque piquage."},
+  eau_c:  {label:"Eau chaude sanitaire",     color:"#ef6c00", dia:50,  y:3.4,  dash:null,        note:"Maintien à 55 °C minimum au retour de boucle : maîtrise du risque légionelle."},
+  vapeur: {label:"Vapeur",                   color:"#e53935", dia:80,  y:3.9,  dash:[14,5],      note:"Calorifugeage obligatoire, purgeurs en point bas, pente de 1 % vers les purgeurs."},
+  air:    {label:"Air comprimé",             color:"#26c6da", dia:40,  y:3.7,  dash:[10,4],      note:"Air au contact du produit : filtration et déshuilage classe ISO 8573-1, piquages par le haut de la nourrice."},
+  nep:    {label:"NEP / lavage",             color:"#7e57c2", dia:63,  y:3.2,  dash:null,        note:"Pente continue vers le retour, aucun bras mort : tout tronçon non balayé est un réservoir microbien."},
+  froid:  {label:"Fluide frigorigène",       color:"#4dd0e1", dia:35,  y:4.1,  dash:[6,4],       note:"Détection de fuite et calorifuge anti-condensation au-dessus des zones produit nu."},
+  glycol: {label:"Eau glycolée",             color:"#5c6bc0", dia:63,  y:3.9,  dash:null,        note:"Glycol de qualité alimentaire si le circuit longe une zone de produit nu."},
+  evac:   {label:"Évacuation / effluents",   color:"#8d6e63", dia:110, y:.12,  dash:null,        note:"Pente de 1 %, siphon et garde d'eau à chaque descente, aucun passage au-dessus d'un poste de travail."},
+  gaz:    {label:"Gaz",                      color:"#ffb300", dia:50,  y:3.8,  dash:[12,4,3,4],  note:"Apparent et repéré sur tout son parcours, vanne de coupure extérieure signalée."},
+  elec:   {label:"Chemin de câbles",         color:"#fdd835", dia:100, y:4.3,  dash:[3,3],       note:"Jamais au-dessus d'un produit nu, dalle perforée pour éviter la rétention de poussières."}
+};
+const RES_KEYS = Object.keys(RESEAUX);
+
 const FAMS = []; CATALOG.forEach(d => { if (FAMS.indexOf(d.fam) < 0) FAMS.push(d.fam); });
 
 const state = {
@@ -482,7 +532,9 @@ const state = {
   fluxType:"entrant",
   navLock:false,        // plan verrouillé : navigation seule (zoom, pan, orbite)
   cam2:{x:37, z:21, zoom:14},
-  show:{grid:true, zones:true, flux:true, labels:true, issues:true, shadows:true},
+  pipes:[], pipeDraft:null, pipeType:"eau_f",
+  airRate:10,           // renouvellements d'air par heure, pour le calcul indicatif de débit
+  show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:true},
   issues:[]
 };
 const history = {past:[], future:[]};
@@ -491,11 +543,11 @@ let need2D = true, need3D = true, needDiag = true;
 function markDirty(){ need2D = true; need3D = true; needDiag = true; }
 
 function snapshot(){
-  return JSON.stringify({site:state.site, objects:state.objects, flux:state.flux, seq:state.seq});
+  return JSON.stringify({site:state.site, objects:state.objects, flux:state.flux, pipes:state.pipes, seq:state.seq});
 }
 function restore(json){
   const s = JSON.parse(json);
-  state.site = s.site; state.objects = s.objects; state.flux = s.flux; state.seq = s.seq;
+  state.site = s.site; state.objects = s.objects; state.flux = s.flux; state.pipes = s.pipes || []; state.seq = s.seq;
   state.selection = state.selection.filter(id => byId(id));
   markDirty();
 }
@@ -528,11 +580,46 @@ const fmt = (v,n) => Number(v).toFixed(n === undefined ? 2 : n).replace(".", ","
 function byId(id){
   for (let i = 0; i < state.objects.length; i++) if (state.objects[i].id === id) return state.objects[i];
   for (let i = 0; i < state.flux.length; i++)    if (state.flux[i].id === id)    return state.flux[i];
+  for (let i = 0; i < state.pipes.length; i++)   if (state.pipes[i].id === id)   return state.pipes[i];
   return null;
 }
 function selected(){ return state.selection.map(byId).filter(Boolean); }
 function selectedObjects(){ return selected().filter(o => !o.points); }
-function isFlux(o){ return !!(o && o.points); }
+function selectedPipes(){ return selected().filter(isPipe); }
+/* Un tuyau est aussi une polyligne : isFlux doit l'exclure pour que les
+   flux de circulation et les réseaux ne se mélangent pas. */
+function isFlux(o){ return !!(o && o.points) && o.kind !== "pipe"; }
+function isPipe(o){ return !!(o && o.kind === "pipe"); }
+function hasPoints(o){ return !!(o && o.points); }
+
+/* Ancrage d'une extrémité sur un élément. Le point est mémorisé dans le
+   repère local de l'élément : il suit ses déplacements et ses rotations. */
+function makeAnchor(x, z, o){
+  const r = rot2(x - o.x, z - o.z, -o.rot);
+  return {id:o.id, lx:r.x, lz:r.z};
+}
+function anchorPt(an){
+  if (!an) return null;
+  const o = byId(an.id);
+  if (!o || hasPoints(o)) return null;
+  const r = rot2(an.lx, an.lz, o.rot);
+  return {x:o.x + r.x, z:o.z + r.z};
+}
+/* Points effectifs d'un tuyau, extrémités ancrées résolues. */
+function pipePts(p){
+  const pts = p.points.map(q => ({x:q.x, z:q.z}));
+  const a = anchorPt(p.a), b = anchorPt(p.b);
+  if (a) pts[0] = a;
+  if (b) pts[pts.length - 1] = b;
+  return pts;
+}
+function pipeLen(p){
+  const pts = pipePts(p); let L = 0;
+  for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i-1].x, pts[i].z - pts[i-1].z);
+  return L;
+}
+function pipeY(p){ return p.y != null ? p.y : (RESEAUX[p.type] || RESEAUX.eau_f).y; }
+function pipeDia(p){ return p.dia || (RESEAUX[p.type] || RESEAUX.eau_f).dia; }
 
 function snapV(v){ const g = state.site.grid; return state.site.snap ? Math.round(v / g) * g : Math.round(v * 1000) / 1000; }
 
@@ -830,6 +917,210 @@ function drawShape(g, def, o, W, H, thumb){
     }
     /* Véhicules : dessinés longueur à l'horizontale, la rotation du
        contexte remet le symbole dans le sens de l'objet. */
+    /* --- Voirie --- */
+    case "road": {
+      const lourde = !!def.lourde;
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col, .25); g.lineWidth = 1.2;
+      g.beginPath();                                          // rives
+      g.moveTo(x, y + 1); g.lineTo(x + W, y + 1);
+      g.moveTo(x, y + H - 1); g.lineTo(x + W, y + H - 1);
+      g.stroke();
+      const horiz = W >= H;
+      g.strokeStyle = "rgba(255,255,255,.62)"; g.lineWidth = 1.4;
+      g.setLineDash(lourde ? [] : [12,10]);                    // axe
+      g.beginPath();
+      if (horiz){ g.moveTo(x + 3, 0); g.lineTo(x + W - 3, 0); }
+      else { g.moveTo(0, y + 3); g.lineTo(0, y + H - 3); }
+      g.stroke(); g.setLineDash([]);
+      if (lourde && Math.min(W, H) > 14){                      // double ligne des voies lourdes
+        g.lineWidth = 1;
+        g.beginPath();
+        if (horiz){ g.moveTo(x + 3, -2); g.lineTo(x + W - 3, -2); g.moveTo(x + 3, 2); g.lineTo(x + W - 3, 2); }
+        else { g.moveTo(-2, y + 3); g.lineTo(-2, y + H - 3); g.moveTo(2, y + 3); g.lineTo(2, y + H - 3); }
+        g.stroke();
+      }
+      break;
+    }
+    case "roundabout": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = col; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = shade(col, .25); g.lineWidth = 1.3;
+      g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+      g.fillStyle = "#3f6b45";                                 // îlot central
+      g.beginPath(); g.arc(0, 0, R*.42, 0, 7); g.fill();
+      g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 1.2; g.setLineDash([9,8]);
+      g.beginPath(); g.arc(0, 0, R*.72, 0, 7); g.stroke(); g.setLineDash([]);
+      break;
+    }
+    case "walkway": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col, -.35); g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = .9;
+      g.beginPath();
+      if (W >= H){ for (let px = x + 8; px < x + W - 4; px += 10){ g.moveTo(px, y + 1.5); g.lineTo(px, y + H - 1.5); } }
+      else { for (let py = y + 8; py < y + H - 4; py += 10){ g.moveTo(x + 1.5, py); g.lineTo(x + W - 1.5, py); } }
+      g.stroke();
+      break;
+    }
+    /* --- Boulangerie et pâtisserie --- */
+    case "spiral_mixer": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      const r = Math.min(W, H)*.34, cx = x + W*.58, cy = 0;
+      g.fillStyle = shade(col,-.2); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+      g.strokeStyle = "#5c6a78"; g.lineWidth = 1.2;
+      g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
+      g.beginPath();                                          // spirale
+      for (let a = 0; a < 6.2; a += .25) g.lineTo(cx + Math.cos(a)*r*.15*(1 + a/3), cy + Math.sin(a)*r*.15*(1 + a/3));
+      g.stroke();
+      g.fillStyle = shade(col,-.35); g.fillRect(x + W*.06, y + H*.22, W*.2, H*.56);
+      break;
+    }
+    case "planetary": {
+      g.fillStyle = shade(col,-.3); g.fillRect(x + W*.1, y + H*.68, W*.8, H*.28);
+      g.fillStyle = col; g.fillRect(x + W*.62, y, W*.3, H*.8);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      const r = Math.min(W, H)*.3;
+      g.fillStyle = "#dde5ee"; g.beginPath(); g.arc(x + W*.38, y + H*.42, r, 0, 7); g.fill();
+      g.strokeStyle = "#5c6a78"; g.lineWidth = 1.1;
+      g.beginPath(); g.arc(x + W*.38, y + H*.42, r, 0, 7); g.stroke();
+      g.beginPath(); g.arc(x + W*.38, y + H*.42, r*.45, 0, 4.2); g.stroke();
+      break;
+    }
+    case "hopper": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1;         // trémie vue de dessus
+      g.beginPath();
+      g.moveTo(x + 2, y + 2); g.lineTo(x + W*.5, 0); g.lineTo(x + W - 2, y + 2);
+      g.moveTo(x + 2, y + H - 2); g.lineTo(x + W*.5, 0); g.lineTo(x + W - 2, y + H - 2);
+      g.stroke();
+      g.fillStyle = "#5c6a78";
+      g.beginPath(); g.arc(x + W*.5, 0, Math.min(W, H)*.14, 0, 7); g.fill();
+      break;
+    }
+    case "sheeter": {
+      g.fillStyle = hexA(col, .45);                            // tables rabattables
+      g.fillRect(x, y + H*.18, W, H*.64);
+      g.fillStyle = col; g.fillRect(x + W*.36, y, W*.28, H);   // bâti central
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2;
+      g.strokeRect(x, y + H*.18, W, H*.64); g.strokeRect(x + W*.36, y, W*.28, H);
+      g.fillStyle = "#5c6a78";                                 // rouleaux
+      g.fillRect(x + W*.42, y + H*.12, W*.16, H*.14);
+      g.fillRect(x + W*.42, y + H*.74, W*.16, H*.14);
+      g.strokeStyle = "rgba(92,106,120,.6)"; g.lineWidth = .9; g.setLineDash([5,4]);
+      g.beginPath(); g.moveTo(x + 3, 0); g.lineTo(x + W - 3, 0); g.stroke(); g.setLineDash([]);
+      break;
+    }
+    case "extruder": {
+      g.fillStyle = col; g.fillRect(x, y, W*.6, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W*.6, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1;         // trémie
+      g.beginPath();
+      g.moveTo(x + 3, y + 3); g.lineTo(x + W*.3, 0); g.lineTo(x + W*.57, y + 3);
+      g.moveTo(x + 3, y + H - 3); g.lineTo(x + W*.3, 0); g.lineTo(x + W*.57, y + H - 3);
+      g.stroke();
+      g.fillStyle = "#c9a96a"; g.fillRect(x + W*.6, y + H*.3, W*.4, H*.4);   // bande de pâte
+      g.strokeStyle = shade(col,-.4); g.strokeRect(x + W*.6, y + H*.3, W*.4, H*.4);
+      g.fillStyle = "#5c6a78"; g.fillRect(x + W*.55, y + H*.18, W*.06, H*.64);
+      break;
+    }
+    case "folder": {
+      g.fillStyle = hexA(col,.5); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#c9a96a"; g.fillRect(x + 2, y + H*.34, W - 4, H*.32);    // bande
+      g.strokeStyle = "#7a6236"; g.lineWidth = 1.3;            // chevrons de pliage
+      g.beginPath();
+      for (let i = 1; i <= 3; i++){
+        const px = x + W*i/4;
+        g.moveTo(px - W*.07, y + H*.2); g.lineTo(px, y + H*.5); g.lineTo(px - W*.07, y + H*.8);
+      }
+      g.stroke();
+      break;
+    }
+    case "sprayer": {
+      g.fillStyle = hexA(col,.35); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#c9a96a"; g.fillRect(x + 2, y + H*.36, W - 4, H*.28);
+      g.fillStyle = col;                                        // rampe de buses
+      g.fillRect(x + W*.12, y + H*.06, W*.76, H*.14);
+      g.strokeStyle = shade(col,-.5); g.lineWidth = 1;
+      for (let i = 0; i < 4; i++){
+        const px = x + W*(.22 + i*.19);
+        g.beginPath(); g.moveTo(px, y + H*.2); g.lineTo(px - W*.03, y + H*.34); g.lineTo(px + W*.03, y + H*.34); g.closePath(); g.stroke();
+      }
+      break;
+    }
+    case "doser": {
+      g.fillStyle = col; g.fillRect(x, y, W, H*.62);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(x + 3, y + 3); g.lineTo(x + W*.5, y + H*.34); g.lineTo(x + W - 3, y + 3);
+      g.stroke();
+      g.fillStyle = "#5c6a78";                                  // buses de dosage
+      for (let i = 0; i < 3; i++) g.fillRect(x + W*(.2 + i*.28), y + H*.68, W*.12, H*.24);
+      break;
+    }
+    case "rotary_oven": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.3; g.strokeRect(x, y, W, H);
+      const r = Math.min(W, H)*.33;
+      g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1.2;
+      g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke();          // chariot tournant
+      g.beginPath();
+      for (let k = 0; k < 4; k++){
+        const a = k*Math.PI/2 + .4;
+        g.moveTo(Math.cos(a)*r*.25, Math.sin(a)*r*.25); g.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+      }
+      g.stroke();
+      g.fillStyle = shade(col,-.35); g.fillRect(x + W*.12, y + H - 4, W*.76, 4);  // porte
+      g.fillStyle = "#2b2016"; g.fillRect(x + W*.46, y + H - 7, W*.08, 7);
+      break;
+    }
+    case "robot_cell": {
+      g.fillStyle = "rgba(255,183,77,.08)"; g.fillRect(x, y, W, H);
+      g.strokeStyle = "#e0a33a"; g.lineWidth = 1.4; g.setLineDash([6,4]);
+      g.strokeRect(x, y, W, H); g.setLineDash([]);
+      g.fillStyle = shade(col,-.2);                             // socle
+      g.beginPath(); g.arc(0, 0, Math.min(W, H)*.16, 0, 7); g.fill();
+      g.strokeStyle = col; g.lineWidth = Math.max(2, Math.min(W, H)*.07);
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(W*.26, -H*.2); g.lineTo(W*.38, H*.1); g.stroke();
+      g.fillStyle = "#5c6a78"; g.fillRect(W*.34, H*.04, W*.1, H*.12);
+      g.strokeStyle = "rgba(224,163,58,.8)"; g.lineWidth = 1;   // amorce de zone d'évolution
+      g.beginPath(); g.arc(0, 0, Math.min(W, H)*.42, -1.1, 1.1); g.stroke();
+      break;
+    }
+    case "trolley": {
+      g.fillStyle = hexA(col,.5); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.25); g.lineWidth = .9;        // niveaux
+      g.beginPath();
+      const nn = Math.max(3, Math.min(8, Math.round(H/4)));
+      for (let i = 1; i < nn; i++){ g.moveTo(x + 2, y + i*H/nn); g.lineTo(x + W - 2, y + i*H/nn); }
+      g.stroke();
+      g.fillStyle = "#3b4654";                                  // roulettes
+      [[.12,.12],[.88,.12],[.12,.88],[.88,.88]].forEach(c => {
+        g.beginPath(); g.arc(x + W*c[0], y + H*c[1], Math.max(1.2, Math.min(W,H)*.09), 0, 7); g.fill();
+      });
+      break;
+    }
+    case "butter": {
+      g.fillStyle = "#9a7b4f"; g.fillRect(x, y, W, H);          // palette bois
+      g.strokeStyle = "#6d5636"; g.lineWidth = 1.1; g.strokeRect(x, y, W, H);
+      const cols = 3, rows = 2, mx = W*.06, my = H*.08;
+      for (let i = 0; i < cols; i++){
+        for (let k = 0; k < rows; k++){
+          const bw = (W - mx*(cols+1))/cols, bh = (H - my*(rows+1))/rows;
+          g.fillStyle = col;
+          g.fillRect(x + mx + i*(bw + mx), y + my + k*(bh + my), bw, bh);
+          g.strokeStyle = shade(col,-.35); g.lineWidth = .8;
+          g.strokeRect(x + mx + i*(bw + mx), y + my + k*(bh + my), bw, bh);
+        }
+      }
+      break;
+    }
     /* Enveloppe de bâtiment : bande de murs à l'échelle, intérieur laissé
        transparent pour que les zones et les équipements restent lisibles. */
     case "building": {
@@ -1031,6 +1322,7 @@ function draw2D(){
   if (state.show.grid) drawGrid(a, b);
   if (state.show.zones) drawOrder().filter(o => o.cat === "zones").forEach(drawObj2D);
   drawOrder().filter(o => o.cat !== "zones").forEach(drawObj2D);
+  if (state.show.pipes){ state.pipes.forEach(p => drawPipe2D(p)); if (state.pipeDraft) drawPipe2D(state.pipeDraft, true); }
   if (state.show.flux){ state.flux.forEach(f => drawFlux2D(f)); if (state.fluxDraft) drawFlux2D(state.fluxDraft, true); }
   if (state.show.issues) drawIssues2D();
   drawSelection2D();
@@ -1087,6 +1379,62 @@ function drawObj2D(o){
     const tw = ctx.measureText(t).width;
     ctx.fillRect(p.x - tw/2 - 3, p.y + off - 7, tw + 6, 13);
     ctx.fillStyle = "#38424f"; ctx.fillText(t, p.x, p.y + off);
+  }
+}
+
+/* Tuyauterie : trait plein doublé d'un liseré clair pour rester lisible
+   par-dessus les zones, tirets propres à chaque réseau, et marqueur carré
+   à chaque extrémité ancrée sur un élément. */
+function drawPipe2D(p, draft){
+  const def = RESEAUX[p.type] || RESEAUX.eau_f;
+  const raw = pipePts(p);
+  if (raw.length < 1) return;
+  const pts = raw.map(q => w2s(q.x, q.z));
+  const sel = state.selection.indexOf(p.id) >= 0;
+  const lw = Math.max(2, Math.min(9, pipeDia(p) / 18));
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = lw + 3.5;
+  ctx.beginPath(); pts.forEach((q,i) => i ? ctx.lineTo(q.x,q.y) : ctx.moveTo(q.x,q.y)); ctx.stroke();
+  ctx.strokeStyle = def.color; ctx.lineWidth = lw;
+  ctx.setLineDash(draft ? [9,6] : (def.dash || []));
+  ctx.beginPath(); pts.forEach((q,i) => i ? ctx.lineTo(q.x,q.y) : ctx.moveTo(q.x,q.y)); ctx.stroke();
+  ctx.setLineDash([]);
+  if (sel){
+    ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = lw + 6;
+    ctx.globalAlpha = .35;
+    ctx.beginPath(); pts.forEach((q,i) => i ? ctx.lineTo(q.x,q.y) : ctx.moveTo(q.x,q.y)); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  for (let i = 1; i < pts.length - 1; i++){              // coudes
+    ctx.fillStyle = def.color;
+    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, lw*.6 + 1, 0, 6.2832); ctx.fill();
+  }
+  [[p.a, 0], [p.b, pts.length - 1]].forEach(e => {        // raccords ancrés
+    const q = pts[e[1]]; if (!q) return;
+    if (e[0] && anchorPt(e[0])){
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.rect(q.x - 4.5, q.y - 4.5, 9, 9); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(q.x - 2.4, q.y); ctx.lineTo(q.x + 2.4, q.y);
+      ctx.moveTo(q.x, q.y - 2.4); ctx.lineTo(q.x, q.y + 2.4); ctx.lineWidth = 1.4; ctx.stroke();
+    } else if (sel || draft){
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(q.x, q.y, 4.5, 0, 6.2832); ctx.fill(); ctx.stroke();
+    }
+  });
+  if (sel || draft){
+    for (let i = 1; i < pts.length - 1; i++){
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, 6.2832); ctx.fill(); ctx.stroke();
+    }
+  }
+  if (state.show.labels && pts.length > 1 && state.cam2.zoom > 5){
+    const A = pts[0], B = pts[1];
+    const t = "DN " + pipeDia(p) + " · " + fmt(pipeY(p),1) + " m";
+    ctx.font = "600 9.5px system-ui,sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    const tw = ctx.measureText(t).width;
+    const mx = (A.x + B.x)/2, my = (A.y + B.y)/2;
+    ctx.fillStyle = hexA(def.color, .92); ctx.fillRect(mx + 5, my - 7.5, tw + 7, 14);
+    ctx.fillStyle = "#fff"; ctx.fillText(t, mx + 8.5, my);
   }
 }
 
@@ -1246,6 +1594,13 @@ let drag = null, hover = null, spaceDown = false;
 
 function pick(px, pz){
   const tol = 6 / state.cam2.zoom;
+  for (const p of state.pipes){                          // sommets du tuyau sélectionné
+    if (state.selection.indexOf(p.id) < 0) continue;
+    const pts = pipePts(p);
+    for (let i = 0; i < pts.length; i++)
+      if (Math.hypot(pts[i].x - px, pts[i].z - pz) < tol * 1.4)
+        return {obj:p, mode:"pipept", idx:i};
+  }
   for (const f of state.flux){
     if (state.selection.indexOf(f.id) < 0) continue;
     for (let i = 0; i < f.points.length; i++)
@@ -1263,6 +1618,13 @@ function pick(px, pz){
       const f = state.flux[i];
       for (let k = 1; k < f.points.length; k++)
         if (distSeg({x:px,z:pz}, f.points[k-1], f.points[k]) < tol) return {obj:f, mode:"move"};
+    }
+  }
+  if (state.show.pipes){
+    for (let i = state.pipes.length - 1; i >= 0; i--){
+      const p = state.pipes[i], pts = pipePts(p);
+      for (let k = 1; k < pts.length; k++)
+        if (distSeg({x:px,z:pz}, pts[k-1], pts[k]) < tol) return {obj:p, mode:"move"};
     }
   }
   if (state.show.zones){
@@ -1300,7 +1662,28 @@ cv.addEventListener("pointerdown", e => {
     drag = {mode:"measure"};
     need2D = true; return;
   }
+  if (state.tool === "tuyau"){
+    el.innerHTML =
+      '<div class="row"><label>Réseau</label><div class="f"><select id="rtype">' +
+      RES_KEYS.map(k => '<option value="' + k + '"' + (k === (state.pipeType||"eau_f") ? " selected":"") + '>' + RESEAUX[k].label + '</option>').join("") +
+      '</select></div></div>' +
+      '<p class="help">Un clic par sommet du parcours. <b>Un clic sur un équipement raccorde l\'extrémité à cet équipement</b> : le tuyau suivra ensuite ses déplacements et ses rotations. Entrée ou double-clic pour valider.</p>' +
+      '<button class="btn sm" id="rend">Terminer le tracé</button> ' +
+      '<button class="btn sm" id="rcancel">Abandonner</button>';
+    $("#rtype").addEventListener("change", e => {
+      state.pipeType = e.target.value;
+      if (state.pipeDraft){
+        const d = RESEAUX[e.target.value];
+        state.pipeDraft.type = e.target.value; state.pipeDraft.dia = d.dia; state.pipeDraft.y = d.y;
+      }
+      need2D = true; need3D = true;
+    });
+    $("#rend").addEventListener("click", endPipeDraft);
+    $("#rcancel").addEventListener("click", cancelDraft);
+    return;
+  }
   if (state.tool === "flux"){ addFluxPoint(p.x, p.z); return; }
+  if (state.tool === "tuyau"){ addPipePoint(p.x, p.z); return; }
 
   const h = pickHandle(p.x, p.z);
   if (h){
@@ -1316,7 +1699,9 @@ cv.addEventListener("pointerdown", e => {
       state.selection = [t.obj.id];
     }
     refreshProps();
-    if (t.mode === "fluxpt"){
+    if (t.mode === "pipept"){
+      drag = {mode:"pipept", obj:t.obj, idx:t.idx, pending:true};
+    } else if (t.mode === "fluxpt"){
       drag = {mode:"fluxpt", obj:t.obj, idx:t.idx, pending:true};
     } else {
       drag = {mode:"move", start:p, pending:true, origs:selected().map(o => JSON.parse(JSON.stringify(o)))};
@@ -1333,13 +1718,13 @@ cv.addEventListener("pointermove", e => {
   const p = s2w(e.clientX - r.left, e.clientY - r.top);
   hover = p;
   $("#coord").textContent = "x " + fmt(p.x) + " m   z " + fmt(p.z) + " m";
-  if (state.placing || state.fluxDraft || state.measure) need2D = true;
+  if (state.placing || state.fluxDraft || state.pipeDraft || state.measure) need2D = true;
 
   if (!drag){
     if (state.navLock){ cv.style.cursor = "grab"; return; }
     const h = pickHandle(p.x, p.z);
     cv.style.cursor = h ? (h.mode === "rotate" ? "grab" : "nwse-resize")
-                        : (state.placing || state.tool === "flux") ? "crosshair"
+                        : (state.placing || state.tool === "flux" || state.tool === "tuyau") ? "crosshair"
                         : pick(p.x, p.z) ? "move" : "default";
     return;
   }
@@ -1356,16 +1741,28 @@ cv.addEventListener("pointermove", e => {
     case "fluxpt": {
       drag.obj.points[drag.idx] = {x:snapV(p.x), z:snapV(p.z)}; needDiag = true; break;
     }
+    /* Un sommet d'extrémité lâché sur un élément s'y accroche ; lâché dans
+       le vide, il s'en détache. Les sommets intermédiaires restent libres. */
+    case "pipept": {
+      const pp = drag.obj, last = pp.points.length - 1, bout = drag.idx === 0 ? "a" : drag.idx === last ? "b" : null;
+      pp.points[drag.idx] = {x:snapV(p.x), z:snapV(p.z)};
+      if (bout){
+        const cible = objAt(p.x, p.z);
+        pp[bout] = cible ? makeAnchor(p.x, p.z, cible) : null;
+        drag.cible = cible ? cible.id : null;
+      }
+      break;
+    }
     case "move": {
       const o0 = drag.origs[0];
       let dx = p.x - drag.start.x, dz = p.z - drag.start.z;
-      if (o0 && !isFlux(o0)){
+      if (o0 && !hasPoints(o0)){
         dx = snapV(o0.x + dx) - o0.x; dz = snapV(o0.z + dz) - o0.z;
       } else { dx = snapV(dx); dz = snapV(dz); }
       if (e.shiftKey){ if (Math.abs(dx) > Math.abs(dz)) dz = 0; else dx = 0; }
       drag.origs.forEach(orig => {
         const o = byId(orig.id); if (!o || o.locked) return;
-        if (isFlux(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
+        if (hasPoints(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
         else { o.x = orig.x + dx; o.z = orig.z + dz; }
       });
       needDiag = true; break;
@@ -1404,6 +1801,7 @@ cv.addEventListener("pointerup", () => {
         const b = aabb(o); return b.x1 >= x0 && b.x0 <= x1 && b.z1 >= z0 && b.z0 <= z1;
       }).map(o => o.id);
       state.flux.forEach(f => { if (f.points.some(q => q.x >= x0 && q.x <= x1 && q.z >= z0 && q.z <= z1)) hits.push(f.id); });
+      state.pipes.forEach(pp => { if (pipePts(pp).some(q => q.x >= x0 && q.x <= x1 && q.z >= z0 && q.z <= z1)) hits.push(pp.id); });
       state.selection = drag.add ? state.selection.concat(hits.filter(id => state.selection.indexOf(id) < 0)) : hits;
       refreshProps();
     }
@@ -1424,7 +1822,7 @@ cv.addEventListener("wheel", e => {
 }, {passive:false});
 
 cv.addEventListener("contextmenu", e => e.preventDefault());
-cv.addEventListener("dblclick", () => { if (state.fluxDraft) endFluxDraft(); });
+cv.addEventListener("dblclick", () => { if (state.fluxDraft) endFluxDraft(); else if (state.pipeDraft) endPipeDraft(); });
 
 function fit2D(){
   const stage = $("#stage");
@@ -1447,6 +1845,7 @@ const THREE_OK = (typeof THREE !== "undefined");
 let scene, renderer, camP, camO, cam3, controls, sunLight, floorMesh, gridHelp, ghost3;
 const meshes = new Map();
 const fluxMeshes = new Map();
+const pipeMeshes = new Map();
 const matCache = new Map();
 let selBoxes = [], projection = "perspective", orthoSpan = 60;
 
@@ -1745,6 +2144,182 @@ function build3D(o){
       }
       break;
     }
+    /* --- Voirie : simples nappes au sol --- */
+    case "road": {
+      const ch = box(w, Math.max(h, .04), d, col); ch.position.y = Math.max(h, .04)/2; g.add(ch);
+      const horiz = w >= d, L = horiz ? w : d, B = horiz ? d : w;
+      const n = Math.max(1, Math.floor(L / 6));
+      for (let i = 0; i < n; i++){
+        const tr = box(horiz ? L*.045 : B*.02, .01, horiz ? B*.02 : L*.045, "#e8eef4");
+        const t = -L/2 + L*(i + .5)/n;
+        tr.position.set(horiz ? t : 0, Math.max(h, .04) + .005, horiz ? 0 : t);
+        g.add(tr);
+      }
+      break;
+    }
+    case "roundabout": {
+      const R = Math.min(w, d)/2;
+      const ch = new THREE.Mesh(new THREE.CylinderGeometry(R, R, Math.max(h, .04), 28), mat(col));
+      ch.position.y = Math.max(h, .04)/2; g.add(ch);
+      const ilot = new THREE.Mesh(new THREE.CylinderGeometry(R*.42, R*.45, .35, 24), mat("#3f6b45"));
+      ilot.position.y = .17; g.add(ilot);
+      break;
+    }
+    case "walkway": {
+      const dal = box(w, Math.max(h, .06), d, col); dal.position.y = Math.max(h, .06)/2; g.add(dal);
+      const bord = box(w, .04, d*1.04, shade(col, -.3)); bord.position.y = .01; g.add(bord);
+      break;
+    }
+    /* --- Boulangerie et pâtisserie --- */
+    case "spiral_mixer": {
+      const soc = box(w, h*.28, d, shade(col,-.25)); soc.position.y = h*.14; g.add(soc);
+      const col_ = box(w*.24, h, d*.55, col); col_.position.set(-w*.36, h/2, 0); g.add(col_);
+      const r = Math.min(w, d)*.36;
+      const cuve = new THREE.Mesh(new THREE.CylinderGeometry(r, r*.92, h*.42, 22), mat("#dde5ee"));
+      cuve.position.set(w*.12, h*.45, 0); g.add(cuve);
+      const spir = new THREE.Mesh(new THREE.CylinderGeometry(r*.12, r*.12, h*.34, 10), mat("#8c98a6"));
+      spir.position.set(w*.12, h*.55, 0); g.add(spir);
+      const tete = box(w*.5, h*.16, d*.5, shade(col,-.1)); tete.position.set(-w*.1, h*.9, 0); g.add(tete);
+      break;
+    }
+    case "planetary": {
+      const sc = box(w*.9, h*.12, d*.9, shade(col,-.3)); sc.position.y = h*.06; g.add(sc);
+      const mont = box(w*.3, h, d*.4, col); mont.position.set(w*.3, h/2, -d*.2); g.add(mont);
+      const r = Math.min(w, d)*.34;
+      const bol = new THREE.Mesh(new THREE.CylinderGeometry(r, r*.7, h*.36, 20), mat("#dde5ee"));
+      bol.position.set(-w*.1, h*.32, d*.06); g.add(bol);
+      const tete = box(w*.62, h*.16, d*.5, col); tete.position.set(w*.05, h*.9, -d*.05); g.add(tete);
+      const fou = new THREE.Mesh(new THREE.CylinderGeometry(r*.3, r*.3, h*.24, 12), mat("#8c98a6"));
+      fou.position.set(-w*.1, h*.68, d*.06); g.add(fou);
+      break;
+    }
+    case "hopper": {
+      const cuve = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.44, Math.min(w,d)*.44, h*.4, 20), mat(col));
+      cuve.position.y = h*.78; g.add(cuve);
+      const tre = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.44, Math.min(w,d)*.1, h*.42, 20), mat(shade(col,-.12)));
+      tre.position.y = h*.37; g.add(tre);
+      for (let i = 0; i < 4; i++){
+        const pied = box(.08, h*.2, .08, "#5c6a78");
+        pied.position.set((i%2?1:-1)*w*.32, h*.1, (i<2?1:-1)*d*.32); g.add(pied);
+      }
+      const mot = box(w*.3, h*.16, d*.3, "#37474f"); mot.position.y = h - h*.04; g.add(mot);
+      break;
+    }
+    case "sheeter": {
+      const t1 = box(w*.34, .06, d*.8, shade(col,.15)); t1.position.set(-w*.33, h*.62, 0); g.add(t1);
+      const t2 = box(w*.34, .06, d*.8, shade(col,.15)); t2.position.set( w*.33, h*.62, 0); g.add(t2);
+      const bati = box(w*.3, h, d, col); bati.position.y = h/2; g.add(bati);
+      const r = Math.min(h*.12, d*.1);
+      [-1, 1].forEach(k => {
+        const ro = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d*.86, 14), mat("#5c6a78"));
+        ro.rotation.x = Math.PI/2; ro.position.set(k*w*.07, h*.72, 0); g.add(ro);
+      });
+      for (let i = 0; i < 4; i++){
+        const pied = box(.07, h*.6, .07, "#8c98a6");
+        pied.position.set((i%2?1:-1)*w*.44, h*.3, (i<2?1:-1)*d*.34); g.add(pied);
+      }
+      break;
+    }
+    case "extruder": {
+      const bati = box(w*.6, h*.7, d, col); bati.position.set(-w*.2, h*.35, 0); g.add(bati);
+      const tre = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.3, Math.min(w,d)*.12, h*.34, 16), mat(shade(col,-.12)));
+      tre.position.set(-w*.2, h*.85, 0); g.add(tre);
+      const band = box(w*.42, .05, d*.62, "#c9a96a"); band.position.set(w*.28, h*.52, 0); g.add(band);
+      const rl = new THREE.Mesh(new THREE.CylinderGeometry(h*.08, h*.08, d*.66, 12), mat("#5c6a78"));
+      rl.rotation.x = Math.PI/2; rl.position.set(w*.06, h*.55, 0); g.add(rl);
+      break;
+    }
+    case "folder": {
+      const ch = box(w, h*.14, d, shade(col,-.2)); ch.position.y = h*.55; g.add(ch);
+      const band = box(w*.96, .05, d*.62, "#c9a96a"); band.position.y = h*.63; g.add(band);
+      for (let i = 0; i < 3; i++){
+        const br = box(w*.06, h*.4, d*.7, col);
+        br.position.set(-w*.3 + i*w*.3, h*.8, 0); g.add(br);
+      }
+      for (let i = 0; i < 4; i++){
+        const pied = box(.07, h*.55, .07, "#8c98a6");
+        pied.position.set((i%2?1:-1)*w*.45, h*.27, (i<2?1:-1)*d*.4); g.add(pied);
+      }
+      break;
+    }
+    case "sprayer": {
+      const ch = box(w, h*.12, d, shade(col,-.3)); ch.position.y = h*.5; g.add(ch);
+      const band = box(w*.94, .05, d*.58, "#c9a96a"); band.position.y = h*.57; g.add(band);
+      const capot = box(w*.7, h*.34, d*.8, col); capot.position.set(0, h*.78, -d*.05); g.add(capot);
+      const rampe = new THREE.Mesh(new THREE.CylinderGeometry(h*.04, h*.04, d*.7, 10), mat("#8c98a6"));
+      rampe.rotation.x = Math.PI/2; rampe.position.set(0, h*.62, 0); g.add(rampe);
+      const bac = box(w*.3, h*.24, d*.4, "#d9b45c"); bac.position.set(w*.32, h*.24, d*.2); g.add(bac);
+      break;
+    }
+    case "doser": {
+      const tre = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.4, Math.min(w,d)*.16, h*.44, 18), mat(col));
+      tre.position.y = h*.74; g.add(tre);
+      const bloc = box(w*.8, h*.22, d*.7, shade(col,-.15)); bloc.position.y = h*.42; g.add(bloc);
+      for (let i = 0; i < 3; i++){
+        const bu = new THREE.Mesh(new THREE.CylinderGeometry(h*.045, h*.045, h*.2, 10), mat("#5c6a78"));
+        bu.position.set(-w*.25 + i*w*.25, h*.24, 0); g.add(bu);
+      }
+      for (let i = 0; i < 4; i++){
+        const pied = box(.07, h*.3, .07, "#8c98a6");
+        pied.position.set((i%2?1:-1)*w*.36, h*.15, (i<2?1:-1)*d*.3); g.add(pied);
+      }
+      break;
+    }
+    case "rotary_oven": {
+      const corps = box(w, h, d, col); corps.position.y = h/2; g.add(corps);
+      const porte = box(w*.78, h*.72, .1, shade(col,-.3)); porte.position.set(0, h*.44, d/2 + .03); g.add(porte);
+      const vit = box(w*.5, h*.4, .04, "#2b2016"); vit.position.set(0, h*.5, d/2 + .08); g.add(vit);
+      const hotte = box(w*1.08, h*.16, d*.5, "#8c98a6"); hotte.position.set(0, h + h*.08, d*.3); g.add(hotte);
+      const chem = new THREE.Mesh(new THREE.CylinderGeometry(w*.1, w*.1, h*.5, 12), mat("#8c98a6"));
+      chem.position.set(-w*.28, h*1.25, -d*.2); g.add(chem);
+      break;
+    }
+    case "robot_cell": {
+      const sol = box(w, .04, d, "#c8a04a"); sol.position.y = .02; g.add(sol);
+      const socle = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.16, Math.min(w,d)*.2, h*.22, 16), mat(shade(col,-.2)));
+      socle.position.y = h*.11; g.add(socle);
+      const ep = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.12, Math.min(w,d)*.12, h*.34, 14), mat(col));
+      ep.position.y = h*.36; g.add(ep);
+      const br1 = box(w*.4, h*.12, d*.12, col); br1.position.set(w*.16, h*.56, 0); br1.rotation.z = -.5; g.add(br1);
+      const br2 = box(w*.3, h*.1, d*.1, shade(col,-.15)); br2.position.set(w*.36, h*.36, 0); br2.rotation.z = .6; g.add(br2);
+      const pince = box(w*.12, h*.1, d*.22, "#5c6a78"); pince.position.set(w*.46, h*.24, 0); g.add(pince);
+      for (let i = 0; i < 4; i++){                              // montants de carter
+        const m = box(.07, h*.8, .07, "#c8a04a");
+        m.position.set((i%2?1:-1)*(w/2 - .06), h*.4, (i<2?1:-1)*(d/2 - .06)); g.add(m);
+      }
+      break;
+    }
+    case "trolley": {
+      for (let i = 0; i < 4; i++){
+        const m = box(.05, h, .05, shade(col,-.2));
+        m.position.set((i%2?1:-1)*(w/2 - .05), h/2, (i<2?1:-1)*(d/2 - .05)); g.add(m);
+      }
+      const n = 7;
+      for (let i = 0; i < n; i++){
+        const niv = box(w*.92, .025, d*.86, col);
+        niv.position.y = h*.14 + i*(h*.82/n); g.add(niv);
+      }
+      for (let i = 0; i < 4; i++){
+        const ro = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .04, 10), mat("#3b4654"));
+        ro.rotation.x = Math.PI/2;
+        ro.position.set((i%2?1:-1)*(w/2 - .07), .05, (i<2?1:-1)*(d/2 - .07)); g.add(ro);
+      }
+      break;
+    }
+    case "butter": {
+      const pal = box(w, .14, d, "#9a7b4f"); pal.position.y = .07; g.add(pal);
+      const cols = 3, rows = 2, hb = (h - .14)/3;
+      for (let e = 0; e < 3; e++){
+        for (let i = 0; i < cols; i++){
+          for (let k = 0; k < rows; k++){
+            const b = box(w/cols*.88, hb*.86, d/rows*.88, e%2 ? shade(col,-.06) : col);
+            b.position.set(-w/2 + w/cols*(i + .5), .14 + hb*(e + .5), -d/2 + d/rows*(k + .5));
+            g.add(b);
+          }
+        }
+      }
+      break;
+    }
     /* Enveloppe : quatre parois de 25 cm et une dalle. Pas de toiture,
        pour que l'implantation intérieure reste visible en 3D. */
     case "building": {
@@ -1916,6 +2491,40 @@ function makeLabel(text, color){
   return sp;
 }
 
+/* Tuyauterie en volume : un cylindre par tronçon à la hauteur d'axe du
+   réseau, une sphère à chaque coude, et une descente verticale vers
+   l'équipement à chaque extrémité raccordée. */
+function buildPipe3D(pp){
+  const g = new THREE.Group(), def = RESEAUX[pp.type] || RESEAUX.eau_f;
+  const pts = pipePts(pp), y = pipeY(pp), r = Math.max(.03, pipeDia(pp) / 2000);
+  const m = mat(def.color);
+  for (let i = 1; i < pts.length; i++){
+    const A = pts[i-1], B = pts[i];
+    const dx = B.x - A.x, dz = B.z - A.z, L = Math.hypot(dx, dz);
+    if (L < 1e-4) continue;
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 10), m);
+    tube.rotation.z = Math.PI/2;
+    tube.rotation.y = -Math.atan2(dz, dx);
+    tube.position.set((A.x+B.x)/2, y, (A.z+B.z)/2);
+    g.add(tube);
+  }
+  for (let i = 1; i < pts.length - 1; i++){                 // coudes
+    const co = new THREE.Mesh(new THREE.CylinderGeometry(r*1.25, r*1.25, r*2.4, 10), m);
+    co.position.set(pts[i].x, y, pts[i].z); g.add(co);
+  }
+  [[pp.a, 0], [pp.b, pts.length - 1]].forEach(e => {         // descentes de raccordement
+    if (!e[0]) return;
+    const o = byId(e[0].id); if (!o) return;
+    const q = pts[e[1]], hb = Math.min(o.h || 1, y);
+    const des = new THREE.Mesh(new THREE.CylinderGeometry(r, r, Math.max(.05, y - hb), 10), m);
+    des.position.set(q.x, (y + hb)/2, q.z); g.add(des);
+    const brid = new THREE.Mesh(new THREE.CylinderGeometry(r*2, r*2, .06, 12), mat("#cfd8dc"));
+    brid.position.set(q.x, hb, q.z); g.add(brid);
+  });
+  g.userData.geoKey = pp.type + "|" + pipeDia(pp) + "|" + y + "|" + JSON.stringify(pts);
+  return g;
+}
+
 function buildFlux3D(f){
   const g = new THREE.Group(), def = FLUX[f.type] || FLUX.mp, wdt = (f.width || 1) * .34;
   for (let i = 1; i < f.points.length; i++){
@@ -1988,6 +2597,23 @@ function sync3D(){
   });
   fluxMeshes.forEach((m, id) => {
     if (!aliveF.has(id)){ scene.remove(m); disposeTree(m); fluxMeshes.delete(id); }
+  });
+
+  const aliveP = new Set();
+  const lp = state.pipeDraft ? state.pipes.concat([state.pipeDraft]) : state.pipes;
+  lp.forEach(pp => {
+    if (pp.points.length < 2) return;
+    aliveP.add(pp.id);
+    let m = pipeMeshes.get(pp.id);
+    const k = pp.type + "|" + pipeDia(pp) + "|" + pipeY(pp) + "|" + JSON.stringify(pipePts(pp));
+    if (!m || m.userData.geoKey !== k){
+      if (m){ scene.remove(m); disposeTree(m); }
+      m = buildPipe3D(pp); scene.add(m); pipeMeshes.set(pp.id, m);
+    }
+    m.visible = state.show.pipes;
+  });
+  pipeMeshes.forEach((m, id) => {
+    if (!aliveP.has(id)){ scene.remove(m); disposeTree(m); pipeMeshes.delete(id); }
   });
 
   updateSelBoxes();
@@ -2089,6 +2715,10 @@ function bind3D(){
     }
     if (state.tool === "flux"){
       if (g) addFluxPoint(g.x, g.z);
+      e.stopPropagation(); return;
+    }
+    if (state.tool === "tuyau"){
+      if (g) addPipePoint(g.x, g.z);
       e.stopPropagation(); return;
     }
     const t = pick3(e);
@@ -2287,6 +2917,39 @@ function runDiagnostics(){
     });
   });
 
+  /* Hauteur sous plafond. Une pièce trop basse ne permet ni la ventilation
+     ni le nettoyage en hauteur ; le seuil est relevé en zone protégée. */
+  state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").forEach(zo => {
+    const hyg = ZONES[zo.zone].hyg, mini = hyg >= 2 ? 3 : 2.5;
+    if (!(zo.h > 0)){
+      push({sev:"mineur", ref:zo.id, x:zo.x, z:zo.z, titre:"Hauteur sous plafond non renseignée",
+            detail:"« " + zo.label + " » n'a pas de hauteur : son volume ne peut pas être calculé."});
+    } else if (zo.h < mini){
+      push({sev:"majeur", ref:zo.id, x:zo.x, z:zo.z, titre:"Hauteur sous plafond insuffisante",
+            detail:"« " + zo.label + " » est à " + fmt(zo.h,2) + " m sous plafond, pour un minimum de " +
+                   fmt(mini,1) + " m" + (hyg >= 2 ? " en zone protégée" : "") +
+                   ". Ventilation, éclairage et nettoyage en hauteur deviennent impraticables."});
+    }
+  });
+
+  /* Encombrement vertical : un équipement plus haut que la pièce qui
+     l'abrite signale une erreur d'implantation ou une hauteur sous-estimée. */
+  state.objects.forEach(o => {
+    if (o.cat === "zones" || !(o.h > 0)) return;
+    const def = BY_ID[o.type]; if (def && (def.vehicule || def.shape === "road" || def.shape === "roundabout")) return;
+    const zo = zoneAt(o.x, o.z); if (!zo || zo.zone === "ext" || !(zo.h > 0)) return;
+    const haut = (o.y || 0) + o.h;
+    if (haut > zo.h + .01){
+      push({sev:"majeur", ref:o.id, x:o.x, z:o.z, titre:"Encombrement supérieur à la hauteur libre",
+            detail:"« " + o.label + " » culmine à " + fmt(haut,2) + " m alors que « " + zo.label +
+                   " » n'offre que " + fmt(zo.h,2) + " m sous plafond."});
+    } else if (o.cat !== "structure" && haut > zo.h - .3 && haut <= zo.h + .01){
+      push({sev:"mineur", ref:o.id, x:o.x, z:o.z, titre:"Passage libre réduit",
+            detail:"« " + o.label + " » laisse moins de 30 cm sous le plafond de « " + zo.label +
+                   " » : pas de place pour les gaines, l'éclairage ni le nettoyage."});
+    }
+  });
+
   /* Véhicules thermiques : leur place est sur la voirie extérieure. Un camion
      ou une voiture posé dans une zone bâtie signale une erreur d'implantation
      (gaz d'échappement, souillures de roues, hauteur libre insuffisante). */
@@ -2314,7 +2977,7 @@ function runDiagnostics(){
   const rank = {critique:0, majeur:1, mineur:2};
   issues.sort((a,b) => rank[a.sev] - rank[b.sev]);
   state.issues = issues;
-  renderDiag(); renderSummary(); need2D = true;
+  renderDiag(); renderSummary(); renderVolumes(); need2D = true;
 }
 
 function renderDiag(){
@@ -2342,6 +3005,44 @@ function renderDiag(){
   }));
 }
 
+/* Volumes des pièces. La hauteur sous plafond d'une zone est sa cote h :
+   elle est éditable directement dans le tableau, ce qui recalcule le volume
+   et le débit de renouvellement d'air sans passer par le panneau de gauche. */
+function zoneVolumes(){
+  return state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").map(o => {
+    const surf = o.w * o.d;
+    return {o:o, surf:surf, hsp:o.h || 0, vol:surf * (o.h || 0)};
+  }).sort((a,b) => b.vol - a.vol);
+}
+function renderVolumes(){
+  const el = $("#vol"); if (!el) return;
+  const rows = zoneVolumes();
+  const surf = rows.reduce((a,r) => a + r.surf, 0);
+  const vol  = rows.reduce((a,r) => a + r.vol, 0);
+  const hMoy = surf ? vol / surf : 0;
+  const tx = state.airRate == null ? 10 : state.airRate;
+  $("#voltag").textContent = rows.length ? fmt(vol, 0) + " m³" : "—";
+  if (!rows.length){
+    el.innerHTML = '<p class="empty">Aucune pièce définie.<br><br>Posez des zones sanitaires : leur surface et leur hauteur sous plafond donnent le volume.</p>';
+    return;
+  }
+  el.innerHTML =
+    '<div class="kv"><span>Surface des pièces</span><b>' + fmt(surf,0) + ' m²</b></div>' +
+    '<div class="kv"><span>Volume total</span><b>' + fmt(vol,0) + ' m³</b></div>' +
+    '<div class="kv"><span>Hauteur moyenne</span><b>' + fmt(hMoy,2) + ' m</b></div>' +
+    '<div class="row" style="margin:8px 0 4px"><label>Renouvellement</label><div class="f">' +
+      '<span class="unit" data-u="vol/h"><input type="number" id="airrate" value="' + tx + '" min="0" max="60" step="1"></span>' +
+      '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">' + fmt(vol * tx, 0) + ' m³/h</div></div></div>' +
+    '<p class="help">Cliquez une hauteur pour la corriger : le volume et le débit suivent. Ordre de grandeur usuel : 5 à 10 volumes/h en préparation, 15 à 20 en cuisson.</p>' +
+    '<table class="voltab"><thead><tr><th>Pièce</th><th>m²</th><th>HSP</th><th>m³</th></tr></thead><tbody>' +
+    rows.map(r =>
+      '<tr><td><i style="background:' + ZONES[r.o.zone].color + '"></i>' + esc(r.o.label) + '</td>' +
+      '<td>' + fmt(r.surf,0) + '</td>' +
+      '<td><input type="number" class="hsp" data-id="' + r.o.id + '" value="' + fmt(r.hsp,2) + '" step="0.1" min="0"></td>' +
+      '<td><b>' + fmt(r.vol,0) + '</b></td></tr>').join("") +
+    '</tbody></table>';
+}
+
 function renderSummary(){
   const S = state.site, el = $("#sum");
   const zones = state.objects.filter(o => o.cat === "zones");
@@ -2354,7 +3055,17 @@ function renderSummary(){
              '<div class="kv"><span>Surfaces zonées</span><b>' + fmt(built,0) + ' m² (' + fmt(built/total*100,0) + ' %)</b></div>' +
              '<div class="kv"><span>Linéaire cloisons</span><b>' + fmt(wallLin,1) + ' m</b></div>' +
              '<div class="kv"><span>Équipements</span><b>' + state.objects.filter(o => o.cat === "equip").length + '</b></div>' +
-             '<div class="kv" style="border:0"><span>Flux tracés</span><b>' + state.flux.length + '</b></div>';
+             '<div class="kv"><span>Flux tracés</span><b>' + state.flux.length + '</b></div>';
+  if (state.pipes.length){
+    const parRes = {};
+    state.pipes.forEach(pp => { parRes[pp.type] = (parRes[pp.type] || 0) + pipeLen(pp); });
+    const nAnc = state.pipes.reduce((n, pp) => n + (pp.a && byId(pp.a.id) ? 1 : 0) + (pp.b && byId(pp.b.id) ? 1 : 0), 0);
+    html += '<div class="kv"><span>Tuyauterie</span><b>' +
+            fmt(Object.keys(parRes).reduce((t,k) => t + parRes[k], 0), 1) + ' m · ' + nAnc + ' raccord' + (nAnc > 1 ? 's' : '') + '</b></div>' +
+            Object.keys(parRes).map(k =>
+              '<div class="kv" style="padding-left:10px"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:' +
+              RESEAUX[k].color + ';margin-right:6px"></i>' + RESEAUX[k].label + '</span><b>' + fmt(parRes[k],1) + ' m</b></div>').join("");
+  }
   const keys = Object.keys(byZone);
   if (keys.length){
     html += '<div class="bar">' + keys.map(k =>
@@ -2425,6 +3136,35 @@ function buildLibrary(filter){
     });
     det.appendChild(box); lib.appendChild(det);
   }
+
+  const reso = RES_KEYS.filter(k => !q || RESEAUX[k].label.toLowerCase().indexOf(q) >= 0);
+  if (reso.length){
+    const det = document.createElement("details"); det.className = "fam"; det.open = true;
+    det.innerHTML = "<summary>Réseaux et tuyauterie<em>" + reso.length + "</em></summary>";
+    const box = document.createElement("div"); box.className = "items";
+    reso.forEach(k => {
+      const d = RESEAUX[k];
+      const b = document.createElement("button");
+      b.className = "item"; b.dataset.r = k;
+      b.title = (d.note ? d.note + "\n" : "") + "Tracer le réseau : un clic par sommet. Un clic sur un équipement raccorde le tuyau à cet équipement.";
+      const c = document.createElement("canvas"), g = c.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      c.style.width = "34px"; c.style.height = "26px"; c.width = 34*dpr; c.height = 26*dpr; g.scale(dpr,dpr);
+      g.strokeStyle = d.color; g.lineWidth = Math.max(2.5, Math.min(6, d.dia/22)); g.lineCap = "round";
+      if (d.dash) g.setLineDash(d.dash.map(v => v/2));
+      g.beginPath(); g.moveTo(4,19); g.lineTo(14,19); g.lineTo(14,8); g.lineTo(30,8); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = "#fff"; g.strokeStyle = d.color; g.lineWidth = 1.6;
+      g.beginPath(); g.rect(1.5,16.5,5,5); g.fill(); g.stroke();
+      b.appendChild(c);
+      const t = document.createElement("div"); t.className = "t";
+      t.innerHTML = "<b>" + d.label + "</b><i>DN " + d.dia + " · axe " + fmt(d.y,1) + " m</i>";
+      b.appendChild(t);
+      b.addEventListener("click", () => { state.pipeType = k; setTool("tuyau"); });
+      box.appendChild(b);
+    });
+    det.appendChild(box); lib.appendChild(det);
+  }
 }
 
 function startPlacing(type){
@@ -2452,6 +3192,49 @@ function placeAt(x, z, keep){
   refreshAll();
 }
 
+/* Élément non-polyligne sous le point, zones comprises : sert de cible
+   d'accrochage pour les extrémités de tuyau. */
+function objAt(x, z){
+  const ord = drawOrder();
+  for (let i = ord.length - 1; i >= 0; i--){
+    const o = ord[i];
+    if (o.cat !== "zones" && hitObj(x, z, o)) return o;
+  }
+  return null;
+}
+
+function addPipePoint(x, z){
+  if (!state.pipeDraft){
+    const d0 = RESEAUX[state.pipeType] || RESEAUX.eau_f;
+    state.pipeDraft = {id:uid(), kind:"pipe", type:state.pipeType || "eau_f", dia:d0.dia, y:d0.y, points:[], a:null, b:null};
+  }
+  const dr = state.pipeDraft, cible = objAt(x, z);
+  if (cible){
+    /* Accrochage : le point se cale sur l'élément visé, au point cliqué. */
+    dr.points.push({x:x, z:z});
+    if (dr.points.length === 1) dr.a = makeAnchor(x, z, cible);
+    else dr.b = makeAnchor(x, z, cible);
+    toast("Raccordé à « " + cible.label + " »");
+  } else {
+    dr.points.push({x:snapV(x), z:snapV(z)});
+    if (dr.points.length > 1) dr.b = null;
+  }
+  const def = RESEAUX[dr.type] || RESEAUX.eau_f;
+  showHint("Réseau « " + def.label + " » : " + dr.points.length +
+           " sommet(s). Cliquez sur un équipement pour l'y raccorder. Double-clic ou Entrée pour valider, Échap pour abandonner.");
+  need2D = true; need3D = true;
+}
+function endPipeDraft(){
+  const pp = state.pipeDraft;
+  state.pipeDraft = null;
+  if (pp && pp.points.length >= 2){
+    commit(); state.pipes.push(pp); state.selection = [pp.id];
+    const def = RESEAUX[pp.type];
+    toast("Réseau tracé : " + (def ? def.label : pp.type) + " — " + fmt(pipeLen(pp),1) + " m");
+  }
+  hideHint(); refreshAll();
+}
+
 function addFluxPoint(x, z){
   if (!state.fluxDraft) state.fluxDraft = {id:uid(), type:state.fluxType || "entrant", points:[], width:1};
   state.fluxDraft.points.push({x:snapV(x), z:snapV(z)});
@@ -2470,7 +3253,7 @@ function endFluxDraft(){
   hideHint(); refreshAll();
 }
 function cancelDraft(){
-  state.fluxDraft = null; state.measure = null;
+  state.fluxDraft = null; state.pipeDraft = null; state.measure = null;
   if (state.placing) startPlacing(state.placing); else hideHint();
   need2D = true; need3D = true;
 }
@@ -2481,10 +3264,15 @@ function setTool(t, silent){
   state.tool = t;
   $$("#tools .btn").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
   if (t !== "flux" && state.fluxDraft) endFluxDraft();
+  if (t !== "tuyau" && state.pipeDraft) endPipeDraft();
   if (t !== "mesure") state.measure = null;
   if (t === "flux" && !silent){
     const def = FLUX[state.fluxType || "entrant"] || FLUX.entrant;
     showHint("Flux « " + def.label + " » : cliquez chaque point au sol, double-clic pour clore.");
+  }
+  if (t === "tuyau" && !silent){
+    const def = RESEAUX[state.pipeType || "eau_f"] || RESEAUX.eau_f;
+    showHint("Réseau « " + def.label + " » : cliquez chaque point du parcours. Un clic sur un équipement raccorde le tuyau à cet équipement.");
   }
   if (t === "mesure" && !silent) showHint("Cliquez 2 points pour mesurer la distance.");
   if (t === "select" && !state.placing) hideHint();
@@ -2562,6 +3350,47 @@ function buildProps(){
     el.innerHTML = '<p class="empty">Aucun élément sélectionné.<br><br>' +
       'Choisissez un équipement ou une zone dans la bibliothèque pour l\'implanter. ' +
       '<kbd>Maj</kbd> + clic permet une sélection multiple.</p>';
+    return;
+  }
+  const pl = selected().filter(isPipe);
+  if (pl.length === 1 && !objs.length && !fl.length){
+    const pp = pl[0], d = RESEAUX[pp.type] || RESEAUX.eau_f;
+    const bout = (an, nom) => {
+      const o = an && byId(an.id);
+      return '<div class="kv"><span>' + nom + '</span><b style="color:' + (o ? "var(--acc)" : "var(--ink-3)") + '">' +
+             (o ? esc(o.label) : "libre") + '</b></div>';
+    };
+    el.innerHTML =
+      '<div class="row"><label>Réseau</label><div class="f"><select id="p-rtype">' +
+      RES_KEYS.map(k => '<option value="' + k + '"' + (k === pp.type ? " selected":"") + '>' + RESEAUX[k].label + '</option>').join("") +
+      '</select></div></div>' +
+      '<div class="row"><label>Diamètre</label><div class="f"><span class="unit" data-u="mm"><input type="number" id="p-rdia" value="' + pipeDia(pp) + '" step="5" min="10"></span>' +
+      '<span class="unit" data-u="m"><input type="number" id="p-ry" value="' + fmt(pipeY(pp),2) + '" step="0.1" min="0"></span></div></div>' +
+      '<div class="row"><label></label><div class="f" style="color:var(--ink-3);font-size:10.5px">diamètre nominal · hauteur d\'axe</div></div>' +
+      bout(pp.a, "Raccord départ") + bout(pp.b, "Raccord arrivée") +
+      '<div class="kv"><span>Sommets</span><b>' + pp.points.length + '</b></div>' +
+      '<div class="kv" style="border:0"><span>Développé</span><b>' + fmt(pipeLen(pp),1) + ' m</b></div>' +
+      (d.note ? '<p class="help"><b>Règle métier :</b> ' + d.note + '</p>' : '') +
+      '<p class="help">Sélectionnez le tuyau puis faites glisser une extrémité sur un équipement pour l\'y raccorder, ou dans le vide pour l\'en détacher.</p>' +
+      '<hr class="sep"><div class="split"><button class="btn sm" id="p-rrev">Inverser le sens</button>' +
+      '<button class="btn sm" id="p-rfree">Détacher</button></div>' +
+      '<hr class="sep"><button class="btn sm danger" id="p-rdel">Supprimer le tuyau</button>';
+    $("#p-rtype").addEventListener("change", e => { commit(); pp.type = e.target.value; markDirty(); refreshProps(true); });
+    $("#p-rdia").addEventListener("change", e => { commit(); pp.dia = Math.max(10, +e.target.value || 50); markDirty(); });
+    $("#p-ry").addEventListener("change", e => { commit(); pp.y = Math.max(0, +e.target.value || 0); markDirty(); });
+    $("#p-rrev").addEventListener("click", () => {
+      commit();
+      pp.points.reverse();
+      const t = pp.a; pp.a = pp.b; pp.b = t;
+      markDirty(); refreshProps(true);
+    });
+    $("#p-rfree").addEventListener("click", () => {
+      commit();
+      const pts = pipePts(pp);                              // on fige la position actuelle
+      pp.points = pts; pp.a = null; pp.b = null;
+      markDirty(); refreshProps(true); toast("Extrémités détachées");
+    });
+    $("#p-rdel").addEventListener("click", deleteSelection);
     return;
   }
   if (fl.length === 1 && !objs.length){
@@ -2729,6 +3558,7 @@ function deleteSelection(){
   commit();
   state.objects = state.objects.filter(o => state.selection.indexOf(o.id) < 0 || o.locked);
   state.flux = state.flux.filter(f => state.selection.indexOf(f.id) < 0);
+  state.pipes = state.pipes.filter(pp => state.selection.indexOf(pp.id) < 0);
   state.selection = [];
   refreshAll(); toast("Éléments supprimés");
 }
@@ -2738,7 +3568,12 @@ function duplicateSelection(){
   const ids = [];
   sel.forEach(o => {
     const c = JSON.parse(JSON.stringify(o)); c.id = uid(); ids.push(c.id);
-    if (isFlux(c)){ c.points = c.points.map(p => ({x:p.x + state.site.grid, z:p.z + state.site.grid})); state.flux.push(c); }
+    if (isPipe(c)){
+      c.points = c.points.map(p => ({x:p.x + state.site.grid, z:p.z + state.site.grid}));
+      c.a = null; c.b = null;                              // une copie n'hérite pas des raccords
+      state.pipes.push(c);
+    }
+    else if (isFlux(c)){ c.points = c.points.map(p => ({x:p.x + state.site.grid, z:p.z + state.site.grid})); state.flux.push(c); }
     else { c.x += state.site.grid; c.z += state.site.grid; c.locked = false; state.objects.push(c); }
   });
   state.selection = ids; refreshAll();
@@ -2800,7 +3635,7 @@ function nudge(dx, dz){
   commit();
   objs.forEach(o => {
     if (o.locked) return;
-    if (isFlux(o)) o.points = o.points.map(p => ({x:p.x+dx, z:p.z+dz}));
+    if (hasPoints(o)) o.points = o.points.map(p => ({x:p.x+dx, z:p.z+dz}));
     else { o.x += dx; o.z += dz; }
   });
   markDirty(); syncPropValues();
@@ -2808,7 +3643,7 @@ function nudge(dx, dz){
 
 /* Verrouillage du plan : mode navigation. La sélection courante est
    conservée, seules les actions qui modifient l'implantation sont neutralisées. */
-const EDIT_KEYS = /^(Delete|Backspace|r|R|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|f|F|m|M)$/;
+const EDIT_KEYS = /^(Delete|Backspace|r|R|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|f|F|m|M|t|T)$/;
 function setNavLock(v){
   state.navLock = v === undefined ? !state.navLock : !!v;
   if (state.navLock){
@@ -2840,7 +3675,7 @@ function refreshStatus(){
   renderViewTag();
 }
 function refreshAll(){
-  markDirty(); refreshProps(true); refreshStatus(); renderSummary(); syncSiteInputs();
+  markDirty(); refreshProps(true); refreshStatus(); renderSummary(); renderVolumes(); syncSiteInputs();
 }
 function syncZoomInputs(){
   $("#s-zoom").value = state.cam2.zoom; $("#s-zoomn").value = Math.round(state.cam2.zoom*10)/10;
@@ -2860,7 +3695,7 @@ function download(blob, name){
 }
 function slug(s){ return (s||"implantation").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
 function exportJSON(){
-  const data = {format:"agroplan.v1", date:new Date().toISOString(), site:state.site, objects:state.objects, flux:state.flux};
+  const data = {format:"agroplan.v1", date:new Date().toISOString(), site:state.site, objects:state.objects, flux:state.flux, pipes:state.pipes};
   download(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}), slug(state.site.name) + ".json");
   toast("Projet exporté en JSON");
 }
@@ -2872,8 +3707,9 @@ function importJSON(text){
   state.site = Object.assign({name:"Site importé", w:74, d:42, h:7, grid:1, snap:true, axis:"+x"}, d.site);
   state.objects = d.objects.map(o => Object.assign({rot:0, y:0, locked:false, zone:"ext", cat:"equip"}, o));
   state.flux = (d.flux || []).map(f => Object.assign({width:1, type:"entrant"}, f));
+  state.pipes = (d.pipes || []).map(pp => Object.assign({kind:"pipe", type:"eau_f", a:null, b:null}, pp));
   let max = 0;
-  state.objects.concat(state.flux).forEach(o => { const n = parseInt(String(o.id).replace(/\D/g,""),10); if (n > max) max = n; });
+  state.objects.concat(state.flux).concat(state.pipes).forEach(o => { const n = parseInt(String(o.id).replace(/\D/g,""),10); if (n > max) max = n; });
   state.seq = max + 1;
   state.selection = []; siteKey = "";
   refreshAll(); fit2D(); if (THREE_OK) fit3D();
@@ -2894,6 +3730,11 @@ function exportCSV(){
   state.objects.forEach(o => rows.push([o.type, o.label, ZONES[o.zone] ? ZONES[o.zone].label : o.zone,
     fmt(o.w), fmt(o.d), fmt(o.h), fmt(o.rot,0), fmt(o.x), fmt(o.z), fmt(o.w*o.d)]));
   state.flux.forEach(f => rows.push(["flux", FLUX[f.type] ? FLUX[f.type].label : f.type, "-", "-", "-", "-", "-", fmt(f.points[0].x), fmt(f.points[0].z), fmt(fluxLen(f)) + " m"]));
+  state.pipes.forEach(pp => {
+    const d = RESEAUX[pp.type], a = pp.a && byId(pp.a.id), b = pp.b && byId(pp.b.id);
+    rows.push(["réseau", (d ? d.label : pp.type) + (a || b ? " (" + (a ? a.label : "libre") + " → " + (b ? b.label : "libre") + ")" : ""),
+      "DN " + pipeDia(pp), "-", "-", fmt(pipeY(pp),2), "-", fmt(pipePts(pp)[0].x), fmt(pipePts(pp)[0].z), fmt(pipeLen(pp)) + " m"]);
+  });
   const csv = "\ufeff" + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(";")).join("\r\n");
   download(new Blob([csv], {type:"text/csv;charset=utf-8"}), slug(state.site.name) + "-nomenclature.csv");
   toast("Nomenclature CSV téléchargée");
@@ -2904,7 +3745,11 @@ function buildLegend(){
     "<h4>Classes sanitaires</h4>" +
     ZONE_KEYS.map(k => '<div class="lg"><i style="background:' + ZONES[k].color + '"></i>' + ZONES[k].label + '</div>').join("") +
     "<h4>Circulation & Flux</h4>" +
-    Object.keys(FLUX).map(k => '<div class="lg"><i class="ln" style="border-top-color:' + FLUX[k].color + ';width:14px"></i>' + FLUX[k].label + '</div>').join("");
+    Object.keys(FLUX).map(k => '<div class="lg"><i class="ln" style="border-top-color:' + FLUX[k].color + ';width:14px"></i>' + FLUX[k].label + '</div>').join("") +
+    "<h4>Réseaux</h4>" +
+    RES_KEYS.map(k => '<div class="lg"><i class="ln" style="border-top-color:' + RESEAUX[k].color +
+      ';border-top-style:' + (RESEAUX[k].dash ? "dashed" : "solid") + ';width:14px"></i>' +
+      RESEAUX[k].label + ' <span style="color:var(--ink-3)">DN ' + RESEAUX[k].dia + '</span></div>').join("");
   $("#keys").innerHTML =
     '<div class="kv"><span>Sélectionner / Poser</span><b>clic</b></div>' +
     '<div class="kv"><span>Déplacer la vue</span><b>clic droit / Espace</b></div>' +
@@ -2913,6 +3758,8 @@ function buildLegend(){
     '<div class="kv"><span>Rotation 90°</span><b>R / Maj+R</b></div>' +
     '<div class="kv"><span>Supprimer</span><b>Suppr</b></div>' +
     '<div class="kv"><span>Annuler / Rétablir</span><b>Ctrl+Z / Y</b></div>' +
+    '<div class="kv"><span>Tracer un réseau</span><b>T</b></div>' +
+    '<div class="kv"><span>Verrouiller le plan</span><b>L</b></div>' +
     '<div class="kv"><span>Recadrer</span><b>F2</b></div>';
 }
 
@@ -2928,11 +3775,11 @@ function add(type, x, z, over){
 }
 
 function loadDemo(){
-  state.objects = []; state.flux = []; state.selection = []; state.seq = 1;
+  state.objects = []; state.flux = []; state.pipes = []; state.selection = []; state.seq = 1;
   /* Le site déborde le bâtiment de 18 m à l'ouest (manœuvre PL réception),
      18 m à l'est (manœuvre PL expédition) et 16 m au sud (parking VL).
      Le bâtiment occupe x 18 → 82, z 0 → 40. */
-  state.site = {name:"Usine de plats cuisinés — plan de site", w:100, d:56, h:7, grid:1, snap:true, axis:"+x"};
+  state.site = {name:"Usine de plats cuisinés — plan de site", w:100, d:60, h:7, grid:1, snap:true, axis:"+x"};
 
   /* --- Enveloppe --- */
   add("mur_ext", 50,    0.12, {w:64, d:.25, label:"Façade nord"});
@@ -2943,8 +3790,8 @@ function loadDemo(){
   /* --- Zones intérieures : marche en avant d'ouest en est --- */
   add("z_quai_r",     23,   8,   {w:8,  d:12});
   add("z_recep",      35,   8,   {w:14, d:12});
-  add("z_stock_mp",   23,   26,  {w:8,  d:14});
-  add("z_stock_sec",  35,   17,  {w:10, d:5});
+  add("z_stock_mp",   23,   26,  {w:8,  d:14, h:8});
+  add("z_stock_sec",  35,   17,  {w:10, d:5,  h:6.5});
   add("z_vest",       35,   23,  {w:10, d:6});
   add("z_dechet",     34,   33,  {w:8,  d:6});
   add("z_chim_plonge",42,   36,  {w:8,  d:6});
@@ -2953,7 +3800,7 @@ function loadDemo(){
   add("z_cuisson",    51,   26,  {w:14, d:12});
   add("z_refroid",    65,   26,  {w:10, d:12});
   add("z_condi1",     65,   9,   {w:10, d:14});
-  add("z_condi2",     75,   12,  {w:8,  d:20});
+  add("z_condi2",     75,   12,  {w:8,  d:20, h:6.5});
   add("z_expe",       75,   33,  {w:8,  d:10});
   add("z_tech",       53,   36,  {w:10, d:5});
   add("sas_hyg",      43.5, 9,   {w:3,  d:5, label:"Sas hygiène production"});
@@ -3008,18 +3855,43 @@ function loadDemo(){
   add("ria",          44,   17.5, {rot:90}); add("ria", 72, 25, {rot:90});
 
   /* --- Extérieur : voirie PL, parking VL, déchets, utilités --- */
-  add("step",   90,   48);
+  /* Voirie : boucle PL périphérique, accès VL et cheminement piéton */
+  add("voie_pl",  50, 46, {w:100, d:6, label:"Voie lourde périphérique"});
+  add("voie_pl",   9, 20, {w:8,  d:40, label:"Voie PL — quais réception"});
+  add("route",    91, 20, {w:8,  d:40, label:"Voie d'accès expédition"});
+  add("trottoir", 25, 41, {w:14, d:1.5});
+  add("trottoir", 61, 41, {w:42, d:1.5});
+  add("step",   90,   54);
   add("forage", 8,    30);
   add("auvent", 15,   8,  {w:6, d:16, label:"Auvent de quai réception"});
   add("silo", 14, 25);
-  add("benne_dech", 34, 42.5);
+  add("benne_dech", 36, 42.6);
   add("camion", 9.6, 5,  {label:"PL à quai — réception"});
   add("camion", 9.6, 11, {label:"PL en attente"});
   add("camion", 90.5, 33,{label:"PL à quai — expédition"});
   add("camion", 62, 46,  {label:"PL sur aire de stationnement"});
-  add("z_parking", 37, 49, {w:30, d:10});
-  [25, 28, 31, 34, 37, 40, 43, 46, 49].forEach(px => add("place_parking", px, 46.5));
-  [25, 28, 34, 46].forEach(px => add("voiture", px, 46.5));
+  add("z_parking", 37, 52.5, {w:30, d:6});
+  [25, 28, 31, 34, 37, 40, 43, 46, 49].forEach(px => add("place_parking", px, 52.5));
+  [25, 28, 34, 46].forEach(px => add("voiture", px, 52.5));
+
+  /* --- Réseaux : raccordés aux équipements par leurs extrémités --- */
+  const par = (type, pts, aId, bId) => {
+    const d = RESEAUX[type];
+    const pp = {id:uid(), kind:"pipe", type:type, dia:d.dia, y:d.y, points:pts.map(q => ({x:q[0], z:q[1]})), a:null, b:null};
+    const oa = byId(aId), ob = byId(bId);
+    if (oa) pp.a = makeAnchor(pts[0][0], pts[0][1], oa);
+    if (ob) pp.b = makeAnchor(pts[pts.length-1][0], pts[pts.length-1][1], ob);
+    state.pipes.push(pp);
+    return pp;
+  };
+  const idOf = t => { const o = state.objects.filter(x => x.type === t)[0]; return o ? o.id : null; };
+  const cuveId = idOf("cuve"), fourId = idOf("four"), nepId = idOf("cip") || idOf("laveur");
+  par("eau_f",  [[23, 2.5], [48, 2.5], [48, 11.4]], null, cuveId);
+  par("nep",    [[48, 12.6], [48, 18.5], [30, 18.5]], cuveId, nepId);
+  par("vapeur", [[46, 39], [51, 39], [51, 24.2]], null, fourId);
+  par("evac",   [[51, 16.5], [51, 33], [35, 33]], null, idOf("bac_dech"));
+  par("air",    [[55.5, 35.8], [55.5, 30], [66, 30], [66, 13]], idOf("compresseur"), idOf("condi"));
+  par("froid",  [[85, 12], [83, 12], [83, 24], [65, 24]], idOf("groupe_froid"), idOf("cellule"));
 
   /* --- Flux --- */
   state.flux = [
@@ -3028,7 +3900,7 @@ function loadDemo(){
     {id:uid(), type:"enc",     width:1.2, points:[{x:48,z:9},{x:54,z:9},{x:54,z:22.5},{x:62,z:22.5},{x:65,z:26},{x:68,z:22},{x:68,z:18},{x:68,z:14}]},
     {id:uid(), type:"pf",      width:1.2, points:[{x:62,z:5},{x:70,z:5},{x:70,z:12},{x:75,z:12},{x:75,z:22},{x:77,z:33},{x:80,z:33}]},
     {id:uid(), type:"sortant", width:1.2, points:[{x:77,z:33},{x:80.8,z:33},{x:90,z:33}]},
-    {id:uid(), type:"dech",    width:.8,  points:[{x:49,z:27},{x:42,z:31},{x:35,z:33},{x:34,z:42.5}]},
+    {id:uid(), type:"dech",    width:.8,  points:[{x:49,z:27},{x:42,z:31},{x:35,z:33},{x:36,z:42.6}]},
     {id:uid(), type:"pers",    width:.8,  points:[{x:35,z:23},{x:43,z:21},{x:43.5,z:12},{x:43.5,z:9},{x:48,z:11}]},
     {id:uid(), type:"emb",     width:.8,  points:[{x:20,z:11},{x:30,z:11},{x:36,z:12}]}
   ];
@@ -3049,13 +3921,25 @@ function bindUI(){
   $("#gridstep").addEventListener("change", e => { state.site.grid = +e.target.value; siteKey = ""; markDirty(); });
   $("#fit").addEventListener("click", () => { state.view === "3d" ? fit3D() : fit2D(); });
   $("#navlock").addEventListener("click", () => setNavLock());
+  /* Tableau des volumes : édition directe des hauteurs sous plafond. */
+  $("#vol").addEventListener("change", e => {
+    const t = e.target;
+    if (t.id === "airrate"){
+      state.airRate = clamp(+t.value || 0, 0, 60); renderVolumes(); return;
+    }
+    if (t.classList.contains("hsp")){
+      const o = byId(t.dataset.id); if (!o) return;
+      commit(); o.h = Math.max(0, +String(t.value).replace(",", ".") || 0);
+      markDirty(); renderVolumes(); refreshProps(true);
+    }
+  });
 
   $("#demo").addEventListener("click", () => {
     askConfirm("Charger l'exemple", "Remplacer l'implantation actuelle par le site modèle complet ?", loadDemo);
   });
   $("#clear").addEventListener("click", () => {
     askConfirm("Effacer le plan", "Voulez-vous supprimer tous les équipements et flux actuels ?", () => {
-      commit(); state.objects = []; state.flux = []; state.selection = []; refreshAll();
+      commit(); state.objects = []; state.flux = []; state.pipes = []; state.selection = []; refreshAll();
     });
   });
 
@@ -3084,7 +3968,7 @@ function bindUI(){
   $("#s-zoom").addEventListener("input", e => { state.cam2.zoom = +e.target.value; syncZoomInputs(); need2D = true; });
   $("#s-zoomn").addEventListener("change", e => { state.cam2.zoom = clamp(+e.target.value, 2, 60); syncZoomInputs(); need2D = true; });
   const vis = (sel, key) => $(sel).addEventListener("change", e => { state.show[key] = e.target.checked; markDirty(); });
-  vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux");
+  vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux"); vis("#v-pipes","pipes");
   vis("#v-labels","labels"); vis("#v-issues","issues"); vis("#v-shadow","shadows");
 
   const st = $("#stage");
@@ -3118,17 +4002,18 @@ function bindUI(){
     if (ctrl && e.key.toLowerCase() === "s"){ e.preventDefault(); exportJSON(); return; }
     if (ctrl && e.key.toLowerCase() === "a"){
       e.preventDefault();
-      state.selection = state.objects.map(o => o.id).concat(state.flux.map(f => f.id));
+      state.selection = state.objects.map(o => o.id).concat(state.flux.map(f => f.id)).concat(state.pipes.map(pp => pp.id));
       refreshProps(true); refreshStatus(); need2D = true; need3D = true; return;
     }
     switch (e.key){
       case "Delete": case "Backspace": e.preventDefault(); deleteSelection(); break;
-      case "Escape": if (state.fluxDraft || state.placing || state.measure) cancelDraft();
+      case "Escape": if (state.fluxDraft || state.pipeDraft || state.placing || state.measure) cancelDraft();
                      else { state.selection = []; refreshProps(true); refreshStatus(); need2D = true; need3D = true; } break;
-      case "Enter": if (state.fluxDraft) endFluxDraft(); break;
+      case "Enter": if (state.fluxDraft) endFluxDraft(); else if (state.pipeDraft) endPipeDraft(); break;
       case "r": case "R": rotateSel(e.shiftKey ? -90 : 90); break;
       case "v": case "V": setTool("select"); break;
       case "f": case "F": setTool("flux"); break;
+      case "t": case "T": setTool("tuyau"); break;
       case "m": case "M": setTool("mesure"); break;
       case "2": setView("2d"); break;
       case "3": setView("3d"); break;
