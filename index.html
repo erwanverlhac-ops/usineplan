@@ -154,8 +154,8 @@ input[type=range]{accent-color:var(--acc);width:100%}
 .voltab td{padding:2px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .voltab td:first-child{text-align:left;white-space:normal;line-height:1.25}
 .voltab td i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:1px}
-.voltab input.hsp{width:52px;padding:1px 4px;text-align:right;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--ink)}
-.voltab input.hsp:focus{border-color:var(--acc);outline:none}
+.voltab input.hsp,.voltab input.tmp{width:48px;padding:1px 4px;text-align:right;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--ink)}
+.voltab input.hsp:focus,.voltab input.tmp:focus{border-color:var(--acc);outline:none}
 .unit{position:relative;flex:1}
 .unit input{padding-right:22px}
 .unit::after{content:attr(data-u);position:absolute;right:7px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:10.5px;pointer-events:none}
@@ -369,13 +369,13 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
 <script>
 "use strict";
 const ZONES = {
-  ext:     {label:"Extérieur / voirie",              color:"#7b8899", hyg:0, ordre:0},
-  grise:   {label:"Zone grise",                      color:"#d08a2c", hyg:1, ordre:1},
-  froid:   {label:"Zone froide",                     color:"#22b8cf", hyg:2, ordre:2},
-  propre:  {label:"Zone propre",                     color:"#3aa76d", hyg:2, ordre:2},
-  blanche: {label:"Zone haute hygiène",              color:"#3d9be9", hyg:3, ordre:3},
-  expe:    {label:"Conditionnement 2 / expédition",  color:"#9b6ef3", hyg:1, ordre:4},
-  tech:    {label:"Locaux techniques et sociaux",    color:"#5d6c80", hyg:0, ordre:0}
+  ext:     {label:"Extérieur / voirie",              color:"#7b8899", hyg:0, ordre:0, temp:null},
+  grise:   {label:"Zone grise",                      color:"#d08a2c", hyg:1, ordre:1, temp:12},
+  froid:   {label:"Zone froide",                     color:"#22b8cf", hyg:2, ordre:2, temp:4},
+  propre:  {label:"Zone propre",                     color:"#3aa76d", hyg:2, ordre:2, temp:12},
+  blanche: {label:"Zone haute hygiène",              color:"#3d9be9", hyg:3, ordre:3, temp:10},
+  expe:    {label:"Conditionnement 2 / expédition",  color:"#9b6ef3", hyg:1, ordre:4, temp:8},
+  tech:    {label:"Locaux techniques et sociaux",    color:"#5d6c80", hyg:0, ordre:0, temp:18}
 };
 const ZONE_KEYS = Object.keys(ZONES);
 
@@ -400,6 +400,16 @@ const CATALOG = [
   {id:"bat_xl", fam:"Bâtiments", cat:"structure", shape:"building", label:"Bloc bâtiment 80 × 50 m", w:80, d:50, h:9,  color:"#9aa7b4", zone:"ext", note:"Bloc préconstruit. Au-delà de 1 000 m², vérifier le découpage en cellules coupe-feu."},
   {id:"bat_libre",fam:"Bâtiments",cat:"structure",shape:"building", label:"Bloc bâtiment sur mesure", w:30, d:20, h:7,  color:"#8fa0b3", zone:"ext", note:"Saisissez directement la largeur, la longueur et la hauteur voulues."},
   {id:"auvent", fam:"Bâtiments", cat:"structure", shape:"canopy",   label:"Auvent de quai",          w:18, d:5,  h:5,  color:"#78909c", zone:"ext", note:"Protège les quais des intempéries : évite la rupture de la chaîne du froid au transfert."},
+  /* Espaces verts et occupants */
+  {id:"pelouse",  fam:"Abords et vivant", cat:"structure", shape:"lawn",  label:"Espace vert / pelouse", w:20, d:12, h:.02, color:"#4e8b4a", zone:"ext", note:"Tenir les abords tondus et dégagés sur 1 m le long des murs : c'est la première barrière contre les nuisibles."},
+  {id:"arbre",    fam:"Abords et vivant", cat:"equip",     shape:"tree",  label:"Arbre",                 w:5,  d:5,  h:7,   color:"#3f7d3c", zone:"ext", note:"Jamais au droit d'une prise d'air neuf ni d'un quai : feuilles, oiseaux et insectes. Éloigner d'au moins 10 m des façades."},
+  {id:"mouton",   fam:"Abords et vivant", cat:"equip",     shape:"sheep", label:"Mouton (éco-pâturage)", w:1.2,d:.6, h:.9,  color:"#e8e3d9", zone:"ext", vivant:true, note:"Éco-pâturage possible sur les abords enherbés, mais clôturé et tenu à l'écart des quais et des zones de stockage."},
+  {id:"ruche",    fam:"Abords et vivant", cat:"equip",     shape:"hive",  label:"Ruche",                 w:.5, d:.45,h:.8,  color:"#c9a227", zone:"ext", vivant:true, note:"En limite de site, entrée tournée à l'opposé des bâtiments, à plus de 30 m des quais et des ouvrants."},
+  {id:"operateur",fam:"Abords et vivant", cat:"equip",     shape:"person",label:"Opérateur",             w:.6, d:.4, h:1.75,color:"#4cc9f0", zone:"propre", vivant:true, note:"Repère d'effectif au poste : sert à vérifier les dégagements, les croisements et la largeur des allées."},
+  {id:"sol_carrel",fam:"Bâtiments", cat:"structure", shape:"tiles",      label:"Sol carrelé",             w:12, d:8,  h:.02, color:"#cfd8dc", zone:"ext", note:"Carrelage à joints époxy, classement antidérapant R11 minimum en zone humide. Pente de 1,5 % vers les caniveaux."},
+  {id:"sol_resine",fam:"Bâtiments", cat:"structure", shape:"tiles",      label:"Sol résine alimentaire",  w:12, d:8,  h:.02, color:"#9ba7b0", zone:"ext", resine:true, note:"Résine sans joint, remontées en plinthe à gorge arrondie : pas d'angle droit où la souillure s'accroche."},
+  {id:"pass_pieton",fam:"Bâtiments",cat:"structure", shape:"crossing",   label:"Passage piéton (extérieur)", w:6, d:3, h:.02, color:"#eceff1", zone:"ext", note:"Au droit des cheminements, visible depuis la cabine PL. Éclairage et marquage rétroréfléchissant."},
+  {id:"allee_pieton",fam:"Bâtiments",cat:"structure",shape:"walkline",   label:"Allée piétonne balisée (usine)", w:20, d:1.2, h:.01, color:"#ffd54f", zone:"tech", note:"Marquage au sol continu séparant les piétons des chariots. Largeur utile de 1 m, jamais encombrée par des palettes."},
   {id:"route",     fam:"Bâtiments", cat:"structure", shape:"road",       label:"Route (double sens)",     w:40, d:6,  h:.02, color:"#3a4350", zone:"ext", note:"6 m pour un double sens, 3,50 m en sens unique. Séparer les flux PL des accès VL et piétons."},
   {id:"voie_pl",   fam:"Bâtiments", cat:"structure", shape:"road",       label:"Voie lourde PL",          w:40, d:8,  h:.02, color:"#333c48", zone:"ext", lourde:true, note:"Chaussée dimensionnée pour 44 t. Rayon intérieur de giration de 12 m minimum en virage."},
   {id:"giratoire", fam:"Bâtiments", cat:"structure", shape:"roundabout", label:"Aire de retournement PL", w:26, d:26, h:.02, color:"#3a4350", zone:"ext", note:"26 m de diamètre extérieur au minimum pour retourner un semi-remorque sans manœuvre."},
@@ -489,6 +499,9 @@ const CATALOG = [
   {id:"poste_info", fam:"Logistique", cat:"equip", shape:"desk",        label:"Poste informatique",      w:1.4,d:.8, h:1.6, color:"#5d6c80", zone:"propre"},
   {id:"place_parking",fam:"Logistique",cat:"equip",shape:"parking_spot",label:"Place de stationnement VL",w:2.5,d:5,  h:.04, color:"#eceff1", zone:"ext"},
   {id:"voiture",    fam:"Logistique", cat:"equip", shape:"car",         label:"Voiture (VL)",            w:1.85,d:4.4,h:1.5, color:"#90a4ae", zone:"ext", vehicule:true, note:"Stationnement personnel et visiteurs à l'écart des voies PL et des quais."},
+  {id:"silo_toile", fam:"Logistique", cat:"equip", shape:"silo_soft",  label:"Silo textile à farine",  w:2.4,d:2.4,h:4.5,color:"#e3e7ea", zone:"tech", note:"Silo souple intérieur : mise à la terre obligatoire (ATEX poussières), inspection périodique de la toile et des coutures."},
+  {id:"bigbag",     fam:"Logistique", cat:"equip", shape:"bigbag",     label:"Big bag (1 t)",          w:1,  d:1,  h:1.5, color:"#dcd3b4", zone:"grise", note:"Ne jamais poser à même le sol en zone propre : palette dédiée, housse conservée jusqu'au poste de vidange."},
+  {id:"vide_bigbag",fam:"Logistique", cat:"equip", shape:"bigbag_st",  label:"Station de vidange big bag", w:2,d:2, h:3.6, color:"#9fb0c0", zone:"propre", note:"Captation des poussières au point de déchargement, manchette de vidange étanche, mise à la terre du châssis."},
   {id:"camion",     fam:"Logistique", cat:"equip", shape:"truck",       label:"Semi-remorque frigo (PL)",w:16.5,d:2.55,h:4, color:"#37474f", zone:"ext", vehicule:true, note:"Aire de manœuvre de 25 m devant le quai. Contrôle de température et propreté de la caisse à réception."},
   /* Utilités techniques et sécurité */
   {id:"groupe_froid",fam:"Utilités et sécurité",cat:"equip",shape:"chiller",    label:"Groupe froid (condenseur)", w:3.2,d:1.6,h:2.2, color:"#78909c", zone:"tech", note:"À l'extérieur ou en local ventilé, à l'écart des prises d'air neuf. Dégagement de 1 m sur trois faces pour la maintenance."},
@@ -496,7 +509,15 @@ const CATALOG = [
   {id:"step",        fam:"Utilités et sécurité",cat:"equip",shape:"wwtp",       label:"Station d'épuration",       w:12, d:8,  h:3.5, color:"#4d7c8a", zone:"ext", sale:true, note:"Sous le vent des ateliers, loin des prises d'air et des quais. Prétraitement des graisses avant rejet, bassin tampon dimensionné sur la pointe de nettoyage."},
   {id:"forage",      fam:"Utilités et sécurité",cat:"equip",shape:"borehole",   label:"Forage d'eau",              w:1.6,d:1.6,h:1.2, color:"#2f9bd1", zone:"ext", note:"Périmètre de protection immédiate clôturé, tête de forage capotée et surélevée. Analyses de potabilité selon le plan de surveillance."},
   {id:"extincteur",  fam:"Utilités et sécurité",cat:"equip",shape:"extinguisher",label:"Extincteur",               w:.3, d:.25,h:.95,color:"#c62828", zone:"tech", note:"Un appareil adapté au risque tous les 200 m² et à moins de 15 m de tout point. Signalisation en hauteur, accès toujours dégagé."},
-  {id:"ria",         fam:"Utilités et sécurité",cat:"equip",shape:"extinguisher",label:"RIA (robinet incendie)",   w:.7, d:.3, h:1.4, color:"#b71c1c", zone:"tech", note:"Couverture de toute la surface par au moins un jet. Ne jamais encombrer l'accès au dévidoir."}
+  {id:"ria",         fam:"Utilités et sécurité",cat:"equip",shape:"extinguisher",label:"RIA (robinet incendie)",   w:.7, d:.3, h:1.4, color:"#b71c1c", zone:"tech", note:"Couverture de toute la surface par au moins un jet. Ne jamais encombrer l'accès au dévidoir."},
+  {id:"cta",         fam:"Utilités et sécurité",cat:"equip",shape:"ahu",       label:"Centrale de traitement d'air", w:4.5,d:2,h:2.4, color:"#6d8a9c", zone:"tech", note:"Prise d'air neuf à l'écart des quais, des bennes et des rejets. Surpression dégressive de la zone la plus propre vers la plus sale."},
+  {id:"filtre_air",  fam:"Utilités et sécurité",cat:"equip",shape:"filter",    label:"Caisson de filtration",      w:1.2,d:.8, h:1.2, color:"#8bc34a", zone:"tech", note:"Préfiltre G4 puis F7 ; terminal H14 à l'entrée des zones à haute hygiène. Manomètre de colmatage et registre de changement."},
+  {id:"ventil_extr", fam:"Utilités et sécurité",cat:"equip",shape:"exhaust",   label:"Ventilateur d'extraction",   w:1,  d:1,  h:.9,  color:"#78909c", zone:"tech", note:"Extraire les zones humides et chaudes en partie basse. Le débit extrait doit rester inférieur au soufflage en zone propre, pour garder la surpression."},
+  {id:"flux_air",    fam:"Utilités et sécurité",cat:"equip",shape:"airflow",   label:"Flux d'air (repère)",        w:6,  d:2,  h:.1,  color:"#66bb6a", zone:"tech", note:"Repère de sens de balayage : l'air va toujours du plus propre vers le plus sale. Vérifier qu'aucune flèche ne remonte la cascade de pression."},
+  {id:"bouche_souf", fam:"Utilités et sécurité",cat:"equip",shape:"diffuser",  label:"Bouche de soufflage",        w:.6, d:.6, h:.2,  color:"#66bb6a", zone:"propre",y:3.6, note:"Diffusion à faible vitesse, jamais dirigée sur un produit nu ni sur un poste de travail."},
+  {id:"aspi_centr",  fam:"Utilités et sécurité",cat:"equip",shape:"vacuum",    label:"Centrale d'aspiration",      w:1.6,d:1,  h:2,   color:"#ab47bc", zone:"tech", note:"Groupe déporté en local technique, rejet filtré à l'extérieur. Prises d'aspiration réparties à moins de 15 m de tout point."},
+  {id:"soufflette",  fam:"Utilités et sécurité",cat:"equip",shape:"blowgun",   label:"Poste de soufflette",        w:.4, d:.3, h:1.2, color:"#26c6da", zone:"tech", note:"À proscrire sur produit nu et en zone propre : le soufflage remet les poussières en suspension. Préférer l'aspiration centralisée."},
+  {id:"bout_gaz",    fam:"Utilités et sécurité",cat:"equip",shape:"gas_bottle",label:"Bouteilles de gaz (rack)",   w:1.2,d:.6, h:1.6, color:"#ff8f00", zone:"ext",  note:"Stockage extérieur ventilé, bouteilles chaînées et debout, à l'écart des issues et des sources de chaleur."}
 ];
 const BY_ID = {}; CATALOG.forEach(d => BY_ID[d.id] = d);
 /* Réseaux de tuyauterie. Chaque famille porte sa couleur de repérage,
@@ -512,7 +533,11 @@ const RESEAUX = {
   glycol: {label:"Eau glycolée",             color:"#5c6bc0", dia:63,  y:3.9,  dash:null,        note:"Glycol de qualité alimentaire si le circuit longe une zone de produit nu."},
   evac:   {label:"Évacuation / effluents",   color:"#8d6e63", dia:110, y:.12,  dash:null,        note:"Pente de 1 %, siphon et garde d'eau à chaque descente, aucun passage au-dessus d'un poste de travail."},
   gaz:    {label:"Gaz",                      color:"#ffb300", dia:50,  y:3.8,  dash:[12,4,3,4],  note:"Apparent et repéré sur tout son parcours, vanne de coupure extérieure signalée."},
-  elec:   {label:"Chemin de câbles",         color:"#fdd835", dia:100, y:4.3,  dash:[3,3],       note:"Jamais au-dessus d'un produit nu, dalle perforée pour éviter la rétention de poussières."}
+  elec:   {label:"Chemin de câbles",         color:"#fdd835", dia:100, y:4.3,  dash:[3,3],       note:"Jamais au-dessus d'un produit nu, dalle perforée pour éviter la rétention de poussières."},
+  eau_tr: {label:"Eau traitée (adoucie / osmosée)", color:"#80deea", dia:50,  y:3.5, dash:[8,4],   note:"Réseau séparé et repéré, distinct du réseau potable. Contrôle de conductivité, aucun bras mort sur la boucle."},
+  gaine_s:{label:"Gaine de soufflage (air traité)", color:"#66bb6a", dia:400, y:4.6, dash:null,    note:"Air filtré soufflé en surpression vers les zones les plus propres. Filtration terminale au plus près de la bouche."},
+  gaine_r:{label:"Gaine de reprise / extraction",   color:"#8d9440", dia:400, y:4.6, dash:[16,6],  note:"Reprise en partie basse des zones humides. Jamais de recyclage d\'air d\'une zone sale vers une zone propre."},
+  aspi:   {label:"Aspiration centralisée",          color:"#ab47bc", dia:80,  y:3,   dash:[10,4,3,4], note:"Vide centralisé : évite la remise en suspension des poussières par le balayage ou la soufflette."}
 };
 const RES_KEYS = Object.keys(RESEAUX);
 
@@ -917,6 +942,245 @@ function drawShape(g, def, o, W, H, thumb){
     }
     /* Véhicules : dessinés longueur à l'horizontale, la rotation du
        contexte remet le symbole dans le sens de l'objet. */
+    /* --- Aéraulique --- */
+    case "ahu": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = .9;          // caissons successifs
+      g.beginPath();
+      for (let i = 1; i < 4; i++){ g.moveTo(x + i*W/4, y + 1.5); g.lineTo(x + i*W/4, y + H - 1.5); }
+      g.stroke();
+      g.fillStyle = "#1f2a33";
+      g.beginPath(); g.arc(x + W*.87, 0, Math.min(H*.3, W*.1), 0, 7); g.fill();
+      g.fillStyle = "#8bc34a"; g.fillRect(x + W*.28, y + H*.2, W*.08, H*.6);
+      break;
+    }
+    case "filter": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.5); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 1;   // média plissé
+      g.beginPath();
+      const n = Math.max(3, Math.round(W/5));
+      for (let i = 0; i <= n; i++){
+        const px = x + i*W/n;
+        g.moveTo(px, y + 2); g.lineTo(px + (i%2 ? -W/(n*2) : W/(n*2)), y + H - 2);
+      }
+      g.stroke();
+      break;
+    }
+    case "exhaust": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = col; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.3;
+      g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+      g.strokeStyle = "#e8eef4"; g.lineWidth = Math.max(1.4, R*.16);
+      for (let k = 0; k < 4; k++){                                 // pales
+        const a = k*Math.PI/2;
+        g.beginPath();
+        g.moveTo(Math.cos(a)*R*.18, Math.sin(a)*R*.18);
+        g.quadraticCurveTo(Math.cos(a+.7)*R*.7, Math.sin(a+.7)*R*.7, Math.cos(a+.2)*R*.85, Math.sin(a+.2)*R*.85);
+        g.stroke();
+      }
+      break;
+    }
+    case "airflow": {
+      const hy = H/2;
+      g.strokeStyle = col; g.lineWidth = Math.max(2, H*.16); g.lineCap = "round";
+      g.beginPath(); g.moveTo(x + 2, 0); g.lineTo(x + W - H*.75, 0); g.stroke();
+      g.fillStyle = col;                                           // pointe
+      g.beginPath();
+      g.moveTo(x + W, 0); g.lineTo(x + W - H*.8, -hy*.75); g.lineTo(x + W - H*.8, hy*.75);
+      g.closePath(); g.fill();
+      g.globalAlpha = .5; g.lineWidth = Math.max(1, H*.08);        // filets d'air
+      g.beginPath();
+      g.moveTo(x + 6, -hy*.55); g.lineTo(x + W*.55, -hy*.55);
+      g.moveTo(x + 6,  hy*.55); g.lineTo(x + W*.55,  hy*.55);
+      g.stroke(); g.globalAlpha = 1;
+      break;
+    }
+    case "diffuser": {
+      g.fillStyle = hexA(col,.35); g.fillRect(x, y, W, H);
+      g.strokeStyle = col; g.lineWidth = 1.3; g.strokeRect(x, y, W, H);
+      g.beginPath();
+      g.moveTo(x, y); g.lineTo(x + W, y + H); g.moveTo(x + W, y); g.lineTo(x, y + H);
+      g.lineWidth = .9; g.stroke();
+      break;
+    }
+    case "vacuum": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#f3e5f5";
+      g.beginPath(); g.arc(x + W*.35, 0, Math.min(H*.3, W*.2), 0, 7); g.fill();
+      g.strokeStyle = "#f3e5f5"; g.lineWidth = 1.6;                // flexible
+      g.beginPath();
+      g.moveTo(x + W*.7, y + H*.3);
+      g.quadraticCurveTo(x + W*1.1, y + H*.5, x + W*.75, y + H*.85);
+      g.stroke();
+      break;
+    }
+    case "blowgun": {
+      g.fillStyle = col; g.fillRect(x, y + H*.25, W*.6, H*.5);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1; g.strokeRect(x, y + H*.25, W*.6, H*.5);
+      g.strokeStyle = col; g.lineWidth = 1.4;                      // jet
+      g.beginPath();
+      for (let i = 0; i < 3; i++){
+        g.moveTo(x + W*.62, 0);
+        g.lineTo(x + W*1.05, (i - 1) * H*.5);
+      }
+      g.stroke();
+      break;
+    }
+    /* --- Vrac --- */
+    case "silo_soft": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = col; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.3;
+      g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+      g.lineWidth = .9; g.strokeStyle = shade(col,-.3);            // sangles
+      for (let k = 0; k < 4; k++){
+        const a = k*Math.PI/2 + .4;
+        g.beginPath(); g.moveTo(Math.cos(a)*R, Math.sin(a)*R); g.lineTo(Math.cos(a+3.14)*R, Math.sin(a+3.14)*R); g.stroke();
+      }
+      g.fillStyle = shade(col,-.4);
+      g.beginPath(); g.arc(0, 0, R*.2, 0, 7); g.fill();
+      break;
+    }
+    case "bigbag": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.25); g.lineWidth = 1.1;          // élingues d'angle
+      const e = Math.min(W, H)*.2;
+      [[0,0,1,1],[1,0,-1,1],[0,1,1,-1],[1,1,-1,-1]].forEach(c => {
+        const px = x + W*c[0], py = y + H*c[1];
+        g.beginPath(); g.moveTo(px, py); g.lineTo(px + c[2]*e, py + c[3]*e); g.stroke();
+      });
+      g.beginPath(); g.arc(0, 0, Math.min(W,H)*.14, 0, 7); g.stroke();
+      break;
+    }
+    case "bigbag_st": {
+      g.fillStyle = hexA(col,.35); g.fillRect(x, y, W, H);
+      g.strokeStyle = col; g.lineWidth = 1.4; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.2); g.lineWidth = 1.1;           // portique
+      g.beginPath();
+      g.moveTo(x + W*.12, y + H*.12); g.lineTo(x + W*.88, y + H*.12);
+      g.moveTo(x + W*.12, y + H*.88); g.lineTo(x + W*.88, y + H*.88);
+      g.stroke();
+      g.fillStyle = "#dcd3b4"; g.fillRect(x + W*.28, y + H*.28, W*.44, H*.44);
+      g.fillStyle = shade(col,-.4);
+      g.beginPath(); g.arc(0, 0, Math.min(W,H)*.1, 0, 7); g.fill();
+      break;
+    }
+    case "gas_bottle": {
+      g.fillStyle = hexA(col,.3); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      const r = Math.min(W/4.4, H/2.6);
+      for (let i = 0; i < 2; i++){
+        for (let k = 0; k < 2; k++){
+          g.fillStyle = col;
+          g.beginPath(); g.arc(x + W*(.28 + i*.44), y + H*(.3 + k*.4), r, 0, 7); g.fill();
+          g.strokeStyle = shade(col,-.45); g.lineWidth = 1;
+          g.beginPath(); g.arc(x + W*(.28 + i*.44), y + H*(.3 + k*.4), r, 0, 7); g.stroke();
+        }
+      }
+      break;
+    }
+    /* --- Sols et circulations piétonnes --- */
+    case "tiles": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      if (def.resine){
+        g.strokeStyle = shade(col,.2); g.lineWidth = .8;           // résine : pas de joint
+        g.beginPath(); g.moveTo(x + 3, y + 3); g.lineTo(x + W - 3, y + H - 3); g.stroke();
+      } else {
+        g.strokeStyle = shade(col,-.18); g.lineWidth = .7;
+        const pas = Math.max(6, Math.min(W, H)/8);
+        g.beginPath();
+        for (let px = x + pas; px < x + W; px += pas){ g.moveTo(px, y); g.lineTo(px, y + H); }
+        for (let py = y + pas; py < y + H; py += pas){ g.moveTo(x, py); g.lineTo(x + W, py); }
+        g.stroke();
+      }
+      break;
+    }
+    case "crossing": {
+      const horiz = W >= H;
+      g.fillStyle = "rgba(20,26,34,.18)"; g.fillRect(x, y, W, H);
+      g.fillStyle = col;
+      const nb = Math.max(3, Math.round((horiz ? W : H) / 9));
+      for (let i = 0; i < nb; i++){
+        if (horiz) g.fillRect(x + i*W/nb + W/(nb*4), y + 1.5, W/(nb*2), H - 3);
+        else       g.fillRect(x + 1.5, y + i*H/nb + H/(nb*4), W - 3, H/(nb*2));
+      }
+      break;
+    }
+    case "walkline": {
+      g.fillStyle = hexA(col,.22); g.fillRect(x, y, W, H);
+      g.strokeStyle = col; g.lineWidth = 2;
+      g.beginPath();
+      if (W >= H){ g.moveTo(x, y + 1); g.lineTo(x + W, y + 1); g.moveTo(x, y + H - 1); g.lineTo(x + W, y + H - 1); }
+      else { g.moveTo(x + 1, y); g.lineTo(x + 1, y + H); g.moveTo(x + W - 1, y); g.lineTo(x + W - 1, y + H); }
+      g.stroke();
+      break;
+    }
+    /* --- Abords et vivant --- */
+    case "lawn": {
+      g.fillStyle = hexA(col,.5); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.2); g.lineWidth = .9;
+      g.beginPath();
+      for (let i = 0; i < Math.max(4, (W*H)/900); i++){
+        const px = x + ((i*37) % Math.max(1,W-6)) + 3, py = y + ((i*53) % Math.max(1,H-6)) + 3;
+        g.moveTo(px, py + 2.5); g.lineTo(px, py - 2.5);
+        g.moveTo(px - 2, py + 2.5); g.lineTo(px - 2.6, py - 1);
+        g.moveTo(px + 2, py + 2.5); g.lineTo(px + 2.6, py - 1);
+      }
+      g.stroke();
+      break;
+    }
+    case "tree": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = hexA(col,.75);
+      g.beginPath();
+      for (let k = 0; k < 9; k++){
+        const a = k/9*6.2832;
+        g.lineTo(Math.cos(a)*R*(k%2 ? .78 : 1), Math.sin(a)*R*(k%2 ? .78 : 1));
+      }
+      g.closePath(); g.fill();
+      g.strokeStyle = shade(col,-.35); g.lineWidth = 1; g.stroke();
+      g.fillStyle = "#6d4c33";
+      g.beginPath(); g.arc(0, 0, Math.max(1.5, R*.13), 0, 7); g.fill();
+      break;
+    }
+    case "sheep": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = col;
+      g.beginPath();
+      if (g.ellipse) g.ellipse(0, 0, W*.44, H*.42, 0, 0, 7); else g.arc(0, 0, R, 0, 7);
+      g.fill();
+      g.strokeStyle = "#8d8577"; g.lineWidth = 1; g.stroke();
+      g.fillStyle = "#3b3a36";                                     // tête
+      g.beginPath(); g.arc(W*.4, 0, Math.max(1.4, H*.18), 0, 7); g.fill();
+      break;
+    }
+    case "hive": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.1; g.strokeRect(x, y, W, H);
+      g.beginPath();
+      g.moveTo(x, y + H*.4); g.lineTo(x + W, y + H*.4);
+      g.moveTo(x, y + H*.7); g.lineTo(x + W, y + H*.7);
+      g.lineWidth = .8; g.stroke();
+      g.fillStyle = "#3b3a36"; g.fillRect(x + W*.3, y + H - 2, W*.4, 2);
+      break;
+    }
+    case "person": {
+      const R = Math.max(2.4, Math.min(W, H)/2);
+      g.fillStyle = col; g.globalAlpha = .28;
+      g.beginPath(); g.arc(0, 0, R*1.9, 0, 7); g.fill();           // rayon d'action
+      g.globalAlpha = 1;
+      g.fillStyle = col;
+      g.beginPath(); g.arc(0, 0, R*.7, 0, 7); g.fill();
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1;
+      g.beginPath(); g.arc(0, 0, R*.7, 0, 7); g.stroke();
+      break;
+    }
     /* --- Voirie --- */
     case "road": {
       const lourde = !!def.lourde;
@@ -2144,6 +2408,161 @@ function build3D(o){
       }
       break;
     }
+    /* --- Aéraulique --- */
+    case "ahu": {
+      const c1 = box(w, h, d, col); c1.position.y = h/2; g.add(c1);
+      for (let i = 1; i < 4; i++){
+        const j = box(.04, h*.98, d*1.02, shade(col,-.35));
+        j.position.set(-w/2 + i*w/4, h/2, 0); g.add(j);
+      }
+      const ven = new THREE.Mesh(new THREE.CylinderGeometry(h*.28, h*.28, .12, 16), mat("#1f2a33"));
+      ven.rotation.x = Math.PI/2; ven.position.set(w*.37, h*.55, d/2 + .06); g.add(ven);
+      const pa = box(w*.1, h*.5, d*.9, "#8bc34a"); pa.position.set(-w*.22, h*.5, 0); g.add(pa);
+      break;
+    }
+    case "filter": {
+      const cad = box(w, h, d, col); cad.position.y = h/2; g.add(cad);
+      const n = Math.max(3, Math.round(w/.2));
+      for (let i = 0; i < n; i++){
+        const pl = box(w/n*.45, h*.86, d*.9, shade(col,.25));
+        pl.position.set(-w/2 + w*(i + .5)/n, h/2, 0); g.add(pl);
+      }
+      break;
+    }
+    case "exhaust": {
+      const R = Math.min(w, d)/2;
+      const car = new THREE.Mesh(new THREE.CylinderGeometry(R, R, h*.7, 18), mat(col));
+      car.position.y = h*.35; g.add(car);
+      const hel = new THREE.Mesh(new THREE.CylinderGeometry(R*.9, R*.9, .06, 18), mat("#1f2a33"));
+      hel.position.y = h*.78; g.add(hel);
+      const cha = new THREE.Mesh(new THREE.CylinderGeometry(R*.35, R*.35, h*.5, 12), mat(shade(col,-.2)));
+      cha.position.y = h*1.05; g.add(cha);
+      break;
+    }
+    case "airflow": {
+      const L = Math.max(w, d), B = Math.min(w, d), inner = new THREE.Group();
+      if (d > w) inner.rotation.y = Math.PI/2;
+      const m2 = mat(col, {transparent:true, opacity:.75});
+      const corps = new THREE.Mesh(new THREE.CylinderGeometry(B*.12, B*.12, L*.7, 10), m2);
+      corps.rotation.z = Math.PI/2; corps.position.set(-L*.15, .4, 0); inner.add(corps);
+      const pte = new THREE.Mesh(new THREE.ConeGeometry(B*.3, L*.3, 12), m2);
+      pte.rotation.z = -Math.PI/2; pte.position.set(L*.35, .4, 0); inner.add(pte);
+      g.add(inner);
+      break;
+    }
+    case "diffuser": {
+      const cad = box(w, Math.max(h,.12), d, col); cad.position.y = Math.max(h,.12)/2; g.add(cad);
+      const gr = box(w*.8, .03, d*.8, "#e8f5e9"); gr.position.y = -.01; g.add(gr);
+      break;
+    }
+    case "vacuum": {
+      const cuv = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.36, Math.min(w,d)*.36, h*.6, 18), mat(col));
+      cuv.position.set(-w*.15, h*.42, 0); g.add(cuv);
+      const mot = box(w*.5, h*.3, d*.7, shade(col,-.25)); mot.position.set(w*.22, h*.82, 0); g.add(mot);
+      const soc = box(w, h*.12, d, "#37474f"); soc.position.y = h*.06; g.add(soc);
+      break;
+    }
+    case "blowgun": {
+      const sup = box(w, h*.1, d, shade(col,-.3)); sup.position.y = h*.05; g.add(sup);
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(w*.12, w*.12, h*.9, 10), mat(col));
+      tube.position.y = h*.55; g.add(tube);
+      const pis = box(w*.5, h*.16, d*.6, shade(col,-.2)); pis.position.set(w*.2, h*.86, 0); g.add(pis);
+      break;
+    }
+    /* --- Vrac --- */
+    case "silo_soft": {
+      const R = Math.min(w, d)/2;
+      const toile = new THREE.Mesh(new THREE.CylinderGeometry(R, R*.95, h*.72, 18), mat(col));
+      toile.position.y = h*.36 + h*.28; g.add(toile);
+      const tre = new THREE.Mesh(new THREE.CylinderGeometry(R*.95, R*.16, h*.28, 18), mat(shade(col,-.1)));
+      tre.position.y = h*.14; g.add(tre);
+      for (let i = 0; i < 4; i++){
+        const mont = box(.08, h, .08, "#8c98a6");
+        mont.position.set((i%2?1:-1)*R*.94, h/2, (i<2?1:-1)*R*.94); g.add(mont);
+      }
+      break;
+    }
+    case "bigbag": {
+      const sac = box(w*.9, h*.78, d*.9, col); sac.position.y = h*.14 + h*.39; g.add(sac);
+      const pal = box(w, .14, d, "#9a7b4f"); pal.position.y = .07; g.add(pal);
+      for (let i = 0; i < 4; i++){
+        const el = box(.05, h*.16, .05, shade(col,-.3));
+        el.position.set((i%2?1:-1)*w*.36, h*.9, (i<2?1:-1)*d*.36); g.add(el);
+      }
+      break;
+    }
+    case "bigbag_st": {
+      for (let i = 0; i < 4; i++){
+        const mont = box(.1, h, .1, col);
+        mont.position.set((i%2?1:-1)*(w/2 - .08), h/2, (i<2?1:-1)*(d/2 - .08)); g.add(mont);
+      }
+      const trav = box(w, .12, d, shade(col,-.15)); trav.position.y = h - .06; g.add(trav);
+      const sac = box(w*.55, h*.4, d*.55, "#dcd3b4"); sac.position.y = h*.62; g.add(sac);
+      const tre = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.26, Math.min(w,d)*.08, h*.26, 16), mat(shade(col,-.2)));
+      tre.position.y = h*.24; g.add(tre);
+      break;
+    }
+    case "gas_bottle": {
+      const soc = box(w, .1, d, "#5c6a78"); soc.position.y = .05; g.add(soc);
+      const r = Math.min(w/4.4, d/2.4);
+      for (let i = 0; i < 2; i++){
+        for (let k = 0; k < 2; k++){
+          const bo = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h*.86, 14), mat(col));
+          bo.position.set(-w/2 + w*(.28 + i*.44), h*.48, -d/2 + d*(.3 + k*.4)); g.add(bo);
+        }
+      }
+      const cad = box(w*1.02, h*.06, d*1.02, "#ffd54f"); cad.position.y = h*.75; g.add(cad);
+      break;
+    }
+    /* --- Sols et circulations --- */
+    case "tiles": case "crossing": case "walkline": {
+      const ep = Math.max(h, .02);
+      const dal = box(w, ep, d, col); dal.position.y = ep/2; g.add(dal);
+      break;
+    }
+    /* --- Abords et vivant --- */
+    case "lawn": {
+      const dal = box(w, Math.max(h,.03), d, col); dal.position.y = Math.max(h,.03)/2; g.add(dal);
+      break;
+    }
+    case "tree": {
+      const R = Math.min(w, d)/2;
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(R*.1, R*.14, h*.42, 10), mat("#6d4c33"));
+      tr.position.y = h*.21; g.add(tr);
+      [[.62,.42],[.5,.68],[.34,.86]].forEach(c => {
+        const f = new THREE.Mesh(new THREE.SphereGeometry(R*c[0], 12, 10), mat(col));
+        f.position.y = h*c[1]; g.add(f);
+      });
+      break;
+    }
+    case "sheep": {
+      const corps = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w,d)*.52, 12, 10), mat(col));
+      corps.position.y = h*.62; corps.scale.set(1.5, .85, 1); g.add(corps);
+      const tete = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w,d)*.22, 10, 8), mat("#3b3a36"));
+      tete.position.set(w*.46, h*.72, 0); g.add(tete);
+      for (let i = 0; i < 4; i++){
+        const pa = box(.06, h*.42, .06, "#3b3a36");
+        pa.position.set((i<2?1:-1)*w*.26, h*.21, (i%2?1:-1)*d*.22); g.add(pa);
+      }
+      break;
+    }
+    case "hive": {
+      const soc = box(w*1.1, h*.12, d*1.1, "#8c98a6"); soc.position.y = h*.06; g.add(soc);
+      for (let i = 0; i < 2; i++){
+        const h2 = box(w, h*.38, d, col); h2.position.y = h*(.28 + i*.38); g.add(h2);
+      }
+      const toit = box(w*1.15, h*.12, d*1.15, shade(col,-.3)); toit.position.y = h*.94; g.add(toit);
+      break;
+    }
+    case "person": {
+      const jam = box(w*.5, h*.45, d*.5, "#2b3a4a"); jam.position.y = h*.22; g.add(jam);
+      const bus = box(w*.8, h*.32, d*.7, col); bus.position.y = h*.6; g.add(bus);
+      const tet = new THREE.Mesh(new THREE.SphereGeometry(w*.28, 10, 8), mat("#e8c9a0"));
+      tet.position.y = h*.87; g.add(tet);
+      const cha = new THREE.Mesh(new THREE.CylinderGeometry(w*.3, w*.3, h*.07, 12), mat("#eceff1"));
+      cha.position.y = h*.96; g.add(cha);                          // charlotte
+      break;
+    }
     /* --- Voirie : simples nappes au sol --- */
     case "road": {
       const ch = box(w, Math.max(h, .04), d, col); ch.position.y = Math.max(h, .04)/2; g.add(ch);
@@ -2917,6 +3336,31 @@ function runDiagnostics(){
     });
   });
 
+  /* Température de consigne. Un local réfrigéré sans production de froid
+     à l'intérieur ni évaporateur au plafond ne tiendra pas sa consigne. */
+  const FROIDS = ["evapo","cellule","tunnel_sur","frigo","groupe_froid"];
+  state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").forEach(zo => {
+    const t = zoneTemp(zo);
+    if (t == null || t > 8) return;
+    const equipe = state.objects.some(o => FROIDS.indexOf(o.type) >= 0 && hitObj(o.x, o.z, zo));
+    if (!equipe){
+      push({sev:"majeur", ref:zo.id, x:zo.x, z:zo.z, titre:"Local réfrigéré sans production de froid",
+            detail:"« " + zo.label + " » est à " + fmt(t,0) + " °C sans évaporateur ni groupe à l'intérieur. " +
+                   "Implanter la production de froid ou relever la consigne."});
+    }
+  });
+
+  /* Soufflette en zone protégée : le soufflage remet les poussières en
+     suspension, exactement là où il ne faut pas. */
+  state.objects.filter(o => o.type === "soufflette").forEach(o => {
+    const zo = zoneAt(o.x, o.z);
+    if (zo && ZONES[zo.zone].hyg >= 2){
+      push({sev:"majeur", ref:o.id, x:o.x, z:o.z, titre:"Soufflage en zone protégée",
+            detail:"« " + o.label + " » est implanté dans « " + zo.label + " ». Le soufflage disperse les poussières : " +
+                   "remplacer par une prise d'aspiration centralisée."});
+    }
+  });
+
   /* Hauteur sous plafond. Une pièce trop basse ne permet ni la ventilation
      ni le nettoyage en hauteur ; le seuil est relevé en zone protégée. */
   state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").forEach(zo => {
@@ -3008,10 +3452,17 @@ function renderDiag(){
 /* Volumes des pièces. La hauteur sous plafond d'une zone est sa cote h :
    elle est éditable directement dans le tableau, ce qui recalcule le volume
    et le débit de renouvellement d'air sans passer par le panneau de gauche. */
+/* Température de consigne : valeur saisie sur la pièce, sinon consigne
+   par défaut de sa classe sanitaire. */
+function zoneTemp(o){
+  if (o.temp != null && o.temp !== "") return +o.temp;
+  const z = ZONES[o.zone];
+  return z && z.temp != null ? z.temp : null;
+}
 function zoneVolumes(){
   return state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").map(o => {
     const surf = o.w * o.d;
-    return {o:o, surf:surf, hsp:o.h || 0, vol:surf * (o.h || 0)};
+    return {o:o, surf:surf, hsp:o.h || 0, vol:surf * (o.h || 0), temp:zoneTemp(o)};
   }).sort((a,b) => b.vol - a.vol);
 }
 function renderVolumes(){
@@ -3020,6 +3471,7 @@ function renderVolumes(){
   const surf = rows.reduce((a,r) => a + r.surf, 0);
   const vol  = rows.reduce((a,r) => a + r.vol, 0);
   const hMoy = surf ? vol / surf : 0;
+  const froid = rows.filter(r => r.temp != null && r.temp <= 8).reduce((a,r) => a + r.vol, 0);
   const tx = state.airRate == null ? 10 : state.airRate;
   $("#voltag").textContent = rows.length ? fmt(vol, 0) + " m³" : "—";
   if (!rows.length){
@@ -3030,15 +3482,17 @@ function renderVolumes(){
     '<div class="kv"><span>Surface des pièces</span><b>' + fmt(surf,0) + ' m²</b></div>' +
     '<div class="kv"><span>Volume total</span><b>' + fmt(vol,0) + ' m³</b></div>' +
     '<div class="kv"><span>Hauteur moyenne</span><b>' + fmt(hMoy,2) + ' m</b></div>' +
+    (froid > 0 ? '<div class="kv"><span>Volume réfrigéré (≤ 8 °C)</span><b>' + fmt(froid,0) + ' m³ (' + fmt(froid/vol*100,0) + ' %)</b></div>' : '') +
     '<div class="row" style="margin:8px 0 4px"><label>Renouvellement</label><div class="f">' +
       '<span class="unit" data-u="vol/h"><input type="number" id="airrate" value="' + tx + '" min="0" max="60" step="1"></span>' +
       '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">' + fmt(vol * tx, 0) + ' m³/h</div></div></div>' +
     '<p class="help">Cliquez une hauteur pour la corriger : le volume et le débit suivent. Ordre de grandeur usuel : 5 à 10 volumes/h en préparation, 15 à 20 en cuisson.</p>' +
-    '<table class="voltab"><thead><tr><th>Pièce</th><th>m²</th><th>HSP</th><th>m³</th></tr></thead><tbody>' +
+    '<table class="voltab"><thead><tr><th>Pièce</th><th>m²</th><th>HSP</th><th>°C</th><th>m³</th></tr></thead><tbody>' +
     rows.map(r =>
       '<tr><td><i style="background:' + ZONES[r.o.zone].color + '"></i>' + esc(r.o.label) + '</td>' +
       '<td>' + fmt(r.surf,0) + '</td>' +
       '<td><input type="number" class="hsp" data-id="' + r.o.id + '" value="' + fmt(r.hsp,2) + '" step="0.1" min="0"></td>' +
+      '<td><input type="number" class="tmp" data-id="' + r.o.id + '" value="' + (r.temp == null ? "" : r.temp) + '" step="1" min="-30" max="60"></td>' +
       '<td><b>' + fmt(r.vol,0) + '</b></td></tr>').join("") +
     '</tbody></table>';
 }
@@ -3428,6 +3882,12 @@ function buildProps(){
           '</div></div>' +
           '<p class="help">Cotes libres dans les champs ci-dessus, ou par les poignées d\'angle sur le plan.</p>'
         : '') +
+      (o.cat === "zones" && o.zone !== "ext"
+        ? '<div class="row"><label>Température</label><div class="f">' +
+          '<span class="unit" data-u="°C"><input type="number" id="p-temp" value="' + (zoneTemp(o) == null ? "" : zoneTemp(o)) + '" step="1" min="-30" max="60"></span>' +
+          '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">consigne ' +
+          (o.temp != null ? 'propre à la pièce' : 'de la classe') + '</div></div></div>'
+        : '') +
       '<div class="row"><label>Position (X, Z)</label><div class="f">' + num("x", o.x) + num("z", o.z) + '</div></div>' +
       '<div class="row"><label>Élévation</label><div class="f">' + num("y", o.y || 0) + '<div style="flex:1;color:var(--ink-3);font-size:10.5px;align-self:center">emprise ' + fmt(o.w*o.d,1) + ' m²</div></div></div>' +
       '<div class="row"><label>Rotation</label><div class="f">' + num("rot", o.rot, 1, "°") +
@@ -3450,6 +3910,12 @@ function buildProps(){
     $("#rot-p90").addEventListener("click", () => rotateSel(90));
     $("#c-auto").addEventListener("click", () => { commit(); objs.forEach(o => delete o.color); markDirty(); refreshProps(true); });
     $("#p-dup").addEventListener("click", duplicateSelection);
+    if ($("#p-temp")) $("#p-temp").addEventListener("change", e => {
+      commit();
+      const v = String(e.target.value).trim();
+      if (v === "") delete o.temp; else o.temp = clamp(+v.replace(",", "."), -30, 60);
+      markDirty(); renderVolumes(); refreshProps(true);
+    });
     $("#p-focus").addEventListener("click", () => focusOn(o.x, o.z));
     $("#p-array").addEventListener("click", () => arraySelection(+$("#ar-n").value, +$("#ar-dx").value, +$("#ar-dz").value));
     $$("#props [data-bw]").forEach(b => b.addEventListener("click", () => {
@@ -3843,7 +4309,7 @@ function loadDemo(){
   add("frigo", 78, 30, {rot:90});
   add("chariot_elev", 75, 29);
   add("poste_info", 38, 3.5); add("poste_info", 75, 22);
-  add("evapo", 65, 24, {y:3.4}); add("evapo", 23, 26, {y:3.4});
+  add("evapo", 65, 24, {y:3.4}); add("evapo", 23, 26, {y:6}); add("evapo", 75, 8, {y:5.2});
 
   /* --- Utilités techniques et sécurité --- */
   add("groupe_froid", 50,   36.5);                  // local technique
@@ -3930,6 +4396,14 @@ function bindUI(){
     if (t.classList.contains("hsp")){
       const o = byId(t.dataset.id); if (!o) return;
       commit(); o.h = Math.max(0, +String(t.value).replace(",", ".") || 0);
+      markDirty(); renderVolumes(); refreshProps(true);
+    }
+    if (t.classList.contains("tmp")){
+      const o = byId(t.dataset.id); if (!o) return;
+      commit();
+      const v = String(t.value).trim();
+      if (v === "") delete o.temp;                          // retour à la consigne de la classe
+      else o.temp = clamp(+v.replace(",", "."), -30, 60);
       markDirty(); renderVolumes(); refreshProps(true);
     }
   });
