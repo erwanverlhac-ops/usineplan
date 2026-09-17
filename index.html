@@ -39,9 +39,9 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 
 #app{display:grid;grid-template-rows:46px 1fr 24px;grid-template-columns:262px 1fr 326px;height:100vh}
 #bar{grid-column:1/4;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
-#left{grid-row:2;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-#stage{grid-row:2;position:relative;background:#0a0f14;overflow:hidden;width:100%;height:100%}
-#right{grid-row:2;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;min-height:0}
+#left{grid-row:2;grid-column:1;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#stage{grid-row:2;grid-column:2;position:relative;background:#0a0f14;overflow:hidden;width:100%;height:100%}
+#right{grid-row:2;grid-column:3;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;min-height:0}
 #status{grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px;background:var(--panel);border-top:1px solid var(--line);color:var(--ink-2);font-size:11.5px}
 
 .brand{display:flex;align-items:baseline;gap:7px;padding-right:12px;margin-right:4px;border-right:1px solid var(--line);height:26px}
@@ -178,11 +178,16 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:11px 0}
 .iss p{color:var(--ink-2);font-size:11px;line-height:1.45}
 .ok-box{display:flex;gap:8px;align-items:flex-start;background:#12241f;border:1px solid #1d4034;color:#9fe6c6;padding:8px 10px;border-radius:var(--r);font-size:11.5px;line-height:1.5}
 
-.toast{
+#toasts{
   position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:100;
-  background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
-  padding:8px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px
+  display:flex;flex-direction:column-reverse;align-items:center;gap:6px;pointer-events:none
 }
+.toast{
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
+  padding:8px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px;
+  opacity:1;transition:opacity .25s ease, transform .25s ease
+}
+.toast.out{opacity:0;transform:translateY(8px)}
 .toast.bad{border-color:#6d2b2b;color:#ffb4b0}
 #modal-backdrop{
   position:fixed;inset:0;background:rgba(5,9,14,.75);z-index:200;display:flex;
@@ -201,10 +206,20 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
 #msg{margin-left:auto;color:var(--ink-3)}
 #nothree{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:8;background:rgba(10,15,20,.94);padding:30px;text-align:center;line-height:1.6}
 
-@media (max-width:1180px){#app{grid-template-columns:220px 1fr 288px}}
+/* Panneaux rabattables : la colonne passe à 0 et le plan récupère la place. */
+#app.hl{grid-template-columns:0 1fr 326px}
+#app.hr{grid-template-columns:262px 1fr 0}
+#app.hl.hr{grid-template-columns:0 1fr 0}
+#app.hl #left,#app.hr #right{visibility:hidden;overflow:hidden;min-width:0;border:0}
+@media (max-width:1180px){
+  #app{grid-template-columns:220px 1fr 288px}
+  #app.hl{grid-template-columns:0 1fr 288px}
+  #app.hr{grid-template-columns:220px 1fr 0}
+  #app.hl.hr{grid-template-columns:0 1fr 0}
+}
 @media (max-width:900px){
   #app{grid-template-columns:1fr}
-  #left,#right{position:absolute;top:46px;bottom:24px;width:280px;z-index:20;box-shadow:0 0 40px rgba(0,0,0,.6)}
+  #left,#right{position:absolute;top:46px;bottom:24px;width:280px;z-index:20;box-shadow:0 0 40px rgba(0,0,0,.6);grid-column:1}
   #left{left:0}#right{right:0}
   #left.off{transform:translateX(-100%)}#right.off{transform:translateX(100%)}
   #stage{grid-column:1}
@@ -228,7 +243,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
       <button class="btn sm on" data-tool="select" title="Sélectionner et déplacer (V)">Sélection</button>
       <button class="btn sm" data-tool="flux" title="Tracer un flux (F)">Flux</button>
       <button class="btn sm" data-tool="tuyau" title="Tracer un réseau de tuyauterie (T) — cliquez un équipement pour l'y raccorder">Tuyauterie</button>
-      <button class="btn sm" data-tool="mesure" title="Mesurer une distance (M) — plan 2D">Mesure</button>
+      <button class="btn sm" data-tool="mesure" title="Mesurer une distance (D) — plan 2D">Mesure</button>
     </div>
 
     <div class="grp">
@@ -243,6 +258,10 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <option value="1" selected>1 m</option><option value="2">2 m</option><option value="5">5 m</option>
       </select>
       <button class="btn sm" id="fit" title="Recadrer sur le site (F2)">Recadrer</button>
+      <button class="btn sm on" id="tleft" title="Rabattre ou rouvrir la bibliothèque d'éléments (F9)">◧ Éléments</button>
+      <button class="btn sm on" id="tright" title="Rabattre ou rouvrir le panneau de propriétés (F10)">Propriétés ◨</button>
+      <button class="btn sm on" id="roof" title="Afficher ou masquer les toitures en vue 3D (O)">Toitures</button>
+      <button class="btn sm" id="navmode" title="Basculer entre navigation Fusion (molette pressée = translation, Maj + molette = orbite) et navigation standard">Navigation Fusion</button>
       <button class="btn sm" id="navlock" title="Verrouiller le plan (L) : navigation seule, aucun élément ne peut être déplacé">Verrouiller le plan</button>
     </div>
 
@@ -255,6 +274,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <div class="grp">
       <button class="btn sm" id="import">Importer JSON</button>
       <button class="btn sm" id="export">Exporter JSON</button>
+      <button class="btn sm" id="share" title="Créer un fichier .html autonome contenant l'application et ce plan : le destinataire l'ouvre d'un double-clic">Partager</button>
       <button class="btn sm" id="png" title="Image du plan">Image</button>
       <button class="btn sm" id="csv" title="Nomenclature des éléments">Nomenclature</button>
     </div>
@@ -279,9 +299,10 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <div id="viewtag"></div>
     <div id="hint" class="hide"></div>
     <div id="legend">
-      <button class="btn ghost sm tog" id="legtog" title="Réduire">–</button>
-      <div id="legbody"></div>
+      <button class="btn ghost sm tog" id="legtog" title="Afficher la légende">Légende</button>
+      <div id="legbody" style="display:none"></div>
     </div>
+    <div id="toasts"></div>
     <div id="drop" class="hide">Déposez un fichier .json d'implantation</div>
   </main>
 
@@ -317,6 +338,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <label class="chk"><input type="checkbox" id="v-pipes" checked> Réseaux et tuyauterie</label>
         <label class="chk"><input type="checkbox" id="v-labels" checked> Étiquettes des éléments</label>
         <label class="chk"><input type="checkbox" id="v-issues" checked> Repères d'anomalie</label>
+        <label class="chk"><input type="checkbox" id="v-roof" checked> Toitures des bâtiments (3D)</label>
         <label class="chk"><input type="checkbox" id="v-shadow" checked> Ombres portées (3D)</label>
       </div>
     </details>
@@ -346,6 +368,8 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <span id="coord">x 0,00 m &nbsp; z 0,00 m</span>
     <span id="selinfo">Aucune sélection</span>
     <span id="zoominfo"></span>
+    <span id="gridinfo"></span>
+    <span id="cmdinfo" style="color:var(--warn);font-weight:600"></span>
     <span id="lockinfo" style="color:var(--acc)"></span>
     <span id="msg"></span>
   </footer>
@@ -480,6 +504,18 @@ const CATALOG = [
   {id:"four_rot",    fam:"Boulangerie et pâtisserie", cat:"equip", shape:"rotary_oven",  label:"Four rotatif à chariot",     w:2.2,d:2.4,h:2.6, color:"#c4713f", zone:"propre", note:"Hotte de captation de buée au-dessus de la porte, 1,2 m de dégagement pour la manœuvre du chariot."},
   {id:"robot_grille",fam:"Boulangerie et pâtisserie", cat:"equip", shape:"robot_cell",   label:"Robot de préhension de grilles", w:3.5,d:3,h:2.6, color:"#7f8fa3", zone:"propre", note:"Cellule d'enfournement et de défournement des grilles. Carter grillagé sur les quatre faces, arrêt d'urgence et asservissement des portes."},
   {id:"echelle_pat", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"trolley",      label:"Échelle de pâtisserie",      w:.8, d:.65,h:1.8, color:"#c3ccd6", zone:"propre", note:"18 niveaux au pas de 80 mm. Ne jamais laisser une échelle chargée en circulation ni sous une gaine."},
+  {id:"diviseuse",   fam:"Boulangerie et pâtisserie", cat:"equip", shape:"divider",    label:"Diviseuse hydraulique",      w:1,  d:1,  h:1.4, color:"#aab6c4", zone:"propre", note:"Pesée régulière contrôlée en début de série. Nettoyage du bac et des couteaux à chaque changement de pâte."},
+  {id:"bouleuse",    fam:"Boulangerie et pâtisserie", cat:"equip", shape:"rounder",    label:"Bouleuse conique",           w:1.1,d:1.1,h:1.7, color:"#b6c2cf", zone:"propre", note:"Cône et gouttières démontables pour lavage. Farinage minimal pour éviter l'empoussièrement."},
+  {id:"faconneuse",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"moulder",    label:"Façonneuse à baguettes",     w:1.8,d:.9, h:1.3, color:"#aab6c4", zone:"propre", note:"Tapis et rouleaux accessibles sans outil. Contrôle du serrage pour la régularité des pâtons."},
+  {id:"repose_pate", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"proofer",    label:"Repose-pâte (balancelles)",  w:3.5,d:1.4,h:2.6, color:"#c3ccd6", zone:"propre", note:"Détente en atmosphère maîtrisée. Balancelles textiles lavables, inspection régulière des toiles."},
+  {id:"ch_pousse",   fam:"Boulangerie et pâtisserie", cat:"equip", shape:"proofer",    label:"Chambre de pousse",          w:2.4,d:2.4,h:2.4, color:"#cfd8dc", zone:"propre", temp:28, note:"28 °C et 80 % d'humidité : condensation et moisissures si les parois ne sont pas séchées après nettoyage."},
+  {id:"cfc",         fam:"Boulangerie et pâtisserie", cat:"equip", shape:"proofer",    label:"Chambre de fermentation contrôlée", w:3,d:2.4,h:2.6, color:"#b6c2cf", zone:"froid", temp:3, note:"Blocage à 3 °C puis remontée programmée. Enregistrement des températures à conserver."},
+  {id:"four_ponts",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"deck_oven",  label:"Four à soles (4 ponts)",     w:2.6,d:2.2,h:2.2, color:"#c4713f", zone:"propre", note:"Hotte de captation de buée, dégagement de 1,2 m devant les bouches d'enfournement."},
+  {id:"spirale_ref", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"spiral_cool",label:"Tour de refroidissement spirale", w:3.2,d:3.2,h:3.5, color:"#9fb0c0", zone:"propre", note:"Refroidissement avant tranchage : passer la zone critique 63 → 10 °C sans rupture, tapis démontable pour lavage."},
+  {id:"enrobeuse",   fam:"Boulangerie et pâtisserie", cat:"equip", shape:"enrober",    label:"Enrobeuse chocolat",         w:2.2,d:1.2,h:1.6, color:"#7b5233", zone:"blanche", note:"Recyclage du chocolat : filtration et contrôle de température. Allergène majeur, nettoyage dédié."},
+  {id:"tranch_pain", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"bread_slicer",label:"Trancheuse à pain",         w:1.2,d:1,  h:1.6, color:"#b6c2cf", zone:"blanche", note:"Lames à démonter et désinfecter quotidiennement. Détection de métaux en aval obligatoire."},
+  {id:"table_refri", fam:"Boulangerie et pâtisserie", cat:"equip", shape:"chilled_table",label:"Tour réfrigéré / table réfrigérée", w:2,d:.8,h:.9, color:"#9fb0c0", zone:"propre", temp:4, note:"Plan de travail réfrigéré : garder la pâte sous 6 °C pendant le façonnage."},
+  {id:"char_paton",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"trolley",    label:"Chariot à bacs de pâte",     w:.8, d:.6, h:1.6, color:"#b6c2cf", zone:"propre", note:"Bacs couverts et identifiés (heure de pétrissage). Jamais stationné dans un passage."},
   {id:"pal_beurre",  fam:"Boulangerie et pâtisserie", cat:"equip", shape:"butter",       label:"Palette de beurre plaque",   w:1.2,d:.8, h:1.2, color:"#e8d9a0", zone:"froid",  note:"Beurre de tourage en plaques. Tempérage à 12-14 °C avant laminage, jamais à température ambiante d'atelier."},
 
   /* Logistique */
@@ -558,14 +594,19 @@ const state = {
   navLock:false,        // plan verrouillé : navigation seule (zoom, pan, orbite)
   cam2:{x:37, z:21, zoom:14},
   pipes:[], pipeDraft:null, pipeType:"eau_f",
+  cmd:null,             // commande de transformation en cours (déplacer, pivoter, échelle)
+  nav:"fusion",         // convention de navigation 3D : "fusion" ou "standard"
   airRate:10,           // renouvellements d'air par heure, pour le calcul indicatif de débit
-  show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:true},
+  show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:true, roof:true},
   issues:[]
 };
 const history = {past:[], future:[]};
 
 let need2D = true, need3D = true, needDiag = true;
-function markDirty(){ need2D = true; need3D = true; needDiag = true; }
+function markDirty(){
+  applyHosts();                          // menuiseries recalées sur leur paroi
+  need2D = true; need3D = true; needDiag = true;
+}
 
 function snapshot(){
   return JSON.stringify({site:state.site, objects:state.objects, flux:state.flux, pipes:state.pipes, seq:state.seq});
@@ -619,6 +660,56 @@ function hasPoints(o){ return !!(o && o.points); }
 
 /* Ancrage d'une extrémité sur un élément. Le point est mémorisé dans le
    repère local de l'élément : il suit ses déplacements et ses rotations. */
+/* ---- Portes et fenêtres : hébergées par un mur ----
+   Une menuiserie posée près d'une paroi s'y encastre : elle prend son
+   orientation, se cale sur son axe et mémorise sa position relative, de
+   sorte qu'elle suit ensuite le mur si celui-ci bouge ou pivote. */
+/* Une cloison vitrée a la forme « window » mais reste une paroi : on
+   désigne donc les menuiseries par leur type, pas par leur symbole. */
+const MENUIS_IDS = ["porte_batt", "porte_rap", "porte_iso", "porte_sect", "oculus", "fenetre"];
+function isMenuiserie(o){
+  const d = BY_ID[o.type];
+  return !!d && (d.shape === "door" || MENUIS_IDS.indexOf(o.type) >= 0);
+}
+function isParoi(o){ const d = BY_ID[o.type]; return !!d && d.shape === "wall"; }
+
+/* Mur le plus proche du point, dans un rayon utile. */
+function paroiProche(x, z, tol){
+  let best = null, bd = tol == null ? 1.6 : tol;
+  for (const w of state.objects){
+    if (!isParoi(w)) continue;
+    const L = Math.max(w.w, w.d), ang = w.w >= w.d ? w.rot : w.rot + 90;
+    const loc = rot2(x - w.x, z - w.z, -ang);
+    if (Math.abs(loc.x) > L/2 + .5) continue;
+    const dist = Math.abs(loc.z);
+    if (dist < bd){ bd = dist; best = {mur:w, ang:ang, t:clamp(loc.x, -L/2, L/2), L:L}; }
+  }
+  return best;
+}
+/* Encastre la menuiserie dans le mur trouvé, et mémorise l'hébergement. */
+function poserSurParoi(o, x, z){
+  const h = paroiProche(x, z, 1.6);
+  if (!h){ delete o.host; return false; }
+  const ep = Math.min(h.mur.w, h.mur.d);
+  const lg = Math.max(o.w, o.d);
+  h.t = clamp(h.t, -h.L/2 + lg/2, h.L/2 - lg/2);
+  o.host = {id:h.mur.id, t:h.t};
+  o.w = lg; o.d = Math.max(ep * 1.15, .12);              // la menuiserie traverse la paroi
+  applyHost(o);
+  return true;
+}
+/* Recalcule la position d'une menuiserie à partir de son mur hôte. */
+function applyHost(o){
+  if (!o.host) return false;
+  const w = byId(o.host.id);
+  if (!w || !isParoi(w)){ delete o.host; return false; }
+  const ang = w.w >= w.d ? w.rot : w.rot + 90;
+  const q = rot2(o.host.t, 0, ang);
+  o.x = w.x + q.x; o.z = w.z + q.z; o.rot = ang;
+  return true;
+}
+function applyHosts(){ state.objects.forEach(o => { if (o.host) applyHost(o); }); }
+
 function makeAnchor(x, z, o){
   const r = rot2(x - o.x, z - o.z, -o.rot);
   return {id:o.id, lx:r.x, lz:r.z};
@@ -646,7 +737,20 @@ function pipeLen(p){
 function pipeY(p){ return p.y != null ? p.y : (RESEAUX[p.type] || RESEAUX.eau_f).y; }
 function pipeDia(p){ return p.dia || (RESEAUX[p.type] || RESEAUX.eau_f).dia; }
 
-function snapV(v){ const g = state.site.grid; return state.site.snap ? Math.round(v / g) * g : Math.round(v * 1000) / 1000; }
+/* Pas effectif de la grille : c'est celui qui est réellement dessiné à
+   l'écran. Les carreaux se doublent quand on s'éloigne et se subdivisent
+   quand on s'approche, et le magnétisme suit exactement ce pas. */
+function gridStep(){
+  const z = state.cam2.zoom; let step = state.site.grid;
+  while (step * z < 7) step *= 2;
+  while (step * z > 55 && step > .05) step /= 2;
+  return step;
+}
+function snapV(v){
+  if (!state.site.snap) return Math.round(v * 1000) / 1000;
+  const g = gridStep();
+  return Math.round(Math.round(v / g) * g * 1000) / 1000;
+}
 
 function rot2(px, pz, deg){
   const a = rad(deg), c = Math.cos(a), s = Math.sin(a);
@@ -717,15 +821,21 @@ function hexA(hex, a){
   const n = parseInt(hex.slice(1), 16);
   return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
 }
-let toastTimer = null;
 function toast(msg, bad){
+  const box = document.getElementById("toasts") || document.body;
   const t = document.createElement("div");
   t.className = "toast" + (bad ? " bad" : "");
   t.textContent = msg;
-  document.body.appendChild(t);
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.remove(), 2600);
-  $("#msg").textContent = msg;
+  box.appendChild(t);
+  /* Chaque message porte sa propre minuterie. Une minuterie unique partagée
+     faisait que l'arrivée d'un message annulait la disparition du précédent,
+     qui restait alors affiché indéfiniment. */
+  setTimeout(() => {
+    t.classList.add("out");
+    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+  }, bad ? 4200 : 2600);
+  while (box.children.length > 4) box.removeChild(box.firstChild);
+  const m = $("#msg"); if (m) m.textContent = msg;
 }
 
 function askConfirm(title, msg, onOk){
@@ -1181,6 +1291,109 @@ function drawShape(g, def, o, W, H, thumb){
       g.beginPath(); g.arc(0, 0, R*.7, 0, 7); g.stroke();
       break;
     }
+    /* --- BVP, suite --- */
+    case "divider": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1;    // grille de division
+      g.beginPath();
+      for (let i = 1; i < 4; i++){
+        g.moveTo(x + i*W/4, y + H*.14); g.lineTo(x + i*W/4, y + H*.86);
+        g.moveTo(x + W*.14, y + i*H/4); g.lineTo(x + W*.86, y + i*H/4);
+      }
+      g.stroke();
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(x + W*.5, y + H*.05); g.lineTo(x + W*.5, y - H*.18); g.stroke();
+      break;
+    }
+    case "rounder": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = col; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2;
+      g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+      g.strokeStyle = "rgba(255,255,255,.65)"; g.lineWidth = 1.3;  // gouttière hélicoïdale
+      g.beginPath();
+      for (let a = 0; a < 8; a += .22) g.lineTo(Math.cos(a)*R*(1 - a/9), Math.sin(a)*R*(1 - a/9));
+      g.stroke();
+      break;
+    }
+    case "moulder": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#c9a96a"; g.fillRect(x + W*.05, y + H*.38, W*.9, H*.24);
+      g.fillStyle = "#5c6a78";
+      [.2, .45, .72].forEach(t => g.fillRect(x + W*t, y + H*.24, W*.06, H*.52));
+      break;
+    }
+    case "proofer": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.3; g.strokeRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.25); g.lineWidth = .9;           // échelles à l'intérieur
+      g.beginPath();
+      const n = Math.max(2, Math.round(H/8));
+      for (let i = 1; i < n; i++){ g.moveTo(x + W*.1, y + i*H/n); g.lineTo(x + W*.9, y + i*H/n); }
+      g.stroke();
+      g.fillStyle = shade(col,-.35); g.fillRect(x + W*.42, y + H - 3, W*.16, 3);
+      g.strokeStyle = "rgba(120,190,220,.9)"; g.lineWidth = 1.2;   // vapeur
+      g.beginPath();
+      for (let i = 0; i < 2; i++){
+        const px = x + W*(.3 + i*.4);
+        g.moveTo(px, y + H*.3); g.quadraticCurveTo(px + 4, y + H*.18, px, y + H*.08);
+      }
+      g.stroke();
+      break;
+    }
+    case "deck_oven": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.3; g.strokeRect(x, y, W, H);
+      g.fillStyle = shade(col,-.3);                                 // ponts superposés
+      for (let i = 0; i < 4; i++) g.fillRect(x + W*.08, y + H*(.12 + i*.2), W*.84, H*.1);
+      g.fillStyle = "#2b2016"; g.fillRect(x + W*.08, y + H - 4, W*.84, 4);
+      break;
+    }
+    case "spiral_cool": {
+      const R = Math.min(W, H)/2;
+      g.fillStyle = hexA(col,.35); g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = shade(col,-.3); g.lineWidth = 1.3;
+      g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+      g.strokeStyle = "#c9a96a"; g.lineWidth = Math.max(1.6, R*.12);  // tapis en spirale
+      g.beginPath();
+      for (let a = 0; a < 14; a += .2) g.lineTo(Math.cos(a)*R*(.28 + a/22), Math.sin(a)*R*(.28 + a/22));
+      g.stroke();
+      break;
+    }
+    case "enrober": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = "#5a3a22";                                      // rideau de chocolat
+      g.fillRect(x + W*.36, y + H*.08, W*.1, H*.84);
+      g.fillStyle = "#c9a96a"; g.fillRect(x + 2, y + H*.42, W - 4, H*.16);
+      break;
+    }
+    case "bread_slicer": {
+      g.fillStyle = col; g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.45); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "#8c98a6"; g.lineWidth = 1;                   // peigne de lames
+      g.beginPath();
+      for (let px = x + W*.18; px < x + W*.85; px += Math.max(3, W*.08)){
+        g.moveTo(px, y + H*.18); g.lineTo(px, y + H*.82);
+      }
+      g.stroke();
+      break;
+    }
+    case "chilled_table": {
+      g.fillStyle = shade(col,.18); g.fillRect(x, y, W, H);
+      g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
+      g.fillStyle = hexA("#29b6f6",.5); g.fillRect(x + 2, y + H*.62, W - 4, H*.32);
+      g.strokeStyle = "#29b6f6"; g.lineWidth = 1;
+      g.beginPath();
+      for (let i = 0; i < 3; i++){
+        const px = x + W*(.25 + i*.25);
+        g.moveTo(px, y + H*.68); g.lineTo(px, y + H*.88);
+      }
+      g.stroke();
+      break;
+    }
     /* --- Voirie --- */
     case "road": {
       const lourde = !!def.lourde;
@@ -1599,8 +1812,7 @@ function draw2D(){
 
 function drawGrid(a, b){
   const c = state.cam2, S = state.site;
-  let step = S.grid;
-  while (step * c.zoom < 7) step *= 2;
+  const step = gridStep();
   ctx.save(); ctx.beginPath(); ctx.rect(a.x, a.y, b.x-a.x, b.y-a.y); ctx.clip();
   for (let pass = 0; pass < 2; pass++){
     const s = pass ? step * 5 : step;
@@ -1946,6 +2158,7 @@ cv.addEventListener("pointerdown", e => {
     $("#rcancel").addEventListener("click", cancelDraft);
     return;
   }
+  if (state.cmd){ applyCmd(p); endCmd(true); return; }
   if (state.tool === "flux"){ addFluxPoint(p.x, p.z); return; }
   if (state.tool === "tuyau"){ addPipePoint(p.x, p.z); return; }
 
@@ -1982,6 +2195,7 @@ cv.addEventListener("pointermove", e => {
   const p = s2w(e.clientX - r.left, e.clientY - r.top);
   hover = p;
   $("#coord").textContent = "x " + fmt(p.x) + " m   z " + fmt(p.z) + " m";
+  if (state.cmd){ applyCmd(p); return; }
   if (state.placing || state.fluxDraft || state.pipeDraft || state.measure) need2D = true;
 
   if (!drag){
@@ -2029,6 +2243,12 @@ cv.addEventListener("pointermove", e => {
         if (hasPoints(o)) o.points = orig.points.map(q => ({x:q.x+dx, z:q.z+dz}));
         else { o.x = orig.x + dx; o.z = orig.z + dz; }
       });
+      /* Une menuiserie déplacée seule se réencastre dans la paroi visée,
+         ou redevient libre si on l'en éloigne franchement. */
+      if (drag.origs.length === 1){
+        const o = byId(drag.origs[0].id);
+        if (o && isMenuiserie(o) && !o.locked) poserSurParoi(o, o.x, o.z);
+      }
       needDiag = true; break;
     }
     case "rotate": {
@@ -2082,7 +2302,7 @@ cv.addEventListener("wheel", e => {
   state.cam2.zoom = clamp(state.cam2.zoom * k, 2, 60);
   const after = s2w(mx, my);
   state.cam2.x += before.x - after.x; state.cam2.z += before.z - after.z;
-  syncZoomInputs(); need2D = true;
+  syncZoomInputs(); refreshStatus(); need2D = true;
 }, {passive:false});
 
 cv.addEventListener("contextmenu", e => e.preventDefault());
@@ -2198,6 +2418,7 @@ function init3D(){
   controls.minDistance = 3; controls.maxDistance = 600;
   controls.maxPolarAngle = Math.PI/2 - .03;
   if ("screenSpacePanning" in controls) controls.screenSpacePanning = false;
+  applyNavMode();
 
   scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x55606e, .85));
   sunLight = new THREE.DirectionalLight(0xffffff, .78);
@@ -2563,6 +2784,80 @@ function build3D(o){
       cha.position.y = h*.96; g.add(cha);                          // charlotte
       break;
     }
+    /* --- BVP, suite --- */
+    case "divider": {
+      const bati = box(w, h*.72, d, col); bati.position.y = h*.36; g.add(bati);
+      const tete = box(w*.9, h*.2, d*.9, shade(col,-.2)); tete.position.y = h*.86; g.add(tete);
+      const lev = box(w*.1, h*.5, d*.1, "#5c6a78"); lev.position.set(w*.3, h*1.1, 0); lev.rotation.z = .5; g.add(lev);
+      break;
+    }
+    case "rounder": {
+      const cone = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.2, Math.min(w,d)*.46, h*.8, 20), mat(col));
+      cone.position.y = h*.4; g.add(cone);
+      const soc = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*.48, Math.min(w,d)*.48, h*.14, 20), mat(shade(col,-.3)));
+      soc.position.y = h*.07; g.add(soc);
+      break;
+    }
+    case "moulder": {
+      const bati = box(w, h*.7, d, col); bati.position.y = h*.35; g.add(bati);
+      const tap = box(w*.94, .05, d*.7, "#c9a96a"); tap.position.y = h*.74; g.add(tap);
+      [-.25, 0, .25].forEach(t => {
+        const ro = new THREE.Mesh(new THREE.CylinderGeometry(h*.09, h*.09, d*.8, 12), mat("#5c6a78"));
+        ro.rotation.x = Math.PI/2; ro.position.set(w*t, h*.82, 0); g.add(ro);
+      });
+      break;
+    }
+    case "proofer": {
+      const corps = box(w, h, d, col); corps.position.y = h/2; g.add(corps);
+      const porte = box(w*.8, h*.86, .06, shade(col,-.3)); porte.position.set(0, h*.47, d/2 + .03); g.add(porte);
+      const poi = box(.05, h*.3, .05, "#5c6a78"); poi.position.set(w*.3, h*.5, d/2 + .08); g.add(poi);
+      const grp = box(w*.5, h*.16, d*.5, "#8c98a6"); grp.position.y = h + h*.08; g.add(grp);
+      break;
+    }
+    case "deck_oven": {
+      const corps = box(w, h, d, col); corps.position.y = h/2; g.add(corps);
+      for (let i = 0; i < 4; i++){
+        const b = box(w*.84, h*.12, .06, "#2b2016");
+        b.position.set(0, h*(.18 + i*.2), d/2 + .03); g.add(b);
+      }
+      const hotte = box(w*1.1, h*.14, d*.5, "#8c98a6"); hotte.position.set(0, h + h*.07, d*.3); g.add(hotte);
+      break;
+    }
+    case "spiral_cool": {
+      const R = Math.min(w, d)/2;
+      const mt = new THREE.Mesh(new THREE.CylinderGeometry(R*.18, R*.18, h, 12), mat("#8c98a6"));
+      mt.position.y = h/2; g.add(mt);
+      const n = 7;
+      for (let i = 0; i < n; i++){
+        const an = new THREE.Mesh(new THREE.CylinderGeometry(R*(.4 + i*.08), R*(.4 + i*.08), .06, 20), mat(i % 2 ? "#c9a96a" : shade(col,.1)));
+        an.position.y = h*(.12 + i*(.82/n)); g.add(an);
+      }
+      break;
+    }
+    case "enrober": {
+      const bati = box(w, h*.6, d, col); bati.position.y = h*.3; g.add(bati);
+      const tap = box(w*.98, .05, d*.6, "#c9a96a"); tap.position.y = h*.62; g.add(tap);
+      const cuve = box(w*.24, h*.34, d*.8, "#5a3a22"); cuve.position.set(-w*.05, h*.8, 0); g.add(cuve);
+      break;
+    }
+    case "bread_slicer": {
+      const bati = box(w, h*.8, d, col); bati.position.y = h*.4; g.add(bati);
+      for (let i = 0; i < 8; i++){
+        const la = box(.01, h*.3, d*.7, "#c9ccd1");
+        la.position.set(-w*.35 + i*w*.1, h*.62, 0); g.add(la);
+      }
+      break;
+    }
+    case "chilled_table": {
+      const plat = box(w, .06, d, shade(col,.2)); plat.position.y = h - .03; g.add(plat);
+      const cais = box(w*.96, h*.6, d*.9, col); cais.position.y = h*.36; g.add(cais);
+      const gr = box(w*.3, h*.5, .04, "#29b6f6"); gr.position.set(w*.3, h*.36, d/2 + .02); g.add(gr);
+      for (let i = 0; i < 4; i++){
+        const pi = box(.06, h*.12, .06, "#8c98a6");
+        pi.position.set((i%2?1:-1)*(w/2-.08), h*.06, (i<2?1:-1)*(d/2-.08)); g.add(pi);
+      }
+      break;
+    }
     /* --- Voirie : simples nappes au sol --- */
     case "road": {
       const ch = box(w, Math.max(h, .04), d, col); ch.position.y = Math.max(h, .04)/2; g.add(ch);
@@ -2749,10 +3044,12 @@ function build3D(o){
       const mO = box(ep, h, d - 2*ep, col); mO.position.set(-w/2 + ep/2, h/2, 0); g.add(mO);
       const mE = box(ep, h, d - 2*ep, col); mE.position.set( w/2 - ep/2, h/2, 0); g.add(mE);
       const ac = box(w, .12, d, shade(col, -.3)); ac.position.y = h; g.add(ac);   // acrotère
+      const toit = box(w - ep, .16, d - ep, shade(col, .12));                    // couverture
+      toit.position.y = h - .08; toit.userData.roof = true; g.add(toit);
       break;
     }
     case "canopy": {
-      const toit = box(w, .18, d, shade(col, .1)); toit.position.y = h; g.add(toit);
+      const toit = box(w, .18, d, shade(col, .1)); toit.position.y = h; toit.userData.roof = true; g.add(toit);
       const np = Math.max(2, Math.round(w / 6));
       for (let i = 0; i <= np; i++){
         for (let k = 0; k < 2; k++){
@@ -2996,7 +3293,10 @@ function sync3D(){
     m.visible = (o.cat !== "zones") || state.show.zones;
     const lab = m.getObjectByName("__label");
     if (lab) lab.visible = state.show.labels;
-    m.traverse(n => { if (n.isMesh) n.userData.oid = o.id; });
+    m.traverse(n => {
+      if (n.isMesh) n.userData.oid = o.id;
+      if (n.userData.roof) n.visible = state.show.roof;   // toitures masquables
+    });
   });
   meshes.forEach((m, id) => {
     if (!alive.has(id)){ scene.remove(m); disposeTree(m); meshes.delete(id); }
@@ -3136,6 +3436,7 @@ function bind3D(){
       if (g) addFluxPoint(g.x, g.z);
       e.stopPropagation(); return;
     }
+    if (state.cmd){ if (g) applyCmd(g); endCmd(true); e.stopPropagation(); return; }
     if (state.tool === "tuyau"){
       if (g) addPipePoint(g.x, g.z);
       e.stopPropagation(); return;
@@ -3641,6 +3942,8 @@ function placeAt(x, z, keep){
   };
   if (def.color) o.color = def.color;
   state.objects.push(o);
+  if (isMenuiserie(o) && poserSurParoi(o, x, z))        // encastrement automatique
+    toast("Encastrée dans « " + byId(o.host.id).label + " »");
   state.selection = [o.id];
   if (!keep) startPlacing(state.placing);
   refreshAll();
@@ -3882,6 +4185,11 @@ function buildProps(){
           '</div></div>' +
           '<p class="help">Cotes libres dans les champs ci-dessus, ou par les poignées d\'angle sur le plan.</p>'
         : '') +
+      (isMenuiserie(o)
+        ? '<div class="kv"><span>Encastrée dans</span><b style="color:' + (o.host && byId(o.host.id) ? "var(--acc)" : "var(--warn)") + '">' +
+          (o.host && byId(o.host.id) ? esc(byId(o.host.id).label) : "aucune paroi") + '</b></div>' +
+          '<p class="help">Faites glisser la menuiserie sur une paroi pour l\'y encastrer : elle prend son orientation, son épaisseur, et la suit ensuite.</p>'
+        : '') +
       (o.cat === "zones" && o.zone !== "ext"
         ? '<div class="row"><label>Température</label><div class="f">' +
           '<span class="unit" data-u="°C"><input type="number" id="p-temp" value="' + (zoneTemp(o) == null ? "" : zoneTemp(o)) + '" step="1" min="-30" max="60"></span>' +
@@ -4109,7 +4417,161 @@ function nudge(dx, dz){
 
 /* Verrouillage du plan : mode navigation. La sélection courante est
    conservée, seules les actions qui modifient l'implantation sont neutralisées. */
-const EDIT_KEYS = /^(Delete|Backspace|r|R|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|f|F|m|M|t|T)$/;
+const EDIT_KEYS = /^(Delete|Backspace|r|R|s|S|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|f|F|m|M|t|T|d|D)$/;
+/* Toitures : masquées, on voit l'implantation depuis le dessus en 3D. */
+/* Deux conventions de navigation. « Fusion » : molette pressée = translation,
+   Maj + molette pressée = orbite, clic gauche réservé à la sélection —
+   c'est ce qu'attend quelqu'un qui vient de Fusion 360 ou de SolidWorks. */
+function applyNavMode(){
+  if (!controls || !THREE.MOUSE) return;
+  const M = THREE.MOUSE;
+  if (state.nav === "fusion"){
+    controls.mouseButtons = {LEFT:null, MIDDLE:M.PAN, RIGHT:M.PAN};
+    if (navShift) controls.mouseButtons.MIDDLE = M.ROTATE;
+  } else {
+    controls.mouseButtons = {LEFT:M.ROTATE, MIDDLE:M.DOLLY, RIGHT:M.PAN};
+  }
+}
+let navShift = false;
+function setNav(mode){
+  state.nav = mode;
+  applyNavMode();
+  const b = $("#navmode"); if (b) b.textContent = mode === "fusion" ? "Navigation Fusion" : "Navigation standard";
+  toast(mode === "fusion"
+    ? "Navigation Fusion : molette pressée pour translater, Maj + molette pour orbiter"
+    : "Navigation standard : clic gauche pour orbiter, clic droit pour translater");
+  need3D = true;
+}
+
+/* ---- Commandes modales de transformation, dans l'esprit de Fusion 360 ----
+   M déplacer, R pivoter, S mettre à l'échelle. La commande suit la souris,
+   X ou Z contraignent l'axe, une valeur tapée au clavier donne la cote
+   exacte, Entrée ou clic valide, Échap annule et remet tout en place. */
+function startCmd(mode){
+  const objs = selectedObjects().filter(o => !o.locked);
+  const pips = selected().filter(o => hasPoints(o) && !o.locked);
+  if (!objs.length && !pips.length){ toast("Sélectionnez d'abord un ou plusieurs éléments"); return; }
+  if (mode !== "move" && !objs.length){ toast("Cette commande ne s'applique pas aux tracés"); return; }
+  commit();
+  let sx = 0, sz = 0, n = 0;
+  objs.forEach(o => { sx += o.x; sz += o.z; n++; });
+  pips.forEach(o => o.points.forEach(q => { sx += q.x; sz += q.z; n++; }));
+  state.cmd = {
+    mode: mode, axis: null, buf: "", from: null,
+    pivot: {x: sx / n, z: sz / n},
+    objs: objs.map(o => ({o:o, x:o.x, z:o.z, w:o.w, d:o.d, rot:o.rot})),
+    pips: pips.map(o => ({o:o, points:o.points.map(q => ({x:q.x, z:q.z}))}))
+  };
+  cmdHint();
+  need2D = true;
+}
+function cmdLabel(c){
+  const v = c.buf !== "" ? c.buf : null;
+  if (c.mode === "move")   return "Déplacer" + (c.axis ? " suivant " + c.axis.toUpperCase() : "") + (v ? " de " + v + " m" : "");
+  if (c.mode === "rotate") return "Pivoter" + (v ? " de " + v + "°" : "");
+  return "Échelle" + (v ? " × " + v : "");
+}
+function cmdHint(){
+  const c = state.cmd; if (!c) return;
+  showHint(cmdLabel(c) + " — " +
+    (c.mode === "move" ? "X ou Z pour contraindre l'axe, " : "") +
+    "tapez une valeur, Entrée ou clic pour valider, Échap pour annuler.");
+  const el = $("#cmdinfo"); if (el) el.textContent = cmdLabel(c);
+}
+function applyCmd(cur){
+  const c = state.cmd; if (!c) return;
+  if (!c.from && cur){ c.from = {x:cur.x, z:cur.z}; return; }
+  const num = c.buf !== "" && isFinite(+c.buf.replace(",", ".")) ? +c.buf.replace(",", ".") : null;
+
+  if (c.mode === "move"){
+    let dx = 0, dz = 0;
+    if (num != null){
+      const ax = c.axis || "x";
+      if (ax === "x") dx = num; else dz = num;
+    } else if (cur && c.from){
+      dx = cur.x - c.from.x; dz = cur.z - c.from.z;
+      if (c.axis === "x") dz = 0;
+      if (c.axis === "z") dx = 0;
+      if (state.site.snap){ const g = gridStep(); dx = Math.round(dx/g)*g; dz = Math.round(dz/g)*g; }
+    }
+    c.objs.forEach(r => { r.o.x = r.x + dx; r.o.z = r.z + dz; });
+    c.pips.forEach(r => { r.o.points = r.points.map(q => ({x:q.x + dx, z:q.z + dz})); });
+  }
+  else if (c.mode === "rotate"){
+    let a = 0;
+    if (num != null) a = num;
+    else if (cur && c.from){
+      a = (Math.atan2(cur.z - c.pivot.z, cur.x - c.pivot.x) -
+           Math.atan2(c.from.z - c.pivot.z, c.from.x - c.pivot.x)) * 180 / Math.PI;
+      if (state.site.snap) a = Math.round(a / 5) * 5;
+    }
+    c.objs.forEach(r => {
+      const q = rot2(r.x - c.pivot.x, r.z - c.pivot.z, a);
+      r.o.x = c.pivot.x + q.x; r.o.z = c.pivot.z + q.z;
+      r.o.rot = (r.rot + a) % 360;
+    });
+  }
+  else {
+    let k = 1;
+    if (num != null) k = num;
+    else if (cur && c.from){
+      const d0 = Math.hypot(c.from.x - c.pivot.x, c.from.z - c.pivot.z);
+      const d1 = Math.hypot(cur.x - c.pivot.x, cur.z - c.pivot.z);
+      k = d0 > .05 ? d1 / d0 : 1;
+      if (state.site.snap) k = Math.round(k * 20) / 20;
+    }
+    k = clamp(k, .05, 20);
+    c.objs.forEach(r => {
+      r.o.w = Math.max(.05, r.w * k); r.o.d = Math.max(.05, r.d * k);
+      r.o.x = c.pivot.x + (r.x - c.pivot.x) * k;
+      r.o.z = c.pivot.z + (r.z - c.pivot.z) * k;
+    });
+  }
+  markDirty(); cmdHint();
+}
+function endCmd(ok){
+  const c = state.cmd; if (!c) return;
+  if (!ok){
+    c.objs.forEach(r => { r.o.x = r.x; r.o.z = r.z; r.o.w = r.w; r.o.d = r.d; r.o.rot = r.rot; });
+    c.pips.forEach(r => { r.o.points = r.points; });
+    undo();                                          // on retire le point d'annulation posé au départ
+  }
+  state.cmd = null;
+  const el = $("#cmdinfo"); if (el) el.textContent = "";
+  hideHint(); markDirty(); refreshProps(true);
+}
+/* Touches consommées par une commande en cours. */
+function cmdKey(e){
+  const c = state.cmd; if (!c) return false;
+  const k = e.key;
+  if (k === "Escape"){ endCmd(false); return true; }
+  if (k === "Enter"){ applyCmd(null); endCmd(true); return true; }
+  if ((k === "x" || k === "X") && c.mode === "move"){ c.axis = c.axis === "x" ? null : "x"; applyCmd(null); return true; }
+  if ((k === "z" || k === "Z") && c.mode === "move" && !e.ctrlKey && !e.metaKey){ c.axis = c.axis === "z" ? null : "z"; applyCmd(null); return true; }
+  if (k === "Backspace"){ c.buf = c.buf.slice(0, -1); applyCmd(null); return true; }
+  if (/^[0-9.,-]$/.test(k)){ c.buf += k; applyCmd(null); return true; }
+  return false;
+}
+
+/* Rabat d'un panneau latéral. Le canevas doit être remesuré, sinon le plan
+   reste dessiné à l'ancienne largeur. */
+function togglePanel(cote){
+  const app = $("#app"), cls = cote === "left" ? "hl" : "hr";
+  const replie = app.classList.toggle(cls);
+  const b = $(cote === "left" ? "#tleft" : "#tright");
+  if (b) b.classList.toggle("on", !replie);
+  requestAnimationFrame(() => { resize2D(); resize3D(); need2D = true; need3D = true; });
+}
+
+function setRoof(v){
+  state.show.roof = v === undefined ? !state.show.roof : !!v;
+  const b = $("#roof");
+  if (b){ b.classList.toggle("on", state.show.roof); b.textContent = state.show.roof ? "Toitures" : "Toitures masquées"; }
+  const c = $("#v-roof"); if (c) c.checked = state.show.roof;
+  need3D = true;
+  toast(state.show.roof ? "Toitures affichées" : "Toitures masquées : vue plongeante sur l'implantation");
+}
+
 function setNavLock(v){
   state.navLock = v === undefined ? !state.navLock : !!v;
   if (state.navLock){
@@ -4138,6 +4600,12 @@ function refreshStatus(){
   $("#snap").classList.toggle("on", state.site.snap);
   $("#navlock").classList.toggle("on", state.navLock);
   $("#lockinfo").textContent = state.navLock ? "Plan verrouillé" : "";
+  /* Filet de sécurité : aucun mode actif, donc aucune raison d'afficher
+     un bandeau d'aide. Évite qu'une bulle reste collée après une action. */
+  if (!state.placing && !state.fluxDraft && !state.pipeDraft && !state.measure &&
+      !state.cmd && state.tool === "select") hideHint();
+  const gi = $("#gridinfo");
+  if (gi) gi.textContent = state.site.snap ? "magnétisme " + fmt(gridStep(), 2) + " m" : "magnétisme désactivé";
   renderViewTag();
 }
 function refreshAll(){
@@ -4165,6 +4633,40 @@ function exportJSON(){
   download(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}), slug(state.site.name) + ".json");
   toast("Projet exporté en JSON");
 }
+/* ---- Partage : une copie autonome de l'application, plan compris ----
+   Le destinataire reçoit un seul fichier .html : il l'ouvre d'un double-clic
+   et voit le plan, sans rien installer ni importer. */
+function planData(){
+  return {format:"agroplan.v1", date:new Date().toISOString(), site:state.site,
+          objects:state.objects, flux:state.flux, pipes:state.pipes};
+}
+function sharePlan(){
+  try {
+    const doc = document.documentElement.cloneNode(true);
+    /* on vide ce qui est reconstruit à l'ouverture, pour ne pas gonfler le fichier */
+    ["#lib","#props","#diag","#sum","#vol","#legbody","#keys","#toasts"].forEach(sel => {
+      const n = doc.querySelector(sel); if (n) n.innerHTML = "";
+    });
+    const vieux = doc.querySelector("#plan-embarque"); if (vieux) vieux.remove();
+    const sc = document.createElement("script");
+    sc.type = "application/json"; sc.id = "plan-embarque";
+    sc.textContent = JSON.stringify(planData()).replace(/<\//g, "<\\/");
+    doc.querySelector("head").appendChild(sc);
+    const html = "<!doctype html>\n" + doc.outerHTML;
+    download(new Blob([html], {type:"text/html"}), slug(state.site.name) + "-plan.html");
+    toast("Fichier de partage créé : " + Math.round(html.length/1024) + " Ko, à envoyer tel quel");
+  } catch(err){
+    toast("Partage impossible : " + err.message, true);
+  }
+}
+/* Plan embarqué dans le fichier reçu ? On le charge à la place de l'exemple. */
+function loadEmbedded(){
+  const n = document.getElementById("plan-embarque");
+  if (!n || !n.textContent.trim()) return false;
+  try { importJSON(n.textContent); return true; }
+  catch(e){ return false; }
+}
+
 function importJSON(text){
   let d;
   try { d = JSON.parse(text); } catch(e){ return toast("Fichier invalide", true); }
@@ -4224,7 +4726,12 @@ function buildLegend(){
     '<div class="kv"><span>Rotation 90°</span><b>R / Maj+R</b></div>' +
     '<div class="kv"><span>Supprimer</span><b>Suppr</b></div>' +
     '<div class="kv"><span>Annuler / Rétablir</span><b>Ctrl+Z / Y</b></div>' +
+    '<div class="kv"><span>Déplacer / pivoter / échelle</span><b>M · R · S</b></div>' +
+    '<div class="kv"><span>Contraindre l\'axe pendant la commande</span><b>X · Z</b></div>' +
+    '<div class="kv"><span>Quart de tour direct</span><b>Maj + R</b></div>' +
     '<div class="kv"><span>Tracer un réseau</span><b>T</b></div>' +
+    '<div class="kv"><span>Mesurer</span><b>D</b></div>' +
+    '<div class="kv"><span>Masquer les toitures</span><b>O</b></div>' +
     '<div class="kv"><span>Verrouiller le plan</span><b>L</b></div>' +
     '<div class="kv"><span>Recadrer</span><b>F2</b></div>';
 }
@@ -4386,6 +4893,10 @@ function bindUI(){
   });
   $("#gridstep").addEventListener("change", e => { state.site.grid = +e.target.value; siteKey = ""; markDirty(); });
   $("#fit").addEventListener("click", () => { state.view === "3d" ? fit3D() : fit2D(); });
+  $("#tleft").addEventListener("click", () => togglePanel("left"));
+  $("#tright").addEventListener("click", () => togglePanel("right"));
+  $("#roof").addEventListener("click", () => setRoof());
+  $("#navmode").addEventListener("click", () => setNav(state.nav === "fusion" ? "standard" : "fusion"));
   $("#navlock").addEventListener("click", () => setNavLock());
   /* Tableau des volumes : édition directe des hauteurs sous plafond. */
   $("#vol").addEventListener("change", e => {
@@ -4418,6 +4929,7 @@ function bindUI(){
   });
 
   $("#export").addEventListener("click", exportJSON);
+  $("#share").addEventListener("click", sharePlan);
   $("#png").addEventListener("click", exportPNG);
   $("#csv").addEventListener("click", exportCSV);
   $("#import").addEventListener("click", () => $("#file").click());
@@ -4428,8 +4940,10 @@ function bindUI(){
   });
   $("#search").addEventListener("input", e => buildLibrary(e.target.value));
   $("#legtog").addEventListener("click", () => {
-    const b = $("#legbody"); const on = b.style.display === "none";
-    b.style.display = on ? "" : "none"; $("#legtog").textContent = on ? "–" : "+";
+    const b = $("#legbody"), ouvert = b.style.display === "none";
+    b.style.display = ouvert ? "" : "none";
+    $("#legtog").textContent = ouvert ? "–" : "Légende";
+    $("#legtog").title = ouvert ? "Replier la légende" : "Afficher la légende";
   });
 
   const siteNum = (sel, key, min, max) => $(sel).addEventListener("change", e => {
@@ -4444,6 +4958,7 @@ function bindUI(){
   const vis = (sel, key) => $(sel).addEventListener("change", e => { state.show[key] = e.target.checked; markDirty(); });
   vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux"); vis("#v-pipes","pipes");
   vis("#v-labels","labels"); vis("#v-issues","issues"); vis("#v-shadow","shadows");
+  $("#v-roof").addEventListener("change", e => setRoof(e.target.checked));
 
   const st = $("#stage");
   st.addEventListener("dragover", e => { e.preventDefault(); $("#drop").classList.remove("hide"); });
@@ -4454,6 +4969,9 @@ function bindUI(){
     const r = new FileReader(); r.onload = () => importJSON(r.result); r.readAsText(f);
   });
 
+  window.addEventListener("keyup", e => {
+    if (e.key === "Shift"){ navShift = false; applyNavMode(); }
+  });
   window.addEventListener("keydown", e => {
     const t = e.target.tagName;
     if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT"){
@@ -4461,6 +4979,8 @@ function bindUI(){
       return;
     }
     if (e.code === "Space"){ spaceDown = true; e.preventDefault(); }
+    if (cmdKey(e)){ e.preventDefault(); return; }
+    if (e.key === "Shift") navShift = true, applyNavMode();
     if ((e.key === "l" || e.key === "L") && !e.ctrlKey && !e.metaKey){ setNavLock(); return; }
     /* Plan verrouillé : seuls la navigation, les vues et les exports restent
        actifs. Les raccourcis d'édition sont sans effet. */
@@ -4484,11 +5004,17 @@ function bindUI(){
       case "Escape": if (state.fluxDraft || state.pipeDraft || state.placing || state.measure) cancelDraft();
                      else { state.selection = []; refreshProps(true); refreshStatus(); need2D = true; need3D = true; } break;
       case "Enter": if (state.fluxDraft) endFluxDraft(); else if (state.pipeDraft) endPipeDraft(); break;
-      case "r": case "R": rotateSel(e.shiftKey ? -90 : 90); break;
+      case "r": startCmd("rotate"); break;
+      case "R": rotateSel(e.shiftKey ? -90 : 90); break;   // Maj+R : quart de tour direct
       case "v": case "V": setTool("select"); break;
       case "f": case "F": setTool("flux"); break;
       case "t": case "T": setTool("tuyau"); break;
-      case "m": case "M": setTool("mesure"); break;
+      case "o": case "O": setRoof(); break;
+      case "F9":  e.preventDefault(); togglePanel("left"); break;
+      case "F10": e.preventDefault(); togglePanel("right"); break;
+      case "m": case "M": startCmd("move"); break;
+      case "s": case "S": startCmd("scale"); break;
+      case "d": case "D": setTool("mesure"); break;
       case "2": setView("2d"); break;
       case "3": setView("3d"); break;
       case "g": case "G": state.site.snap = !state.site.snap; refreshStatus(); break;
@@ -4500,7 +5026,7 @@ function bindUI(){
     }
   });
   window.addEventListener("keyup", e => { if (e.code === "Space") spaceDown = false; });
-  function step(e){ return state.site.grid * (e.shiftKey ? 10 : 1); }
+  function step(e){ return gridStep() * (e.shiftKey ? 10 : 1); }
 
   const ro = new ResizeObserver(() => { resize2D(); resize3D(); need2D = true; });
   ro.observe($("#stage"));
@@ -4511,7 +5037,8 @@ function boot(){
   buildLibrary(); buildLegend(); bindUI(); wireProps();
   resize2D();
   init3D(); bind3D();
-  loadDemo();
+  if (!loadEmbedded()) loadDemo();
+  history.past.length = 0; history.future.length = 0;
   setTool("select", true); setView("2d");
   
   requestAnimationFrame(() => {
