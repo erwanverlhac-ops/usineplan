@@ -66,6 +66,27 @@ button,input,select,textarea{font:inherit;color:inherit;font-variant-numeric:tab
 .seg button{background:transparent;border:0;padding:5px 12px;cursor:pointer;color:var(--ink-2);font-weight:600}
 .seg button.on{background:var(--acc);color:var(--acc-ink)}
 .spacer{flex:1}
+.btn.ico{font-size:15px;line-height:1;padding:2px 8px}
+.menu{position:relative}
+.pop{
+  position:absolute;top:calc(100% + 5px);right:0;min-width:236px;z-index:60;
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
+  padding:4px;display:none;flex-direction:column;box-shadow:0 14px 34px rgba(0,0,0,.55)
+}
+.menu.open .pop{display:flex}
+.pop button{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  text-align:left;padding:6px 9px;border:0;background:transparent;color:var(--ink);
+  border-radius:4px;font-size:12px;white-space:nowrap;cursor:pointer
+}
+.pop button:hover{background:var(--line)}
+.pop button em{font-style:normal;color:var(--ink-3);font-size:10.5px}
+.pop button.on::before{content:"✓ ";color:var(--acc);margin-right:-6px}
+.pop button:not(.on)::before{content:"   ";white-space:pre}
+.pop button.dangerm{color:#ff9b96}
+.pop .sepm{height:1px;background:var(--line);margin:4px 2px}
+@media (max-width:1240px){.brand span{display:none}}
+@media (max-width:1060px){.grp{padding-right:6px;margin-right:2px}.btn.sm{padding:3px 6px;font-size:11.5px}}
 
 #search{margin:9px;padding:6px 9px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);width:calc(100% - 18px)}
 #search::placeholder{color:var(--ink-3)}
@@ -241,43 +262,55 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
 
     <div class="grp" id="tools">
       <button class="btn sm on" data-tool="select" title="Sélectionner et déplacer (V)">Sélection</button>
-      <button class="btn sm" data-tool="flux" title="Tracer un flux (F)">Flux</button>
-      <button class="btn sm" data-tool="tuyau" title="Tracer un réseau de tuyauterie (T) — cliquez un équipement pour l'y raccorder">Tuyauterie</button>
+      <button class="btn sm" data-tool="flux" title="Tracer un flux de circulation (F)">Flux</button>
+      <button class="btn sm" data-tool="tuyau" title="Tracer un réseau de tuyauterie (T) — cliquez un équipement pour l'y raccorder">Tuyaux</button>
       <button class="btn sm" data-tool="mesure" title="Mesurer une distance (D) — plan 2D">Mesure</button>
     </div>
 
     <div class="grp">
-      <button class="btn sm" id="undo" title="Annuler (Ctrl+Z)">Annuler</button>
-      <button class="btn sm" id="redo" title="Rétablir (Ctrl+Y)">Rétablir</button>
+      <button class="btn sm ico" id="undo" title="Annuler (Ctrl+Z)">↶</button>
+      <button class="btn sm ico" id="redo" title="Rétablir (Ctrl+Y)">↷</button>
     </div>
 
     <div class="grp">
       <button class="btn sm" id="snap" title="Magnétisme sur la grille (G)">Magnétisme</button>
-      <select id="gridstep" style="width:88px" title="Pas de grille">
+      <select id="gridstep" style="width:78px" title="Pas de grille de référence">
         <option value="0.25">0,25 m</option><option value="0.5">0,5 m</option>
         <option value="1" selected>1 m</option><option value="2">2 m</option><option value="5">5 m</option>
       </select>
       <button class="btn sm" id="fit" title="Recadrer sur le site (F2)">Recadrer</button>
-      <button class="btn sm on" id="tleft" title="Rabattre ou rouvrir la bibliothèque d'éléments (F9)">◧ Éléments</button>
-      <button class="btn sm on" id="tright" title="Rabattre ou rouvrir le panneau de propriétés (F10)">Propriétés ◨</button>
-      <button class="btn sm on" id="roof" title="Afficher ou masquer les toitures en vue 3D (O)">Toitures</button>
-      <button class="btn sm" id="navmode" title="Basculer entre navigation Fusion (molette pressée = translation, Maj + molette = orbite) et navigation standard">Navigation Fusion</button>
-      <button class="btn sm" id="navlock" title="Verrouiller le plan (L) : navigation seule, aucun élément ne peut être déplacé">Verrouiller le plan</button>
     </div>
 
     <div class="spacer"></div>
 
-    <div class="grp">
-      <button class="btn sm" id="demo" title="Charger l'implantation de démonstration">Exemple</button>
-      <button class="btn sm" id="clear" title="Vider le plan">Vider</button>
+    <div class="menu" id="m-aff">
+      <button class="btn sm" data-menu>Affichage ▾</button>
+      <div class="pop">
+        <button id="tleft" class="on">Bibliothèque d'éléments<em>F9</em></button>
+        <button id="tright" class="on">Panneau de propriétés<em>F10</em></button>
+        <button id="m-leg">Légende du plan</button>
+        <div class="sepm"></div>
+        <button id="roof" class="on"><span>Toitures</span><em>O</em></button>
+        <button id="navmode"><span>Navigation Fusion</span></button>
+        <button id="navlock"><span>Verrouiller le plan</span><em>L</em></button>
+      </div>
     </div>
-    <div class="grp">
-      <button class="btn sm" id="import">Importer JSON</button>
-      <button class="btn sm" id="export">Exporter JSON</button>
-      <button class="btn sm" id="share" title="Créer un fichier .html autonome contenant l'application et ce plan : le destinataire l'ouvre d'un double-clic">Partager</button>
-      <button class="btn sm" id="png" title="Image du plan">Image</button>
-      <button class="btn sm" id="csv" title="Nomenclature des éléments">Nomenclature</button>
+
+    <div class="menu" id="m-fic">
+      <button class="btn sm" data-menu>Fichier ▾</button>
+      <div class="pop">
+        <button id="share">Partager le plan (fichier autonome)</button>
+        <div class="sepm"></div>
+        <button id="import">Importer un JSON</button>
+        <button id="export">Exporter en JSON<em>Ctrl+S</em></button>
+        <button id="png">Exporter l'image du plan</button>
+        <button id="csv">Exporter la nomenclature</button>
+        <div class="sepm"></div>
+        <button id="demo">Charger l'exemple</button>
+        <button id="clear" class="dangerm">Vider le plan</button>
+      </div>
     </div>
+
     <input type="file" id="file" accept="application/json,.json" class="hide">
   </header>
 
@@ -4436,7 +4469,7 @@ let navShift = false;
 function setNav(mode){
   state.nav = mode;
   applyNavMode();
-  const b = $("#navmode"); if (b) b.textContent = mode === "fusion" ? "Navigation Fusion" : "Navigation standard";
+  const b = $("#navmode"); if (b) setLabel(b, mode === "fusion" ? "Navigation Fusion" : "Navigation standard");
   toast(mode === "fusion"
     ? "Navigation Fusion : molette pressée pour translater, Maj + molette pour orbiter"
     : "Navigation standard : clic gauche pour orbiter, clic droit pour translater");
@@ -4555,6 +4588,11 @@ function cmdKey(e){
 
 /* Rabat d'un panneau latéral. Le canevas doit être remesuré, sinon le plan
    reste dessiné à l'ancienne largeur. */
+/* Écrit le libellé d'un bouton sans toucher au raccourci affiché à côté. */
+function setLabel(b, t){
+  const sp = b.querySelector("span");
+  if (sp) sp.textContent = t; else b.textContent = t;
+}
 function togglePanel(cote){
   const app = $("#app"), cls = cote === "left" ? "hl" : "hr";
   const replie = app.classList.toggle(cls);
@@ -4566,7 +4604,7 @@ function togglePanel(cote){
 function setRoof(v){
   state.show.roof = v === undefined ? !state.show.roof : !!v;
   const b = $("#roof");
-  if (b){ b.classList.toggle("on", state.show.roof); b.textContent = state.show.roof ? "Toitures" : "Toitures masquées"; }
+  if (b){ b.classList.toggle("on", state.show.roof); setLabel(b, state.show.roof ? "Toitures" : "Toitures masquées"); }
   const c = $("#v-roof"); if (c) c.checked = state.show.roof;
   need3D = true;
   toast(state.show.roof ? "Toitures affichées" : "Toitures masquées : vue plongeante sur l'implantation");
@@ -4579,7 +4617,7 @@ function setNavLock(v){
     if (state.tool !== "select") setTool("select", true);
   }
   const b = $("#navlock");
-  if (b) b.textContent = state.navLock ? "Déverrouiller le plan" : "Verrouiller le plan";
+  if (b) setLabel(b, state.navLock ? "Déverrouiller le plan" : "Verrouiller le plan");
   if (cv) cv.style.cursor = state.navLock ? "grab" : "default";
   if (controls) controls.enabled = true;
   refreshStatus(); refreshProps(true); need2D = true; need3D = true;
@@ -4893,6 +4931,20 @@ function bindUI(){
   });
   $("#gridstep").addEventListener("change", e => { state.site.grid = +e.target.value; siteKey = ""; markDirty(); });
   $("#fit").addEventListener("click", () => { state.view === "3d" ? fit3D() : fit2D(); });
+  /* Menus déroulants de la barre : un seul ouvert à la fois, refermé au
+     clic ailleurs, à l'Échap, et après avoir choisi une commande. */
+  $$("[data-menu]").forEach(b => b.addEventListener("click", e => {
+    e.stopPropagation();
+    const m = b.parentNode, ouvert = m.classList.contains("open");
+    $$(".menu").forEach(x => x.classList.remove("open"));
+    if (!ouvert) m.classList.add("open");
+  }));
+  $$(".pop").forEach(pop => pop.addEventListener("click", e => {
+    if (e.target.tagName === "BUTTON") setTimeout(() => pop.parentNode.classList.remove("open"), 0);
+  }));
+  document.addEventListener("click", () => $$(".menu").forEach(x => x.classList.remove("open")));
+  $("#m-leg").addEventListener("click", () => $("#legtog").click());
+
   $("#tleft").addEventListener("click", () => togglePanel("left"));
   $("#tright").addEventListener("click", () => togglePanel("right"));
   $("#roof").addEventListener("click", () => setRoof());
@@ -5001,7 +5053,9 @@ function bindUI(){
     }
     switch (e.key){
       case "Delete": case "Backspace": e.preventDefault(); deleteSelection(); break;
-      case "Escape": if (state.fluxDraft || state.pipeDraft || state.placing || state.measure) cancelDraft();
+      case "Escape":
+        $$(".menu").forEach(x => x.classList.remove("open"));
+        if (state.fluxDraft || state.pipeDraft || state.placing || state.measure) cancelDraft();
                      else { state.selection = []; refreshProps(true); refreshStatus(); need2D = true; need3D = true; } break;
       case "Enter": if (state.fluxDraft) endFluxDraft(); else if (state.pipeDraft) endPipeDraft(); break;
       case "r": startCmd("rotate"); break;
