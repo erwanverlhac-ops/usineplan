@@ -232,6 +232,17 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
 #app.hr{grid-template-columns:262px 1fr 0}
 #app.hl.hr{grid-template-columns:0 1fr 0}
 #app.hl #left,#app.hr #right{visibility:hidden;overflow:hidden;min-width:0;border:0}
+/* ---- Mode consultation (fichier partagé en lecture seule) ---- */
+#robadge{display:none;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:600;
+  color:#0f151c;background:var(--acc);white-space:nowrap}
+body.readonly #robadge{display:inline-block}
+#lbltog{display:none;font-weight:600}
+body.readonly #lbltog{display:inline-flex;border-color:var(--acc)}
+body.readonly #share2,body.readonly #tools,body.readonly #undo,body.readonly #redo,
+body.readonly #snap,body.readonly #gridstep,body.readonly #m-fic,body.readonly #navlock,
+body.readonly #tleft,body.readonly #drop,body.readonly #left{display:none!important}
+body.readonly #props input,body.readonly #props select,body.readonly #props textarea,
+body.readonly #vol input,body.readonly #vol select{opacity:.8;cursor:default}
 @media (max-width:1180px){
   #app{grid-template-columns:220px 1fr 288px}
   #app.hl{grid-template-columns:0 1fr 288px}
@@ -283,6 +294,10 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
 
     <div class="spacer"></div>
 
+    <span id="robadge" title="Ce plan a été partagé pour consultation : il ne peut pas être modifié">Consultation seule</span>
+    <button class="btn sm on" id="lbltog" title="Afficher ou masquer les étiquettes des éléments (E)">🏷 Masquer les étiquettes</button>
+    <button class="btn sm" id="share2" title="Créer un fichier .html en lecture seule à envoyer au professeur">Partager pour consultation</button>
+
     <div class="menu" id="m-aff">
       <button class="btn sm" data-menu>Affichage ▾</button>
       <div class="pop">
@@ -291,7 +306,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
         <button id="m-leg">Légende du plan</button>
         <div class="sepm"></div>
         <button id="roof" class="on"><span>Toitures</span><em>O</em></button>
-        <button id="navmode"><span>Navigation Fusion</span></button>
+        <button id="navmode"><span>Navigation standard</span></button>
         <button id="navlock"><span>Verrouiller le plan</span><em>L</em></button>
       </div>
     </div>
@@ -299,7 +314,7 @@ kbd{background:var(--panel-2);border:1px solid var(--line-2);border-bottom-width
     <div class="menu" id="m-fic">
       <button class="btn sm" data-menu>Fichier ▾</button>
       <div class="pop">
-        <button id="share">Partager le plan (fichier autonome)</button>
+        <button id="share">Partager pour consultation (lecture seule)</button>
         <div class="sepm"></div>
         <button id="import">Importer un JSON</button>
         <button id="export">Exporter en JSON<em>Ctrl+S</em></button>
@@ -586,7 +601,70 @@ const CATALOG = [
   {id:"bouche_souf", fam:"Utilités et sécurité",cat:"equip",shape:"diffuser",  label:"Bouche de soufflage",        w:.6, d:.6, h:.2,  color:"#66bb6a", zone:"propre",y:3.6, note:"Diffusion à faible vitesse, jamais dirigée sur un produit nu ni sur un poste de travail."},
   {id:"aspi_centr",  fam:"Utilités et sécurité",cat:"equip",shape:"vacuum",    label:"Centrale d'aspiration",      w:1.6,d:1,  h:2,   color:"#ab47bc", zone:"tech", note:"Groupe déporté en local technique, rejet filtré à l'extérieur. Prises d'aspiration réparties à moins de 15 m de tout point."},
   {id:"soufflette",  fam:"Utilités et sécurité",cat:"equip",shape:"blowgun",   label:"Poste de soufflette",        w:.4, d:.3, h:1.2, color:"#26c6da", zone:"tech", note:"À proscrire sur produit nu et en zone propre : le soufflage remet les poussières en suspension. Préférer l'aspiration centralisée."},
-  {id:"bout_gaz",    fam:"Utilités et sécurité",cat:"equip",shape:"gas_bottle",label:"Bouteilles de gaz (rack)",   w:1.2,d:.6, h:1.6, color:"#ff8f00", zone:"ext",  note:"Stockage extérieur ventilé, bouteilles chaînées et debout, à l'écart des issues et des sources de chaleur."}
+  {id:"bout_gaz",    fam:"Utilités et sécurité",cat:"equip",shape:"gas_bottle",label:"Bouteilles de gaz (rack)",   w:1.2,d:.6, h:1.6, color:"#ff8f00", zone:"ext",  note:"Stockage extérieur ventilé, bouteilles chaînées et debout, à l'écart des issues et des sources de chaleur."},
+  /* ---- Projet B5 — Oise Panification ----
+     Cotes des machines : plans et fiches du dossier « donnée prof ».
+     Lignes futures : dossier « donnée obtenue le 131126 ». Les hauteurs ne figurent
+     pas sur les plans prof (vues de dessus) : ce sont des valeurs usuelles. */
+  {id:"z_boul", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Atelier boulangerie", w:34, d:22, h:6, zone:"propre", note:"Pétrissage, façonnage sur ligne, pousse et cuisson. Extraction des buées au droit des fours."},
+  {id:"z_vien", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Atelier viennoiserie (16 °C)", w:34, d:20, h:5, zone:"propre", temp:16, note:"Ambiance 14-16 °C pour tenir le beurre de tourage. Laminage, façonnage, plaquage."},
+  {id:"z_pesee", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Pesée / préparation ingrédients", w:16, d:8, h:4, zone:"propre", note:"Tamisage et pesée des mineurs. Captation des poussières de farine (ATEX)."},
+  {id:"z_repos_neg", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Chambre de repos pâtons (froid négatif)", w:10, d:8, h:4, zone:"froid", temp:-18, note:"Repos des pâtons laminés sur chariots : 90 à 120 min avant la ligne de façonnage."},
+  {id:"z_beurre", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Garnitures et tempérage beurre", w:6, d:8, h:4, zone:"froid", temp:12, note:"Beurre de tourage tempéré à 12-14 °C avant passage sur la ligne de laminage."},
+  {id:"z_surgel", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Refroidissement / surgélation", w:12, d:20, h:5, zone:"froid", temp:-30, note:"Cellules à chariots : −18 °C à cœur avant conditionnement. Sol chauffé hors gel sous les surgélateurs."},
+  {id:"z_stock_neg", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stockage PF surgelé (−20 °C)", w:12, d:40, h:9, zone:"expe", temp:-20, note:"Chambre négative sur racks, sas et rideau d'air côté quai, sol isolé et chauffé hors gel."},
+  {id:"z_mat_propre", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Stock matériel propre", w:14, d:8, h:4, zone:"propre", note:"Échelles et plaques lavées, séchées, en attente de retour au plaquage."},
+  {id:"z_bureaux", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Bureaux", w:12, d:10, h:3, zone:"tech"},
+  {id:"z_pause", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Salle de pause / réfectoire", w:10, d:10, h:3, zone:"tech"},
+  {id:"z_charge", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Local de charge chariots", w:8, d:10, h:4, zone:"tech", note:"Local ventilé, sol antiacide, rince-œil à proximité."},
+  {id:"cuve_petrin", fam:"Projet B5 — lignes et pétrissage", cat:"equip", shape:"cylinder", label:"Cuve amovible de pétrin (400 L)", w:1.1, d:1.1, h:0.95, color:"#c3ccd6", zone:"propre", note:"Cuve inox sur roues : repos de la pâte en cuve (pointage) avant basculement."},
+  {id:"doseur_eau", fam:"Projet B5 — lignes et pétrissage", cat:"equip", shape:"box", label:"Doseur-refroidisseur d'eau de coulage", w:0.9, d:0.8, h:1.8, color:"#7fdbe8", zone:"propre", note:"Eau glacée à 2 °C pour tenir la température de pâte en sortie de pétrin."},
+  {id:"machine_glace", fam:"Projet B5 — lignes et pétrissage", cat:"equip", shape:"box", label:"Machine à glace écailles", w:1.3, d:0.9, h:2, color:"#7fdbe8", zone:"propre"},
+  {id:"poste_pesee", fam:"Projet B5 — lignes et pétrissage", cat:"equip", shape:"table", label:"Poste de pesée ingrédients", w:1.8, d:0.8, h:0.9, color:"#c3ccd6", zone:"propre", note:"Balance 30 kg, bacs identifiés par recette, allergènes pesés sur poste dédié."},
+  {id:"bascule_sol", fam:"Projet B5 — lignes et pétrissage", cat:"equip", shape:"footprint", label:"Bascule de pesée au sol 1,5 t", w:1.5, d:1.5, h:0.1, color:"#7b8899", zone:"grise"},
+  {id:"parisien", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"trolley", label:"Parisien (chariot de pousse sur couches)", w:1.9, d:0.75, h:1.9, color:"#c3ccd6", zone:"propre", note:"Apprêt des flûtes et pains façonnés long avant le four à soles (30 à 60 min)."},
+  {id:"formeuse_carton", fam:"Projet B5 — conditionnement et lavage", cat:"equip", shape:"box", label:"Formeuse de cartons", w:2.2, d:1.9, h:1.6, color:"#b98b4e", zone:"expe", note:"Ligne dimensionnée à 6 cartons/min. Cartons déconditionnés hors de la zone produit nu."},
+  {id:"fermeuse_carton", fam:"Projet B5 — conditionnement et lavage", cat:"equip", shape:"box", label:"Fermeuse / scotcheuse de cartons", w:1.7, d:0.9, h:1.5, color:"#b98b4e", zone:"expe"},
+  {id:"filmeuse", fam:"Projet B5 — conditionnement et lavage", cat:"equip", shape:"box", label:"Filmeuse de palettes (banderoleuse)", w:2.7, d:1.7, h:2.5, color:"#9aa7b5", zone:"expe"},
+  {id:"lav_plaques", fam:"Projet B5 — conditionnement et lavage", cat:"equip", shape:"box", label:"Tunnel de lavage plaques et moules", w:6, d:1.6, h:2.1, color:"#8fa0b3", zone:"grise", sale:true, note:"Lavage, rinçage, séchage. Entrée côté sale, sortie côté stock matériel propre."},
+  {id:"lav_echelles", fam:"Projet B5 — conditionnement et lavage", cat:"equip", shape:"box", label:"Cabine de lavage d'échelles", w:2.2, d:1.8, h:2.7, color:"#8fa0b3", zone:"grise", sale:true},
+  {id:"chaudiere", fam:"Projet B5 — utilités et site", cat:"equip", shape:"compressor", label:"Chaudière vapeur", w:2.6, d:1.6, h:2.3, color:"#c4713f", zone:"tech", note:"Vapeur des étuves et eau chaude de lavage. Chaufferie isolée coupe-feu, ventilation haute et basse."},
+  {id:"tgbt", fam:"Projet B5 — utilités et site", cat:"equip", shape:"box", label:"TGBT / armoires électriques", w:3, d:0.8, h:2.2, color:"#5d6c80", zone:"tech", note:"Dégagement de 1 m en façade, local fermé à clé, hors zone humide."},
+  {id:"transfo", fam:"Projet B5 — utilités et site", cat:"equip", shape:"box", label:"Poste de transformation HT/BT", w:4, d:2.5, h:2.6, color:"#546e7a", zone:"ext", note:"En limite de bâtiment, accessible au gestionnaire de réseau depuis la voirie."},
+  {id:"adoucisseur", fam:"Projet B5 — utilités et site", cat:"equip", shape:"cylinder", label:"Adoucisseur d'eau", w:0.9, d:0.9, h:1.8, color:"#80deea", zone:"tech"},
+  {id:"cuve_sprinkler", fam:"Projet B5 — utilités et site", cat:"equip", shape:"cylinder", label:"Réserve incendie (sprinklage)", w:8, d:8, h:7, color:"#b71c1c", zone:"ext", note:"Réserve d'eau et local pompes, accessible aux secours depuis la voie périphérique."},
+  {id:"casier", fam:"Projet B5 — utilités et site", cat:"equip", shape:"box", label:"Casiers vestiaire (bloc de 4)", w:1.2, d:0.5, h:1.9, color:"#8b93a0", zone:"tech", note:"Casiers à double compartiment : tenue de ville et tenue de travail séparées."},
+  {id:"rayonnage", fam:"Projet B5 — utilités et site", cat:"equip", shape:"rack", label:"Rayonnage léger", w:2, d:0.6, h:2.2, color:"#4f7fb0", zone:"propre"},
+  {id:"gerbeur", fam:"Projet B5 — utilités et site", cat:"equip", shape:"forklift", label:"Gerbeur électrique", w:2, d:0.9, h:2, color:"#f4b740", zone:"grise"},
+  {id:"poste_garde", fam:"Projet B5 — utilités et site", cat:"structure", shape:"building", label:"Poste de garde", w:4, d:3, h:2.8, color:"#9aa7b4", zone:"ext", note:"Contrôle des entrées PL, registre des visiteurs."},
+  {id:"pont_bascule", fam:"Projet B5 — utilités et site", cat:"equip", shape:"footprint", label:"Pont-bascule 18 m", w:18, d:3, h:0.1, color:"#7b8899", zone:"ext"},
+  {id:"cloture", fam:"Projet B5 — utilités et site", cat:"structure", shape:"wall", label:"Clôture de site", w:20, d:0.08, h:2, color:"#6b7a8c", zone:"ext"},
+  {id:"portail", fam:"Projet B5 — utilités et site", cat:"structure", shape:"door", label:"Portail coulissant", w:8, d:0.2, h:2, color:"#f4b740", zone:"ext"},
+  {id:"z_echelles", fam:"Zones et sas", cat:"zones", shape:"zone", label:"Rangement échelles et plaques propres", w:24, d:7, h:4, zone:"propre", note:"Échelles et plaques lavées et séchées, rangées en attente de retour au plaquage."},
+  {id:"petrin_200", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"spiral_mixer", label:"Pétrin spirale Escher MR 200 (200 kg)", w:2.04, d:1.09, h:1.5, color:"#b6c2cf", zone:"propre", note:"Fiche prof : 2 035 × 1 090 × 1 500 mm (2 075 mm tête levée), cuve amovible 310 L, 200 kg de pâte, 14,7 kW, 1 400 kg."},
+  {id:"ligne_boul", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"conveyor", label:"Ligne boulangerie automatisée", w:9.1, d:1.0, h:1.6, color:"#8fa0b3", zone:"propre", note:"Plan prof : 9,1 × 1,0 m. 2 400 p/h (4 800 en petites pièces), 6,15 kW."},
+  {id:"ligne_croissant", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"folder", label:"Ligne croissant", w:2.3, d:4.4, h:1.6, color:"#aab6c4", zone:"propre", note:"Plan prof : 4,4 m de long, tapis 1,1 m, 2,3 m hors tout. 3 000 à 4 500 p/h."},
+  {id:"ligne_vien", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"conveyor", label:"Ligne viennoiserie (Polyline)", w:8.1, d:1.2, h:1.5, color:"#8fa0b3", zone:"propre", note:"Plan prof : 8,1 × 1,2 m, tapis de 0,6 m. 2 000 à 8 000 p/h, 1,5 kW."},
+  {id:"laminoir_vien", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"sheeter", label:"Laminoir viennoiserie", w:3.7, d:1.3, h:1.3, color:"#b6c2cf", zone:"propre", note:"Plan prof : 3,7 × 1,3 m, tapis de 0,6 m. 2 kW."},
+  {id:"mlc", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"sheeter", label:"Ligne de laminage MLC", w:3.1, d:8.3, h:1.8, color:"#b6c2cf", zone:"propre", note:"Plan prof : 8,3 m de long, 3,1 m en pied (2,6 m en tête), tapis de 0,8 m. Beurrage, tourage et détaillage des pâtons. 4 kW."},
+  {id:"cuiseur_prof", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"box", label:"Mélangeur-cuiseur", w:2.2, d:1.4, h:1.7, color:"#b6c2cf", zone:"propre", note:"Plan prof : 2,2 × 1,4 m (corps 1,7 m). Crème pâtissière et compotes."},
+  {id:"ligne_condi", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"footprint", label:"Ligne de conditionnement 6 cartons/min (emprise)", w:11.66, d:7.73, h:0.05, color:"#9b6ef3", zone:"expe", note:"Plan prof : 11,66 × 7,73 m, 4 opérateurs. Convoyeurs, détecteur de métaux, table tournante, emballage cartons, scotcheuse."},
+  {id:"table_tournante", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"cylinder", label:"Table tournante", w:1.5, d:1.5, h:0.9, color:"#c3ccd6", zone:"expe", note:"Accumulation en bout de ligne de conditionnement. 2 kW."},
+  {id:"vide_sac", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"hopper", label:"Vide-sac avec tamis", w:1.2, d:0.9, h:1.7, color:"#c3ccd6", zone:"propre", note:"Tamisage de sécurité avant pétrissage, 0,5 kW. Captation des poussières (ATEX)."},
+  {id:"doseur_mixeur", fam:"Projet B5 — lignes (cotes données prof)", cat:"equip", shape:"box", label:"Doseur-mixeur d'eau", w:0.6, d:0.5, h:1.6, color:"#7fdbe8", zone:"propre", note:"0,5 kW."},
+  {id:"etuve_prof", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"proofer", label:"Étuve 6 chariots (tunnel)", w:4.2, d:1.1, h:2.4, color:"#cfd8dc", zone:"propre", temp:28, note:"Plan prof : 4,2 × 1,1 m, 5,8 m portes ouvertes (une porte à chaque bout). 12,7 kW."},
+  {id:"four_rot_prof", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"rotary_oven", label:"Four rotatif à chariot", w:1.5, d:1.6, h:2.4, color:"#c4713f", zone:"propre", note:"Plan prof : 1,5 × 1,6 m, débattement de porte de 1,5 m en façade. 60 kW."},
+  {id:"enfourneur_prof", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"conveyor", label:"Enfourneur", w:2.2, d:0.6, h:1.2, color:"#8fa0b3", zone:"propre", note:"Plan prof : 2,2 m devant le four à soles."},
+  {id:"surgel_boul", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"proofer", label:"Surgélateur boulangerie (chariots)", w:3.9, d:1.7, h:2.6, color:"#6fc9de", zone:"froid", temp:-35, note:"Plan prof : 3,9 × 1,7 m, 5 chariots dessinés. 35 kW."},
+  {id:"surgel_vien", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"proofer", label:"Surgélateur viennoiserie (tunnel à chariots)", w:1.8, d:3.1, h:2.6, color:"#6fc9de", zone:"froid", temp:-35, note:"Plan prof : 1,8 × 3,1 m, 4,6 m portes ouvertes (une porte à chaque bout). 35 kW."},
+  {id:"rideau_air", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Rideau d'air de refroidissement", w:1.6, d:0.4, h:2.4, color:"#7fdbe8", zone:"propre", note:"Ressuage des échelles en sortie de four (2 rideaux, 0,5 kW)."},
+  {id:"compacteur", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Compacteur de quai", w:2.0, d:1.5, h:2.0, color:"#8b93a0", zone:"grise", sale:true, note:"Cartons et films de déconditionnement. 7,5 kW."},
+  {id:"ligne_semi_boul", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne boulangerie semi-industrielle", w:15.96, d:1.5, h:1.8, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 15,96 m. 6 000 baguettes/h, 10 000 p/h en petits pains."},
+  {id:"fritsch", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne viennoiserie semi-industrielle Fritsch", w:12.21, d:2.0, h:1.8, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 12,21 × 2,0 m. 5 400 à 7 200 croissants/h, 5 280 pains choc/h."},
+  {id:"mecatherm", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne boulangerie industrielle Mecatherm", w:85, d:13, h:4, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : façonnage, pousse, four tunnel, refroidissement et surgélation en spirale. Cote illisible sur le PDF : 85 × 13 m est une estimation à confirmer."},
+  {id:"ligne_vien_indus", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne viennoiserie industrielle continue", w:70.24, d:12, h:4, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 70,24 m au total dont 45,18 m de façonnage, double spirale et surgélateur. 12 m de large au droit des spirales (lu sur le plan). 10 800 à 14 400 croissants/h."},
+  {id:"reserve", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"footprint", label:"Emprise réservée (ligne future)", w:16, d:3, h:0.05, color:"#ffb300", zone:"propre", note:"Surface à laisser libre de réseaux au sol et de cloisons pour le remplacement de la ligne."},
+  {id:"four_tunnel", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Four tunnel à soles", w:2.0, d:1.9, h:2.2, color:"#c4713f", zone:"propre", note:"Plan prof : 2,0 × 1,9 m, enfourneur de 2,2 m en entrée, sortie à l'opposé. 79,2 kW. 6 fours = 22,9 m² de sole, besoin des flûtes (cas courant)."}
 ];
 const BY_ID = {}; CATALOG.forEach(d => BY_ID[d.id] = d);
 /* Réseaux de tuyauterie. Chaque famille porte sa couleur de repérage,
@@ -628,12 +706,15 @@ const state = {
   cam2:{x:37, z:21, zoom:14},
   pipes:[], pipeDraft:null, pipeType:"eau_f",
   cmd:null,             // commande de transformation en cours (déplacer, pivoter, échelle)
-  nav:"fusion",         // convention de navigation 3D : "fusion" ou "standard"
+  nav:"standard",       // convention de navigation 3D : "standard" (par défaut) ou "fusion"
   airRate:10,           // renouvellements d'air par heure, pour le calcul indicatif de débit
   show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:true, roof:true},
   issues:[]
 };
 const history = {past:[], future:[]};
+/* Mode consultation : activé quand le fichier ouvert a été produit par
+   « Partager pour consultation ». Navigation, sélection et calques seulement. */
+let READONLY = false;
 
 let need2D = true, need3D = true, needDiag = true;
 function markDirty(){
@@ -1830,8 +1911,9 @@ function draw2D(){
   ctx.strokeStyle = "#98a3b3"; ctx.lineWidth = 1.5; ctx.strokeRect(a.x, a.y, b.x-a.x, b.y-a.y);
 
   if (state.show.grid) drawGrid(a, b);
-  if (state.show.zones) drawOrder().filter(o => o.cat === "zones").forEach(drawObj2D);
-  drawOrder().filter(o => o.cat !== "zones").forEach(drawObj2D);
+  const ord = drawOrder();                 // tri calculé une seule fois par dessin
+  if (state.show.zones) ord.filter(o => o.cat === "zones").forEach(drawObj2D);
+  ord.filter(o => o.cat !== "zones").forEach(drawObj2D);
   if (state.show.pipes){ state.pipes.forEach(p => drawPipe2D(p)); if (state.pipeDraft) drawPipe2D(state.pipeDraft, true); }
   if (state.show.flux){ state.flux.forEach(f => drawFlux2D(f)); if (state.fluxDraft) drawFlux2D(state.fluxDraft, true); }
   if (state.show.issues) drawIssues2D();
@@ -1993,7 +2075,7 @@ function drawSelection2D(){
     ctx.beginPath(); cs.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.stroke();
   });
   const objs = selectedObjects();
-  if (objs.length === 1 && !objs[0].locked && !state.navLock){
+  if (objs.length === 1 && !objs[0].locked && !state.navLock && !READONLY){
     const o = objs[0], cs = corners(o).map(p => w2s(p.x, p.z));
     ctx.fillStyle = "#fff"; ctx.strokeStyle = "#0b7ea8"; ctx.lineWidth = 2;
     cs.forEach(p => { ctx.beginPath(); ctx.rect(p.x-4, p.y-4, 8, 8); ctx.fill(); ctx.stroke(); });
@@ -2147,7 +2229,7 @@ function pick(px, pz){
 
 function pickHandle(px, pz){
   const objs = selectedObjects();
-  if (objs.length !== 1 || objs[0].locked) return null;
+  if (READONLY || objs.length !== 1 || objs[0].locked) return null;
   const o = objs[0], tol = 7 / state.cam2.zoom;
   const hp = rotHandlePos(o);
   if (Math.hypot(hp.x - px, hp.z - pz) < tol) return {obj:o, mode:"rotate"};
@@ -2163,6 +2245,16 @@ cv.addEventListener("pointerdown", e => {
 
   if (pan){ drag = {mode:"pan", sx:e.clientX, sy:e.clientY, cx:state.cam2.x, cz:state.cam2.z}; return; }
   if (e.button !== 0) return;
+
+  /* Consultation : un clic sur un élément le sélectionne pour lire ses
+     propriétés ; un clic dans le vide fait glisser la vue. Rien ne bouge. */
+  if (READONLY){
+    const t = pick(p.x, p.z);
+    if (t) state.selection = [t.obj.id];
+    else drag = {mode:"pan", sx:e.clientX, sy:e.clientY, cx:state.cam2.x, cz:state.cam2.z};
+    refreshProps(); refreshStatus(); need2D = true; need3D = true;
+    return;
+  }
 
   if (state.placing){ placeAt(p.x, p.z, e.shiftKey); return; }
 
@@ -2422,9 +2514,18 @@ function mat(color, opts){
   const m = new THREE.MeshLambertMaterial(Object.assign({color:new THREE.Color(color)}, opts || {}));
   matCache.set(key, m); return m;
 }
+/* Perf : toutes les boîtes partagent un même cube unité, mis à l'échelle,
+   au lieu d'une géométrie neuve par pièce. Les petits détails (pieds,
+   poignées, plaques fines) ne projettent plus d'ombre : invisible à l'œil,
+   mais autant d'objets en moins dans la passe d'ombre. */
+let UNIT_BOX = null;
 function box(w, h, d, color, opts){
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, opts));
-  m.castShadow = true; m.receiveShadow = true; return m;
+  if (!UNIT_BOX){ UNIT_BOX = new THREE.BoxGeometry(1, 1, 1); UNIT_BOX.userData.shared = true; }
+  const m = new THREE.Mesh(UNIT_BOX, mat(color, opts));
+  m.scale.set(Math.max(w, 1e-3), Math.max(h, 1e-3), Math.max(d, 1e-3));
+  const s = [w, h, d].sort((a, b) => a - b);          // s[2] = plus grande cote
+  m.castShadow = s[2] >= .3 && s[1] >= .12;
+  m.receiveShadow = true; return m;
 }
 
 function init3D(){
@@ -2433,10 +2534,13 @@ function init3D(){
   scene = new THREE.Scene();
   scene.background = new THREE.Color("#0f151c");
 
-  renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  /* Perf : pas de preserveDrawingBuffer (l'export PNG rend juste avant de
+     lire le canevas), densité de pixels plafonnée à 1,5 et ombres PCF
+     simples, nettement moins coûteuses que PCFSoft pour un rendu proche. */
+  renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:"high-performance"});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
   host.appendChild(renderer.domElement);
 
@@ -3301,7 +3405,7 @@ function buildFlux3D(f){
 
 function disposeTree(g){
   g.traverse(n => {
-    if (n.geometry) n.geometry.dispose();
+    if (n.geometry && !n.geometry.userData.shared) n.geometry.dispose();
     if (n.material && n.material.map) n.material.map.dispose();
   });
 }
@@ -3370,18 +3474,27 @@ function sync3D(){
 
   updateSelBoxes();
 }
+/* Cadres de sélection : une seule géométrie d'arêtes (cube unité) et un
+   seul matériau partagés, mis à l'échelle par objet. Plus rien n'est
+   recréé ni laissé en mémoire graphique à chaque mise à jour. */
+let selEdgeGeo = null, selEdgeMat = null;
 function updateSelBoxes(){
+  if (!selEdgeGeo){
+    const unit = new THREE.BoxGeometry(1, 1, 1);
+    selEdgeGeo = new THREE.EdgesGeometry(unit); unit.dispose();
+    selEdgeMat = new THREE.LineBasicMaterial({color:0x4cc9f0, depthTest:false});
+  }
   selBoxes.forEach(b => scene.remove(b));
   selBoxes = [];
   selectedObjects().forEach(o => {
     const h = Math.max(.1, o.h);
-    const e = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(o.w + .06, h + .06, o.d + .06)),
-      new THREE.LineBasicMaterial({color:0x4cc9f0, depthTest:false}));
+    const e = new THREE.LineSegments(selEdgeGeo, selEdgeMat);
+    e.scale.set(o.w + .06, h + .06, o.d + .06);
     e.position.set(o.x, (o.y || 0) + h/2, o.z);
     e.rotation.y = -rad(o.rot); e.renderOrder = 9;
     scene.add(e); selBoxes.push(e);
   });
+  needRender = true;
 }
 
 function resize3D(){
@@ -3390,6 +3503,7 @@ function resize3D(){
   if (!stage) return;
   const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height);
+  needRender = true;                     // setSize vide le canevas
   camP.aspect = r.width / r.height; camP.updateProjectionMatrix();
   const a = r.width / r.height, s = orthoSpan / 2;
   camO.left = -s * a; camO.right = s * a; camO.top = s; camO.bottom = -s;
@@ -3460,6 +3574,13 @@ function bind3D(){
     /* Plan verrouillé : on ne capte rien, l'orbite et le zoom reviennent
        entièrement au contrôleur de caméra. */
     if (state.navLock) return;
+    /* Consultation : sélection pour lecture, sans glisser. L'événement
+       continue vers le contrôleur de caméra, l'orbite reste possible. */
+    if (READONLY){
+      const t = pick3(e);
+      if (t){ state.selection = [t.obj.id]; refreshProps(); refreshStatus(); updateSelBoxes(); need2D = true; }
+      return;
+    }
     const g = groundAt(e);
     if (state.placing){
       if (g) placeAt(g.x, g.z, e.shiftKey);
@@ -3520,7 +3641,10 @@ function moveGhost3(x, z){
   const def = BY_ID[state.placing]; if (!def) return;
   const key = state.placing;
   if (!ghost3 || ghost3.userData.k !== key){
-    if (ghost3){ scene.remove(ghost3); disposeTree(ghost3); }
+    if (ghost3){
+      scene.remove(ghost3); disposeTree(ghost3);
+      ghost3.traverse(n => { if (n.material) n.material.dispose(); });   // matériaux clonés propres au fantôme
+    }
     const o = Object.assign({}, def, {x:0, z:0, rot:0, label:def.label});
     ghost3 = build3D(o); ghost3.userData.k = key;
     ghost3.traverse(n => {
@@ -3532,17 +3656,41 @@ function moveGhost3(x, z){
   ghost3.visible = true;
   ghost3.position.set(snapV(x), def.y || 0, snapV(z));
 }
-function hideGhost3(){ if (ghost3) ghost3.visible = false; }
+function hideGhost3(){ if (ghost3){ ghost3.visible = false; needRender = true; } }
 
-function animate(){
+/* Rendu à la demande : la scène n'est redessinée que si elle a changé
+   (need3D / needRender) ou si la caméra a bougé (orbite, amorti, zoom).
+   Au repos, la carte graphique ne travaille plus. */
+let needRender = true, lastCamObj = null;
+const lastCamM = THREE_OK ? new THREE.Matrix4() : null, lastCamP = THREE_OK ? new THREE.Matrix4() : null;
+function camMoved(){
+  if (cam3 !== lastCamObj) return true;
+  const a = cam3.matrixWorld.elements, b = lastCamM.elements;
+  const p = cam3.projectionMatrix.elements, q = lastCamP.elements;
+  for (let i = 0; i < 16; i++){
+    if (Math.abs(a[i] - b[i]) > 1e-5 || Math.abs(p[i] - q[i]) > 1e-7) return true;
+  }
+  return false;
+}
+/* Diagnostic : au plus toutes les 200 ms pendant un glisser, et une fois
+   de plus à la fin (le drapeau needDiag reste levé jusqu'au passage). */
+let lastDiag = 0;
+const DIAG_MIN_MS = 200;
+function animate(now){
   requestAnimationFrame(animate);
+  now = now || performance.now();
   if (state.view === "3d" && THREE_OK){
-    if (need3D){ sync3D(); need3D = false; }
+    if (need3D){ sync3D(); need3D = false; needRender = true; }
     controls.update();
-    renderer.render(scene, cam3);
+    cam3.updateMatrixWorld();
+    if (needRender || camMoved()){
+      renderer.render(scene, cam3);
+      needRender = false; lastCamObj = cam3;
+      lastCamM.copy(cam3.matrixWorld); lastCamP.copy(cam3.projectionMatrix);
+    }
   }
   if (state.view === "2d" && need2D){ draw2D(); need2D = false; }
-  if (needDiag){ needDiag = false; runDiagnostics(); }
+  if (needDiag && now - lastDiag >= DIAG_MIN_MS){ needDiag = false; lastDiag = now; runDiagnostics(); }
 }
 
 function sampleFlux(f, step){
@@ -3672,7 +3820,7 @@ function runDiagnostics(){
 
   /* Température de consigne. Un local réfrigéré sans production de froid
      à l'intérieur ni évaporateur au plafond ne tiendra pas sa consigne. */
-  const FROIDS = ["evapo","cellule","tunnel_sur","frigo","groupe_froid"];
+  const FROIDS = ["evapo","cellule","tunnel_sur","frigo","groupe_froid","surgel_boul","surgel_vien"];
   state.objects.filter(o => o.cat === "zones" && o.zone !== "ext").forEach(zo => {
     const t = zoneTemp(zo);
     if (t == null || t > 8) return;
@@ -3715,6 +3863,7 @@ function runDiagnostics(){
   state.objects.forEach(o => {
     if (o.cat === "zones" || !(o.h > 0)) return;
     const def = BY_ID[o.type]; if (def && (def.vehicule || def.shape === "road" || def.shape === "roundabout")) return;
+    if (o.cat === "structure") return;   /* murs, cloisons et poteaux montent au-dessus du faux plafond */
     const zo = zoneAt(o.x, o.z); if (!zo || zo.zone === "ext" || !(zo.h > 0)) return;
     const haut = (o.y || 0) + o.h;
     if (haut > zo.h + .01){
@@ -4310,6 +4459,7 @@ function wireProps(){
   const el = $("#props");
   el.addEventListener("focusin", () => { editCommitted = false; });
   const apply = e => {
+    if (READONLY) return;
     const k = e.target.dataset.k; if (!k) return;
     if (!editCommitted){ commit(); editCommitted = true; }
     const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -4678,21 +4828,27 @@ function planData(){
   return {format:"agroplan.v1", date:new Date().toISOString(), site:state.site,
           objects:state.objects, flux:state.flux, pipes:state.pipes};
 }
+/* Le fichier partagé s'ouvre en consultation seule (readonly:true dans le
+   plan embarqué) : le professeur navigue, sélectionne et règle les calques,
+   mais ne peut rien modifier ni ré-exporter. */
 function sharePlan(){
+  if (READONLY) return;
   try {
     const doc = document.documentElement.cloneNode(true);
     /* on vide ce qui est reconstruit à l'ouverture, pour ne pas gonfler le fichier */
     ["#lib","#props","#diag","#sum","#vol","#legbody","#keys","#toasts"].forEach(sel => {
       const n = doc.querySelector(sel); if (n) n.innerHTML = "";
     });
+    doc.querySelectorAll("#v3d canvas").forEach(n => n.remove());   // recréé à l'ouverture
     const vieux = doc.querySelector("#plan-embarque"); if (vieux) vieux.remove();
     const sc = document.createElement("script");
     sc.type = "application/json"; sc.id = "plan-embarque";
-    sc.textContent = JSON.stringify(planData()).replace(/<\//g, "<\\/");
+    const data = Object.assign(planData(), {readonly:true});
+    sc.textContent = JSON.stringify(data).replace(/<\//g, "<\\/");
     doc.querySelector("head").appendChild(sc);
     const html = "<!doctype html>\n" + doc.outerHTML;
-    download(new Blob([html], {type:"text/html"}), slug(state.site.name) + "-plan.html");
-    toast("Fichier de partage créé : " + Math.round(html.length/1024) + " Ko, à envoyer tel quel");
+    download(new Blob([html], {type:"text/html"}), slug(state.site.name) + "-consultation.html");
+    toast("Fichier de consultation créé (" + Math.round(html.length/1024) + " Ko) : à envoyer tel quel au professeur");
   } catch(err){
     toast("Partage impossible : " + err.message, true);
   }
@@ -4701,8 +4857,45 @@ function sharePlan(){
 function loadEmbedded(){
   const n = document.getElementById("plan-embarque");
   if (!n || !n.textContent.trim()) return false;
-  try { importJSON(n.textContent); return true; }
+  try {
+    const d = JSON.parse(n.textContent);
+    READONLY = !!d.readonly;
+    importJSON(n.textContent); return true;
+  }
   catch(e){ return false; }
+}
+/* Bascule l'interface en consultation : outils d'édition masqués,
+   champs figés, bibliothèque repliée. */
+function lockInputs(){
+  $$("#props input, #props select, #props textarea, #props button, #vol input, #vol select").forEach(x => {
+    if (x.id !== "p-focus") x.disabled = true;
+  });
+}
+/* Bouton « Étiquettes » de la barre (consultation) : reste aligné sur la
+   case « Étiquettes des éléments » du panneau Site et affichage. */
+function setLabelsShown(v){
+  state.show.labels = !!v;
+  $("#v-labels").checked = state.show.labels;
+  markDirty(); syncLabelBtn();
+}
+function syncLabelBtn(){
+  const b = $("#lbltog"); if (!b) return;
+  b.textContent = state.show.labels ? "🏷 Masquer les étiquettes" : "🏷 Afficher les étiquettes";
+  b.classList.toggle("on", state.show.labels);
+}
+function applyReadonly(){
+  if (!READONLY) return;
+  document.body.classList.add("readonly");
+  $("#app").classList.add("hl");
+  ["#s-name","#s-w","#s-d","#s-h","#s-axis","#gridstep"].forEach(s => { const n = $(s); if (n) n.disabled = true; });
+  const obs = new MutationObserver(lockInputs);
+  obs.observe($("#props"), {childList:true, subtree:true});
+  obs.observe($("#vol"), {childList:true, subtree:true});
+  lockInputs();
+  syncLabelBtn();
+  state.site.snap = false;
+  document.title = "Consultation — " + (state.site.name || "AgroPlan");
+  setTimeout(() => toast("Plan en consultation seule : naviguez, cliquez un élément pour lire ses propriétés"), 400);
 }
 
 function importJSON(text){
@@ -4952,6 +5145,7 @@ function bindUI(){
   $("#navlock").addEventListener("click", () => setNavLock());
   /* Tableau des volumes : édition directe des hauteurs sous plafond. */
   $("#vol").addEventListener("change", e => {
+    if (READONLY) return;
     const t = e.target;
     if (t.id === "airrate"){
       state.airRate = clamp(+t.value || 0, 0, 60); renderVolumes(); return;
@@ -4982,6 +5176,7 @@ function bindUI(){
 
   $("#export").addEventListener("click", exportJSON);
   $("#share").addEventListener("click", sharePlan);
+  $("#share2").addEventListener("click", sharePlan);
   $("#png").addEventListener("click", exportPNG);
   $("#csv").addEventListener("click", exportCSV);
   $("#import").addEventListener("click", () => $("#file").click());
@@ -5010,6 +5205,8 @@ function bindUI(){
   const vis = (sel, key) => $(sel).addEventListener("change", e => { state.show[key] = e.target.checked; markDirty(); });
   vis("#v-grid","grid"); vis("#v-zones","zones"); vis("#v-flux","flux"); vis("#v-pipes","pipes");
   vis("#v-labels","labels"); vis("#v-issues","issues"); vis("#v-shadow","shadows");
+  $("#v-labels").addEventListener("change", syncLabelBtn);
+  $("#lbltog").addEventListener("click", () => setLabelsShown(!state.show.labels));
   $("#v-roof").addEventListener("change", e => setRoof(e.target.checked));
 
   const st = $("#stage");
@@ -5017,6 +5214,7 @@ function bindUI(){
   st.addEventListener("dragleave", e => { if (e.target === st) $("#drop").classList.add("hide"); });
   st.addEventListener("drop", e => {
     e.preventDefault(); $("#drop").classList.add("hide");
+    if (READONLY) return;
     const f = e.dataTransfer.files[0]; if (!f) return;
     const r = new FileReader(); r.onload = () => importJSON(r.result); r.readAsText(f);
   });
@@ -5028,6 +5226,26 @@ function bindUI(){
     const t = e.target.tagName;
     if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT"){
       if (e.key === "Escape") e.target.blur();
+      return;
+    }
+    /* Consultation : uniquement les touches de vue et d'affichage. */
+    if (READONLY){
+      if (e.key === "Shift"){ navShift = true; applyNavMode(); return; }
+      if (e.code === "Space"){ spaceDown = true; e.preventDefault(); return; }
+      switch (e.key){
+        case "Escape":
+          $$(".menu").forEach(x => x.classList.remove("open"));
+          state.selection = []; refreshProps(true); refreshStatus(); need2D = true; need3D = true; break;
+        case "2": setView("2d"); break;
+        case "3": setView("3d"); break;
+        case "o": case "O": setRoof(); break;
+        case "e": case "E": setLabelsShown(!state.show.labels); break;
+        case "F10": e.preventDefault(); togglePanel("right"); break;
+        case "F2": e.preventDefault(); state.view === "3d" ? fit3D() : fit2D(); break;
+        default:
+          if (e.key === "Delete" || e.key === "Backspace" || ((e.ctrlKey || e.metaKey) && /^[zydsa]$/i.test(e.key)))
+            e.preventDefault();
+      }
       return;
     }
     if (e.code === "Space"){ spaceDown = true; e.preventDefault(); }
@@ -5094,6 +5312,7 @@ function boot(){
   if (!loadEmbedded()) loadDemo();
   history.past.length = 0; history.future.length = 0;
   setTool("select", true); setView("2d");
+  applyReadonly();
   
   requestAnimationFrame(() => {
     resize2D();
