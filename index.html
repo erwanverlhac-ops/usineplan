@@ -387,7 +387,7 @@ body.readonly #vol input,body.readonly #vol select{opacity:.8;cursor:default}
         <label class="chk"><input type="checkbox" id="v-labels" checked> Étiquettes des éléments</label>
         <label class="chk"><input type="checkbox" id="v-issues" checked> Repères d'anomalie</label>
         <label class="chk"><input type="checkbox" id="v-roof" checked> Toitures des bâtiments (3D)</label>
-        <label class="chk"><input type="checkbox" id="v-shadow" checked> Ombres portées (3D)</label>
+        <label class="chk"><input type="checkbox" id="v-shadow"> Ombres portées (3D, plus lourd)</label>
       </div>
     </details>
 
@@ -598,6 +598,7 @@ const CATALOG = [
   {id:"filtre_air",  fam:"Utilités et sécurité",cat:"equip",shape:"filter",    label:"Caisson de filtration",      w:1.2,d:.8, h:1.2, color:"#8bc34a", zone:"tech", note:"Préfiltre G4 puis F7 ; terminal H14 à l'entrée des zones à haute hygiène. Manomètre de colmatage et registre de changement."},
   {id:"ventil_extr", fam:"Utilités et sécurité",cat:"equip",shape:"exhaust",   label:"Ventilateur d'extraction",   w:1,  d:1,  h:.9,  color:"#78909c", zone:"tech", note:"Extraire les zones humides et chaudes en partie basse. Le débit extrait doit rester inférieur au soufflage en zone propre, pour garder la surpression."},
   {id:"flux_air",    fam:"Utilités et sécurité",cat:"equip",shape:"airflow",   label:"Flux d'air (repère)",        w:6,  d:2,  h:.1,  color:"#66bb6a", zone:"tech", note:"Repère de sens de balayage : l'air va toujours du plus propre vers le plus sale. Vérifier qu'aucune flèche ne remonte la cascade de pression."},
+  {id:"chaussette",  fam:"Utilités et sécurité",cat:"equip",shape:"textile_duct",label:"Gaine textile de diffusion (chaussette)", w:10, d:.5, h:.5, color:"#e8eef4", zone:"propre", y:3.2, note:"Diffusion d'air à faible vitesse sur toute la longueur, sans courant d'air sur les postes ni sur le produit nu. Gaine démontable et lavable (machine à laver), suspendue sur câble. Diamètre courant : 300 à 800 mm ; longueur et hauteur de pose réglables."},
   {id:"bouche_souf", fam:"Utilités et sécurité",cat:"equip",shape:"diffuser",  label:"Bouche de soufflage",        w:.6, d:.6, h:.2,  color:"#66bb6a", zone:"propre",y:3.6, note:"Diffusion à faible vitesse, jamais dirigée sur un produit nu ni sur un poste de travail."},
   {id:"aspi_centr",  fam:"Utilités et sécurité",cat:"equip",shape:"vacuum",    label:"Centrale d'aspiration",      w:1.6,d:1,  h:2,   color:"#ab47bc", zone:"tech", note:"Groupe déporté en local technique, rejet filtré à l'extérieur. Prises d'aspiration réparties à moins de 15 m de tout point."},
   {id:"soufflette",  fam:"Utilités et sécurité",cat:"equip",shape:"blowgun",   label:"Poste de soufflette",        w:.4, d:.3, h:1.2, color:"#26c6da", zone:"tech", note:"À proscrire sur produit nu et en zone propre : le soufflage remet les poussières en suspension. Préférer l'aspiration centralisée."},
@@ -708,7 +709,7 @@ const state = {
   cmd:null,             // commande de transformation en cours (déplacer, pivoter, échelle)
   nav:"standard",       // convention de navigation 3D : "standard" (par défaut) ou "fusion"
   airRate:10,           // renouvellements d'air par heure, pour le calcul indicatif de débit
-  show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:true, roof:true},
+  show:{grid:true, zones:true, flux:true, pipes:true, labels:true, issues:true, shadows:false, roof:true},
   issues:[]
 };
 const history = {past:[], future:[]};
@@ -1220,6 +1221,25 @@ function drawShape(g, def, o, W, H, thumb){
       g.moveTo(x + 6, -hy*.55); g.lineTo(x + W*.55, -hy*.55);
       g.moveTo(x + 6,  hy*.55); g.lineTo(x + W*.55,  hy*.55);
       g.stroke(); g.globalAlpha = 1;
+      break;
+    }
+    /* Chaussette : gaine textile vue de dessus, manchette de raccordement
+       côté gauche, câble de suspension en axe, micro-perforations figurées. */
+    case "textile_duct": {
+      const r = Math.min(H/2, W/2);
+      g.fillStyle = hexA(col, .55); g.strokeStyle = "#5f7d95"; g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(x + r, y); g.lineTo(x + W - r, y); g.arc(x + W - r, 0, r, -Math.PI/2, Math.PI/2);
+      g.lineTo(x + r, y + H); g.lineTo(x + r, y); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#8c98a6"; g.fillRect(x, y - H*.08, Math.max(2, Math.min(W*.04, H*.5)), H*1.16);   // manchette
+      g.strokeStyle = "#5f7d95"; g.lineWidth = .8; g.setLineDash([3, 3]);
+      g.beginPath(); g.moveTo(x + 4, 0); g.lineTo(x + W - r*.5, 0); g.stroke(); g.setLineDash([]);
+      if (!thumb && H > 6){
+        g.fillStyle = "#5f7d95";
+        for (let px = x + H; px < x + W - r; px += Math.max(6, H*.9)){
+          g.beginPath(); g.arc(px, -H*.28, .9, 0, 6.2832); g.arc(px, H*.28, .9, 0, 6.2832); g.fill();
+        }
+      }
       break;
     }
     case "diffuser": {
@@ -2557,9 +2577,13 @@ function init3D(){
   if ("screenSpacePanning" in controls) controls.screenSpacePanning = false;
   applyNavMode();
 
-  scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x55606e, .85));
+  scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x55606e, .8));
+  /* Lumière d'appoint opposée au soleil : sans ombres portées, elle
+     sépare les faces des machines et garde le relief lisible. */
+  const fill = new THREE.DirectionalLight(0xdfe8ff, .32);
+  fill.position.set(-60, 45, 80); scene.add(fill);
   sunLight = new THREE.DirectionalLight(0xffffff, .78);
-  sunLight.castShadow = true;
+  sunLight.castShadow = state.show.shadows;
   sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.bias = -0.0009;
   scene.add(sunLight, sunLight.target);
@@ -2597,13 +2621,708 @@ function buildSite3D(){
   resize3D();
 }
 
+/* =====================================================================
+   Silhouettes 3D des machines (v15)
+   Convention : origine au centre de l'emprise, au sol ; longueur selon x
+   (o.w), profondeur selon z (o.d), façade opérateur côté +z.
+   Les pièces réutilisent des géométries unité partagées (cube, cylindre,
+   sphère) mises à l'échelle : beaucoup de détails, peu de mémoire.
+   ===================================================================== */
+const K_INOX = "#cfd7df", K_INOX_F = "#a7b2bd", K_NOIR = "#2b333d", K_CAOUT = "#20262d",
+      K_VITRE = "#cfe3f5", K_JAUNE = "#f2c94c", K_BANDE = "#e8e2d0", K_MAILLE = "#4a525b";
+const kPhong = new Map();
+function kShiny(color){                 // métal brossé : léger reflet spéculaire
+  if (kPhong.has(color)) return kPhong.get(color);
+  const m = new THREE.MeshPhongMaterial({color:new THREE.Color(color), shininess:70, specular:new THREE.Color(0x7d8994)});
+  kPhong.set(color, m); return m;
+}
+function kGlass(){ return mat(K_VITRE, {transparent:true, opacity:.22, depthWrite:false}); }
+function kGlow(){ return mat("#f0a75a", {transparent:true, opacity:.8}); }   // hublot de four éclairé
+const kCylGeo = {};
+function kUnitCyl(seg){
+  if (!kCylGeo[seg]){ const ge = new THREE.CylinderGeometry(1, 1, 1, seg); ge.userData.shared = true; kCylGeo[seg] = ge; }
+  return kCylGeo[seg];
+}
+let kSphGeo = null;
+function kUnitSph(){
+  if (!kSphGeo){ kSphGeo = new THREE.SphereGeometry(1, 20, 12); kSphGeo.userData.shared = true; }
+  return kSphGeo;
+}
+/* pavé centré en (x, y, z) */
+function kBox(g, w, h, d, color, x, y, z, m){
+  const o = box(w, h, d, color); if (m) o.material = m;
+  o.position.set(x || 0, y || 0, z || 0); g.add(o); return o;
+}
+function kInox(g, w, h, d, x, y, z, color){ return kBox(g, w, h, d, color || K_INOX, x, y, z, kShiny(color || K_INOX)); }
+/* cylindre d'axe "y" (vertical), "x" ou "z" */
+function kCyl(g, r, len, color, x, y, z, axis, seg, m){
+  const o = new THREE.Mesh(kUnitCyl(seg || 18), m || mat(color));
+  o.scale.set(Math.max(r, 1e-3), Math.max(len, 1e-3), Math.max(r, 1e-3));
+  if (axis === "x") o.rotation.z = Math.PI/2; else if (axis === "z") o.rotation.x = Math.PI/2;
+  o.position.set(x || 0, y || 0, z || 0);
+  o.castShadow = r > .12; o.receiveShadow = true;
+  g.add(o); return o;
+}
+function kCylI(g, r, len, x, y, z, axis, seg, color){ return kCyl(g, r, len, color || K_INOX, x, y, z, axis, seg, kShiny(color || K_INOX)); }
+function kSph(g, rx, ry, rz, color, x, y, z, m){
+  const o = new THREE.Mesh(kUnitSph(), m || mat(color));
+  o.scale.set(rx, ry, rz); o.position.set(x || 0, y || 0, z || 0); g.add(o); return o;
+}
+function kCone(g, rTop, rBot, hh, color, x, y, z, seg, m){
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, hh, seg || 24), m || mat(color));
+  o.position.set(x || 0, y || 0, z || 0); g.add(o); return o;
+}
+/* Pièces récurrentes */
+function kJambes(g, w, larg, ht, pas){        // pieds ronds inox, patins, entretoises
+  const n = Math.max(2, Math.round(w / (pas || 1.8)) + 1);
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + .1 + (w - .2) * i/(n - 1);
+    [-1, 1].forEach(k => {
+      kCylI(g, .028, ht, x, ht/2, k*larg/2, "y", 10);
+      kCyl(g, .045, .03, K_NOIR, x, .015, k*larg/2, "y", 12);
+    });
+    kInox(g, .03, .03, larg, x, ht*.3, 0);
+  }
+}
+function kRoues(g, w, d, r){                  // roulettes pivotantes aux 4 coins
+  [-1, 1].forEach(i => [-1, 1].forEach(k => {
+    kCyl(g, r, r*.7, K_CAOUT, i*(w/2 - r), r, k*(d/2 - r), "z", 14);
+    kBox(g, r*.9, r*.6, r*.9, K_INOX_F, i*(w/2 - r), r*2.2, k*(d/2 - r));
+  }));
+}
+function kPupitre(g, x, y, z, s){             // boîtier, écran, marche et arrêt d'urgence (façade +z)
+  s = s || 1;
+  kBox(g, .42*s, .32*s, .12*s, "#e9edf1", x, y, z);
+  kBox(g, .26*s, .16*s, .02*s, "#1c2a38", x - .04*s, y + .03*s, z + .065*s);
+  kCyl(g, .032*s, .035*s, "#d32f2f", x + .14*s, y + .07*s, z + .07*s, "z", 12);
+  kCyl(g, .022*s, .03*s, "#2e7d32", x + .14*s, y - .06*s, z + .07*s, "z", 10);
+}
+function kBande(g, len, larg, y, x0, z0, couleur){   // tapis + rouleaux d'extrémité + longerons
+  x0 = x0 || 0; z0 = z0 || 0;
+  kBox(g, len, .03, larg, couleur || K_BANDE, x0, y, z0);
+  kCylI(g, .045, larg*1.02, x0 - len/2, y - .02, z0, "z", 14);
+  kCylI(g, .045, larg*1.02, x0 + len/2, y - .02, z0, "z", 14);
+  [-1, 1].forEach(k => kInox(g, len, .1, .03, x0, y - .03, z0 + k*(larg/2 + .025)));
+}
+function kPorte(g, pw, ph, x, z, color, vitre){       // vantail en façade, poignée, paumelles
+  kBox(g, pw, ph, .06, color, x, ph/2 + .06, z + .03);
+  if (vitre) kBox(g, pw*.55, ph*.3, .02, K_VITRE, x, ph*.66, z + .065, mat("#9cc7e4", {transparent:true, opacity:.7}));
+  kInox(g, .04, ph*.32, .05, x + pw/2 - .12, ph*.55, z + .09);
+  [-1, 1].forEach(k => kInox(g, .05, .14, .05, x - pw/2 + .03, ph*(.5 + k*.32), z + .05));
+}
+function kHotte(g, w, d, y, z, conduit){              // hotte d'extraction + conduit
+  kInox(g, w, .1, d, 0, y + .05, z);
+  kInox(g, w*.6, .16, d*.6, 0, y + .18, z);
+  if (conduit > .05) kCylI(g, .16, conduit, 0, y + .26 + conduit/2, z, "y", 14);
+}
+function kGroupe(g, w, d, y){                          // groupe frigorifique en toiture
+  const gw = Math.min(w*.6, 1.6), gd = Math.min(d*.6, .9), gh = .36;
+  kBox(g, gw, gh, gd, "#e6ebf0", 0, y + gh/2, 0);
+  const n = Math.max(1, Math.round(gw/.6));
+  for (let i = 0; i < n; i++){
+    const x = -gw/2 + gw*(i + .5)/n;
+    kCyl(g, Math.min(gd, gw/n)*.36, .03, K_NOIR, x, y + gh + .01, 0, "y", 18);
+  }
+}
+function kGrille(g, gw, gh, x, y, z){                  // lamelles d'aération sur une face +z
+  const n = Math.max(2, Math.min(8, Math.round(gh/.08)));
+  for (let i = 0; i < n; i++) kBox(g, gw, .018, .02, K_NOIR, x, y - gh/2 + gh*(i + .5)/n, z);
+}
+/* Machine en longueur : si l'emprise est posée en travers (d > w), on
+   construit dans un sous-groupe tourné d'un quart de tour. */
+function kAlong(fn){
+  return (g, w, d, h, col, o) => {
+    if (d > w * 1.15){
+      const s = new THREE.Group(); s.rotation.y = Math.PI/2;
+      fn(s, d, w, h, col, o); g.add(s);
+    } else fn(g, w, d, h, col, o);
+  };
+}
+
+/* ---- Constructeurs ---- */
+function kPetrinSpirale(g, w, d, h, col){
+  const r = Math.min(w*.3, d*.44), bx = w/2 - r - .06;
+  const cw = Math.min(w*.28, .6), cx = -w/2 + cw/2 + .04;
+  kBox(g, w, h*.07, d*.92, "#3d4650", 0, h*.035, 0);                       // socle
+  kBox(g, w*.94, h*.3, d*.84, col, 0, h*.07 + h*.15, 0, kShiny(col));      // bâti bas
+  kBox(g, cw, h*.62, d*.72, col, cx, h*.37 + h*.31, 0, kShiny(col));        // colonne
+  const x0 = -w/2 + .04, x1 = bx + r*.45;
+  kBox(g, x1 - x0, h*.13, d*.56, col, (x0 + x1)/2, h*.92, 0, kShiny(col));  // tête
+  kCyl(g, r, h*.4, K_INOX, bx, h*.37 + h*.2, 0, "y", 28, kShiny(K_INOX));   // cuve
+  kCyl(g, r*1.04, .03, K_INOX_F, bx, h*.77, 0, "y", 28, kShiny(K_INOX_F));  // rebord
+  kCyl(g, r*.94, .02, "#efe3c8", bx, h*.72, 0, "y", 28);                    // pâte
+  kCylI(g, r*.07, h*.26, bx + r*.3, h*.74, 0, "y", 10, K_INOX_F);           // spirale
+  kCylI(g, r*.09, h*.24, bx - r*.35, h*.76, 0, "y", 10, K_INOX_F);          // colonne de cuve
+  kCyl(g, r*1.05, .015, K_VITRE, bx, h*.84, 0, "y", 28, kGlass());          // grille de protection
+  kPupitre(g, cx, h*.72, d*.36 + .06, .7);
+}
+function kFourSoles(g, w, d, h, col, ponts){
+  ponts = ponts || 4;
+  const hb = h*.14, hc = h*.72;
+  kBox(g, w, hb, d, "#3d4650", 0, hb/2, 0);                                 // soubassement / buée
+  kBox(g, w, hc, d, col, 0, hb + hc/2, 0);                                  // corps
+  for (let i = 0; i < ponts; i++){
+    const y = hb + hc*(i + .5)/ponts, ph = hc/ponts*.56;
+    kBox(g, w*.82, ph, .05, "#2a2420", 0, y, d/2 + .025);                   // bouche
+    kBox(g, w*.5, ph*.48, .02, "#f0a75a", 0, y + ph*.04, d/2 + .055, kGlow());
+    kInox(g, w*.7, .035, .05, 0, y + ph*.62, d/2 + .08);                    // poignée
+    kInox(g, w*.9, .03, .14, 0, y - ph*.6, d/2 + .07);                      // tablette
+  }
+  kPupitre(g, w/2 - .26, hb + hc*.9, d/2 + .07, .65);
+  kHotte(g, w*1.04, d*.45, hb + hc, d*.27, h - hb - hc - .26);
+}
+function kFourRotatif(g, w, d, h, col){
+  const hc = h*.86, pw = w*.6, ph = hc*.82, px = -w*.14;
+  kBox(g, w, .08, d, "#3d4650", 0, .04, 0);
+  kBox(g, w, hc - .08, d, col, 0, .08 + (hc - .08)/2, 0);
+  kBox(g, pw, ph, .08, shade(col, -.15), px, .08 + ph/2, d/2 + .04);        // porte
+  kBox(g, pw*.58, ph*.5, .02, "#f0a75a", px, .08 + ph*.56, d/2 + .09, kGlow());
+  kInox(g, .05, ph*.4, .06, px + pw/2 - .1, .08 + ph*.5, d/2 + .12);
+  kBox(g, w*.24, hc - .1, .04, shade(col, -.3), w*.37, .08 + (hc - .1)/2, d/2 + .02);  // colonne technique
+  kPupitre(g, w*.37, hc*.72, d/2 + .08, .65);
+  kGrille(g, w*.16, hc*.2, w*.37, hc*.3, d/2 + .05);
+  kHotte(g, w*.9, d*.4, hc, d*.25, 0);
+  kCylI(g, .11, h - hc, -w*.3, hc + (h - hc)/2, -d*.25, "y", 14);           // cheminée fumées
+}
+function kFourTunnel(g, w, d, h, col){
+  const y0 = h*.2, hb = h*.58, lc = w*.84;
+  kJambes(g, lc, d*.84, y0, 2.2);
+  kBox(g, lc, hb, d, col, 0, y0 + hb/2, 0);                                 // chambre isolée
+  kBox(g, lc, .05, d*1.03, shade(col, -.25), 0, y0 + hb, 0);
+  const lb = (w - lc)/2;                                                     // tapis acier entrée / sortie
+  [-1, 1].forEach(k => { kBande(g, lb, d*.7, y0 + .25, k*(lc/2 + lb/2), 0, K_MAILLE); kJambes(g, lb, d*.6, y0 + .2, 5); });
+  const n = Math.max(2, Math.round(lc/1.6));
+  for (let i = 0; i < n; i++){                                               // trappes de visite
+    const x = -lc/2 + lc*(i + .5)/n;
+    kBox(g, lc/n*.7, hb*.42, .03, shade(col, -.2), x, y0 + hb*.5, d/2 + .015);
+    kInox(g, lc/n*.3, .03, .04, x, y0 + hb*.74, d/2 + .04);
+  }
+  const nc = Math.max(1, Math.round(lc/4));
+  for (let i = 0; i < nc; i++){                                              // cheminées de buée
+    const x = nc === 1 ? 0 : -lc*.35 + lc*.7*i/(nc - 1);
+    kCylI(g, .14, h - y0 - hb, x, y0 + hb + (h - y0 - hb)/2, -d*.2, "y", 14);
+  }
+  kPupitre(g, lc/2 - .35, y0 + hb*.6, d/2 + .07, 1);
+}
+function kChambre(g, w, d, h, col, opt){         // cellule, chambre, étuve, surgélateur
+  opt = opt || {};
+  const caisse = h * (opt.groupe ? .85 : .97);
+  kBox(g, w, .1, d, "#5c6a78", 0, .05, 0);
+  kBox(g, w, caisse - .1, d, col, 0, .1 + (caisse - .1)/2, 0);
+  const np = Math.max(1, Math.round(w/1.2));                                 // joints de panneaux
+  for (let i = 1; i < np; i++) kBox(g, .025, caisse - .14, .012, shade(col, -.2), -w/2 + w*i/np, .1 + (caisse - .1)/2, d/2 + .006);
+  const ph = Math.min(caisse*.84, 2.1);
+  if (opt.bouts){                                                            // une porte à chaque extrémité
+    const pw = Math.min(d*.8, 1.2);
+    [-1, 1].forEach(k => {
+      kBox(g, .06, ph, pw, shade(col, -.12), k*(w/2 + .03), .1 + ph/2, 0);
+      kInox(g, .05, ph*.3, .04, k*(w/2 + .08), .1 + ph*.5, pw/2 - .14);
+    });
+  } else {
+    const n = opt.portes || 1, pw = Math.min(w/n*.78, 1.3);
+    for (let i = 0; i < n; i++) kPorte(g, pw, ph, -w/2 + w*(i + .5)/n, d/2, shade(col, -.1), opt.vitre);
+  }
+  kPupitre(g, w/2 - .28, Math.min(caisse*.62, 1.5), d/2 + .07, .75);
+  if (opt.groupe) kGroupe(g, w, d, caisse);
+  if (opt.humide) kCylI(g, .07, .25, -w/2 + .3, caisse + .12, -d/4, "y", 10);
+}
+function kEnceinte(g, w, d, h, col, o){
+  const def = BY_ID[o.type] || {}, t = o.temp != null ? o.temp : def.temp;
+  const bouts = o.type === "etuve_prof" || o.type === "surgel_vien";
+  kAlong((s, W, D, H, c) => kChambre(s, W, D, H, c, {
+    groupe: t != null && t < 8, humide: t != null && t >= 20, bouts: bouts,
+    vitre: o.type === "repose_pate", portes: Math.max(1, Math.round(W/2.6))
+  }))(g, w, d, h, col, o);
+}
+function kConvoyeur(g, w, d, h, col){
+  if (d > 2.6) return kLigneIndus(g, w, d, h, col);
+  const ht = h > 1.2 ? Math.min(.95, h*.6) : h - .04, bw = d*.82;
+  kBande(g, w, bw, ht, 0, 0);
+  kJambes(g, w, bw*.84, ht - .05, 1.8);
+  if (h > 1.2){                                                               // ligne : stations sous carter
+    const ns = Math.max(1, Math.round(w/3.2));
+    for (let i = 0; i < ns; i++){
+      const x = -w/2 + w*(i + .5)/ns, sw = Math.min(1.3, w/ns*.45), hs = h - ht;
+      kInox(g, sw, .08, d, x, h - .04, 0);
+      [-1, 1].forEach(a => [-1, 1].forEach(k => kInox(g, .05, hs, .05, x + a*(sw/2 - .03), ht + hs/2, k*(d/2 - .03))));
+      kBox(g, sw - .06, hs - .1, d - .06, K_VITRE, x, ht + (hs - .1)/2, 0, kGlass());
+      kCylI(g, .07, bw, x, ht + .12, 0, "z", 14);
+    }
+    kPupitre(g, -w/2 + w/(2*ns), ht + (h - ht)*.45, d/2 + .06, .7);
+  }
+}
+function kLigneIndus(g, w, d, h, col){            // très grandes lignes : couloirs, pousse, four, spirales
+  const nl = Math.max(2, Math.min(6, Math.floor(d/2.4))), ht = .9;
+  for (let j = 0; j < nl; j++){
+    const z = -d/2 + d*(j + .5)/nl;
+    kBande(g, w*.96, 1, ht, 0, z);
+    const lane = new THREE.Group(); lane.position.z = z;   // pieds de chaque couloir
+    kJambes(lane, w*.96, .84, ht - .05, 12); g.add(lane);
+  }
+  kBox(g, w*.24, h*.8, d*.42, "#cfd8dc", -w*.24, h*.4, -d*.25);             // pousse
+  kBox(g, w*.26, h*.5, d*.3, "#c4713f", w*.04, h*.25, -d*.25);              // four tunnel
+  for (let i = 0; i < 3; i++) kCylI(g, .25, h*.5, w*(-.04 + i*.08), h*.75, -d*.25, "y", 14);
+  const R = Math.min(d*.22, w*.06, 4.5);
+  for (let k = 0; k < 2; k++){                                              // spirales
+    const x = w/2 - R - .3 - k*(2*R + .8), z = d*.2;
+    kCyl(g, R, h, K_VITRE, x, h/2, z, "y", 32, kGlass());
+    kCylI(g, R*.18, h, x, h/2, z, "y", 16);
+    for (let i = 0; i < 6; i++) kCyl(g, R*.92, .05, K_BANDE, x, h*(.1 + i*.15), z, "y", 32);
+  }
+}
+function kLaminoir(g, w, d, h, col){
+  const ht = h*.62, tw = (w - w*.26)/2;
+  [-1, 1].forEach(k => {
+    const cx = k*(w*.13 + tw/2);
+    kBande(g, tw, d*.72, ht, cx, 0);
+    [-1, 1].forEach(j => [-1, 1].forEach(m => kCylI(g, .03, ht - .05, cx + j*tw*.4, (ht - .05)/2, m*d*.3, "y", 10)));
+  });
+  kBox(g, w*.26, ht - .05, d*.8, shade(col, -.15), 0, (ht - .05)/2, 0, kShiny(shade(col, -.15)));
+  [-1, 1].forEach(k => kBox(g, w*.24, h - ht + .05, .14, col, 0, ht + (h - ht)/2 - .02, k*(d/2 - .07), kShiny(col)));
+  kBox(g, w*.24, h*.2, d, col, 0, h*.9, 0, kShiny(col));
+  const r = Math.min(.09, h*.06);
+  kCylI(g, r, d - .28, 0, ht + .13, 0, "z", 16, K_INOX_F);
+  kCylI(g, r, d - .28, 0, ht - .01, 0, "z", 16, K_INOX_F);
+  kCyl(g, .15, .04, K_NOIR, 0, h*.78, d/2 + .04, "z", 20);                  // volant de réglage
+  kPupitre(g, 0, h*.9, d/2 + .07, .55);
+}
+function kPlieuse(g, w, d, h, col){
+  const ht = Math.min(.95, h*.6);
+  kBande(g, w, d*.6, ht, 0, 0);
+  kJambes(g, w, d*.5, ht - .05, 1.6);
+  const n = Math.max(2, Math.round(w/1.1));
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + w*(i + .5)/n;
+    [-1, 1].forEach(k => kBox(g, .12, h - ht + .05, .1, col, x, ht + (h - ht)/2, k*(d*.3 + .06), kShiny(col)));
+    kBox(g, .14, .1, d*.72, col, x, h - .05, 0, kShiny(col));
+    kCylI(g, .05, d*.6, x, ht + .1, 0, "z", 12, K_INOX_F);
+  }
+  kPupitre(g, w/2 - .3, ht + .3, d*.36 + .1, .7);
+}
+function kCuve(g, w, d, h, col){                  // cuve inox sur pieds, fonds bombés
+  const r = Math.min(w, d)/2, yb = h*.2, hb = h*.58, m = kShiny(col);
+  for (let i = 0; i < 4; i++){
+    const a = Math.PI/4 + i*Math.PI/2;
+    kCylI(g, .04, yb + .1, Math.cos(a)*r*.75, (yb + .1)/2, Math.sin(a)*r*.75, "y", 10);
+  }
+  kSph(g, r, h*.08, r, col, 0, yb, 0, m);
+  kCyl(g, r, hb, col, 0, yb + hb/2, 0, "y", 32, m);
+  kCyl(g, r*1.012, .05, shade(col, -.2), 0, yb + hb*.5, 0, "y", 32);
+  kSph(g, r, h*.08, r, col, 0, yb + hb, 0, m);
+  kCylI(g, r*.22, .08, r*.4, yb + hb + h*.06, 0, "y", 18, K_INOX_F);       // trou d'homme
+  kBox(g, r*.45, h*.1, r*.45, "#3d4650", 0, yb + hb + h*.11, 0);           // moteur d'agitateur
+  kCylI(g, .05, yb*.6, 0, yb*.5, 0, "y", 10);                               // vanne de fond
+}
+function kSilo(g, w, d, h, col){
+  const r = Math.min(w, d)/2, hp = h*.2, hc = h*.12, hb = h*.6, m = kShiny(col);
+  for (let i = 0; i < 4; i++){
+    const a = Math.PI/4 + i*Math.PI/2;
+    kBox(g, .12, hp + hc*.5, .12, "#8c98a6", Math.cos(a)*r*.75, (hp + hc*.5)/2, Math.sin(a)*r*.75);
+  }
+  const fond = kCone(g, r, r*.12, hc, col, 0, hp + hc/2, 0, 24, m);
+  kCyl(g, r, hb, col, 0, hp + hc + hb/2, 0, "y", 28, m);
+  for (let y = hp + hc + 1; y < hp + hc + hb - .3; y += 1.2) kCyl(g, r*1.012, .04, shade(col, -.15), 0, y, 0, "y", 28);
+  kCone(g, r*.15, r*1.02, h*.08, col, 0, hp + hc + hb + h*.04, 0, 24, m);
+  [-1, 1].forEach(k => kBox(g, .04, hb + hc, .04, "#8c98a6", k*.2, hp + (hb + hc)/2, r + .12));  // échelle
+  for (let y = hp + .3; y < hp + hb + hc; y += .6) kBox(g, .4, .03, .03, "#8c98a6", 0, y, r + .12);
+}
+function kTable(g, w, d, h){
+  kInox(g, w, .04, d, 0, h - .02, 0);
+  kInox(g, w, .1, .03, 0, h + .05, -d/2 + .015);                            // dosseret
+  kInox(g, w*.94, .03, d*.86, 0, h*.22, 0);                                 // étagère basse
+  kJambes(g, w - .1, d - .14, h - .04, 1.6);
+}
+function kTrancheuse(g, w, d, h, col){
+  kBox(g, w, h*.55, d, col, 0, h*.275, 0, kShiny(col));
+  kInox(g, w*.5, h*.35, d*.9, 0, h*.725, 0, col);
+  kBox(g, w*.42, h*.22, .02, "#2b333d", 0, h*.73, d*.45 + .012, mat("#2b333d", {transparent:true, opacity:.6}));
+  const t1 = kInox(g, w*.32, .04, d*.8, -w*.36, h*.62, 0); t1.rotation.z = -.35;   // table d'alimentation
+  const t2 = kInox(g, w*.26, .04, d*.5, w*.37, h*.5, 0);   t2.rotation.z = .3;     // goulotte de sortie
+  kPupitre(g, w*.22, h*.42, d/2 + .06, .6);
+}
+function kPeseuse(g, w, d, h, col){
+  const R = Math.min(w, d)*.44;
+  kJambes(g, w*.86, d*.82, h*.44, 3);
+  kInox(g, w*.92, .06, d*.9, 0, h*.45, 0);                                  // plateforme
+  kCyl(g, R*.42, h*.3, col, 0, h*.63, 0, "y", 20, kShiny(col));             // corps central
+  const n = 14;
+  for (let i = 0; i < n; i++){                                              // couronne de godets
+    const a = i/n * Math.PI*2;
+    const b = kInox(g, R*.2, h*.13, R*.16, Math.cos(a)*R*.8, h*.62, Math.sin(a)*R*.8);
+    b.rotation.y = -a;
+  }
+  kCone(g, R*.1, R*.6, h*.1, K_INOX, 0, h*.83, 0, 20, kShiny(K_INOX));     // cône distributeur
+  kCylI(g, R*.16, h*.12, 0, h*.94, 0, "y", 14);                             // goulotte d'alimentation
+  kCone(g, R*.45, R*.12, h*.16, K_INOX, 0, h*.34, 0, 18, kShiny(K_INOX));  // entonnoir de sortie
+  kPupitre(g, w*.36, h*.55, d*.45 + .06, .55);
+}
+function kFlowpack(g, w, d, h, col){
+  const ht = h*.48;
+  kBox(g, w, ht - .1, d*.7, col, 0, .1 + (ht - .1)/2, -d*.1, kShiny(col));
+  kJambes(g, w*.96, d*.6, .1, 3);
+  kBande(g, w*.42, d*.32, ht + .02, -w*.28, d*.12, K_MAILLE);
+  for (let i = 0; i < 6; i++) kBox(g, .03, .06, d*.3, K_JAUNE, -w*.47 + i*w*.07, ht + .06, d*.12);   // taquets
+  kInox(g, w*.22, h*.3, d*.62, w*.04, ht + h*.15, -d*.02);                  // tête de soudure
+  kCyl(g, h*.12, d*.5, "#eef3f8", -w*.08, h*.86, -d*.22, "z", 24);         // bobine de film
+  kCyl(g, h*.035, d*.54, K_NOIR, -w*.08, h*.86, -d*.22, "z", 12);
+  kBande(g, w*.28, d*.32, ht + .02, w*.34, d*.12);
+  kCylI(g, .03, h*.33, w*.4, ht + h*.16, d*.34, "y", 10);                   // bras de pupitre
+  kPupitre(g, w*.4, ht + h*.36, d*.34 + .07, .8);
+}
+function kDetecteur(g, w, d, h, col){
+  const ht = Math.min(.9, h*.5), tw = Math.min(.45, w*.35), tz = d*.8;
+  kJambes(g, w, d*.5, ht - .05, 2);
+  kBande(g, w, d*.45, ht, 0, 0, K_MAILLE);
+  [-1, 1].forEach(k => kBox(g, tw, h - ht + .1, .12, col, 0, ht - .1 + (h - ht + .1)/2, k*tz/2));  // montants
+  kBox(g, tw, .22, tz + .12, col, 0, h - .11, 0);                           // tête
+  kBox(g, tw, .14, tz + .12, col, 0, ht - .14, 0);
+  kBox(g, .4, .35, .3, "#d32f2f", w*.3, .2, -d*.32);                        // bac de rejet
+  kPupitre(g, 0, ht + (h - ht)*.45, tz/2 + .12, .55);
+}
+function kEtiqueteuse(g, w, d, h, col){
+  const ht = Math.min(.9, h*.52);
+  kJambes(g, w, d*.45, ht - .05, 2);
+  kBande(g, w, d*.42, ht, 0, d*.15, K_MAILLE);
+  kInox(g, .08, h - .1, .08, 0, (h - .1)/2, -d*.38);                        // colonne
+  kBox(g, w*.45, h*.2, .26, col, 0, h*.72, -d*.22, kShiny(col));            // tête d'étiquetage
+  kCyl(g, h*.13, .04, "#f7f7f7", -w*.12, h*.88, -d*.17, "z", 24);           // bobine
+  kCyl(g, h*.06, .05, "#8c98a6", w*.12, h*.88, -d*.17, "z", 18);            // enrouleur
+  kPupitre(g, w*.32, h*.6, -d*.08, .55);
+}
+function kPalettiseur(g, w, d, h, col){
+  [-1, 1].forEach(i => [-1, 1].forEach(k => kBox(g, .1, h, .1, K_JAUNE, i*(w/2 - .05), h/2, k*(d/2 - .05))));
+  [-1, 1].forEach(k => kBox(g, w, .12, .1, K_JAUNE, 0, h - .06, k*(d/2 - .05)));
+  [-1, 1].forEach(i => kBox(g, .1, .12, d, K_JAUNE, i*(w/2 - .05), h - .06, 0));
+  const gr = mat("#9aa7b5", {transparent:true, opacity:.22, depthWrite:false});   // grillage
+  kBox(g, w - .1, h*.78, .01, "#9aa7b5", 0, h*.42, -d/2 + .05, gr);
+  [-1, 1].forEach(i => kBox(g, .01, h*.78, d - .1, "#9aa7b5", i*(w/2 - .05), h*.42, 0, gr));
+  kBox(g, 1.2, .14, .8, "#b98b4e", w*.1, .07, 0);                           // palette en cours
+  kBox(g, 1.12, h*.32, .76, "#cdb083", w*.1, .14 + h*.16, 0);
+  kBox(g, w*.9, .14, .18, col, 0, h*.86, 0, kShiny(col));                   // portique
+  kCylI(g, .04, h*.14, w*.1, h*.77, 0, "y", 10);
+  kBox(g, .55, .3, .55, col, w*.1, h*.66, 0, kShiny(col));                  // tête de préhension
+  kBande(g, w*.3, .5, .75, -w*.3, d*.2);
+}
+function kNEP(g, w, d, h, col){
+  kBox(g, w, .12, d, "#5c6a78", 0, .06, 0);                                 // skid
+  const n = 3, r = Math.min(w*.75/(n*2.3), d*.3);
+  for (let i = 0; i < n; i++){                                              // cuves : soude, acide, eau
+    const x = -w/2 + w*.75*(i + .5)/n;
+    kCylI(g, r, h*.66, x, .12 + h*.33, -d*.1, "y", 24);
+    kSph(g, r, .12, r, K_INOX, x, .12 + h*.66, -d*.1, kShiny(K_INOX));
+  }
+  kBox(g, w*.2, h*.8, d*.34, "#e9edf1", w*.38, .12 + h*.4, -d*.22);         // armoire
+  kPupitre(g, w*.38, h*.6, -d*.22 + d*.17 + .06, .7);
+  for (let i = 0; i < 2; i++){                                              // pompes
+    kCyl(g, .11, .26, "#1e88e5", -w*.25 + i*.65, .3, d*.3, "x", 14);
+    kBox(g, .26, .18, .22, "#37474f", -w*.25 + i*.65 + .26, .3, d*.3);
+  }
+  kCylI(g, .035, w*.75, -w*.12, h*.86, d*.05, "x", 10);                     // collecteurs
+  kCylI(g, .035, w*.75, -w*.12, .5, d*.15, "x", 10);
+}
+function kTunnelLavage(g, w, d, h, col){
+  const ht = Math.min(.9, h*.45), lc = w*.7, lb = (w - lc)/2;
+  kJambes(g, lc, d*.9, .12, 1.6);
+  kBox(g, lc, h*.8, d, col, 0, .12 + h*.4, 0, kShiny(col));
+  [-1, 1].forEach(k => {
+    kBande(g, lb, d*.72, ht, k*(lc/2 + lb/2), 0, K_MAILLE);
+    kJambes(g, lb, d*.6, ht - .05, 5);
+    kBox(g, .02, .45, d*.7, K_NOIR, k*(lc/2 + .01), ht + .25, 0);          // rideau à lamelles
+  });
+  const n = Math.max(2, Math.round(lc/1.2));
+  for (let i = 0; i < n; i++){
+    const x = -lc/2 + lc*(i + .5)/n;
+    kBox(g, lc/n*.74, h*.4, .03, shade(col, -.15), x, h*.52, d/2 + .015);   // trappes
+    kCyl(g, .1, .02, "#9cc7e4", x, h*.62, d/2 + .035, "z", 16);             // hublots
+  }
+  kCylI(g, .14, h*.2, -lc*.3, .12 + h*.8 + h*.1, 0, "y", 14);               // extraction des buées
+  kPupitre(g, lc/2 - .3, h*.7, d/2 + .07, .8);
+}
+function kLaveBottes(g, w, d, h, col){
+  kBox(g, w, .08, d, "#5c6a78", 0, .04, 0);                                 // caillebotis
+  [-1, 1].forEach(k => {
+    kInox(g, w*.85, h*.34, .18, -w*.05, .08 + h*.17, k*(d/2 - .09));        // joues à brosses
+    kCyl(g, .09, w*.7, col, -w*.05, .26, k*(d/2 - .24), "x", 14);           // brosses
+    kCylI(g, .025, w*.85, -w*.05, h*.62, k*(d/2 - .09), "x", 10);           // mains courantes
+  });
+  kInox(g, .36, .22, d*.6, w/2 - .2, h*.72, 0);                             // lave-mains
+  kBox(g, .12, .2, .08, "#f5f5f5", w/2 - .1, h*.92, 0);                     // distributeur
+}
+function kArmoireFroide(g, w, d, h, col){
+  kJambes(g, w*.9, d*.8, .1, 3);
+  kInox(g, w, h*.84, d, 0, .1 + h*.42, 0);
+  const n = w > 1 ? 2 : 1, pw = w/n - .03;
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + w*(i + .5)/n;
+    kInox(g, pw, h*.8, .03, x, .1 + h*.42, d/2 + .015, K_INOX_F);
+    kInox(g, .03, h*.3, .05, x + (i ? -1 : 1)*(pw/2 - .07), .1 + h*.48, d/2 + .05);
+  }
+  kBox(g, w, h*.08, d, col, 0, h*.96, 0);
+  kGrille(g, w*.7, h*.05, 0, h*.96, d/2 + .01);
+}
+function kEvaporateur(g, w, d, h, col){
+  kBox(g, w, h, d, "#eef2f5", 0, h/2, 0);
+  const n = Math.max(1, Math.round(w/.65));
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + w*(i + .5)/n;
+    kCyl(g, Math.min(h, w/n)*.38, .04, K_NOIR, x, h*.5, d/2 + .02, "z", 22);
+    kCyl(g, .05, .05, "#8c98a6", x, h*.5, d/2 + .045, "z", 10);
+  }
+  kBox(g, w*.96, h*.8, .02, "#9fb0c0", 0, h/2, -d/2 - .01);                 // batterie à ailettes
+  kInox(g, w*1.02, .05, d*1.05, 0, -.03, 0);                                // bac de condensats
+}
+function kBac660(g, w, d, h, col){
+  const hb = h*.84;
+  kRoues(g, w*.9, d*.86, .07);
+  kBox(g, w*.92, hb - .17, d*.88, col, 0, .17 + (hb - .17)/2, 0);
+  const lid = kBox(g, w, .06, d, shade(col, -.18), 0, hb + .02, 0); lid.rotation.x = -.06;
+  kBox(g, w*.7, .04, .04, K_NOIR, 0, hb - .06, -d/2 - .03);                 // poignée
+  for (let i = 0; i < 3; i++) kBox(g, .03, hb*.6, .012, shade(col, -.2), -w*.3 + i*w*.3, hb*.5, d*.44 + .006);
+}
+function kTranspal(g, w, d, h, col){
+  const fl = w*.62;
+  [-1, 1].forEach(k => kBox(g, fl, .08, .17, "#37474f", w/2 - fl/2, .06, k*d*.28));   // fourches
+  kBox(g, w*.32, h*.52, d*.9, col, -w/2 + w*.16, h*.3, 0);
+  kBox(g, w*.32, .05, d*.9, K_NOIR, -w/2 + w*.16, h*.58, 0);
+  const t = kCyl(g, .03, h*.55, K_NOIR, -w/2 + w*.1, h*.82, 0, "y", 8); t.rotation.z = .35;   // timon
+  kBox(g, .12, .06, .36, K_NOIR, -w/2 + w*.02, h*1.0, 0);
+  kCyl(g, .11, .08, K_CAOUT, -w/2 + w*.16, .11, 0, "z", 16);
+}
+function kDoseurEau(g, w, d, h, col){
+  kJambes(g, w*.88, d*.78, .06, 3);
+  kInox(g, w, h*.66, d, 0, .06 + h*.33, 0);
+  kBox(g, w*.8, h*.38, .02, col, 0, h*.4, d/2 + .01);
+  kPupitre(g, 0, h*.58, d/2 + .06, .55);
+  kCylI(g, Math.min(w, d)*.34, h*.24, 0, .06 + h*.66 + h*.12, 0, "y", 20);  // réservoir tampon
+  kSph(g, Math.min(w, d)*.34, .06, Math.min(w, d)*.34, K_INOX, 0, .06 + h*.9, 0, kShiny(K_INOX));
+  kCyl(g, .025, h*.42, K_NOIR, w/2 + .03, h*.5, 0, "y", 8);                 // flexible de coulage
+}
+function kMachineGlace(g, w, d, h, col){
+  kJambes(g, w*.9, d*.8, .1, 3);
+  kInox(g, w, h*.5, d, 0, .1 + h*.25, 0);                                   // bac de stockage
+  kInox(g, w*.6, h*.2, .03, 0, .1 + h*.3, d/2 + .015, K_INOX_F);            // trappe
+  kBox(g, w, h*.38, d, col, 0, .1 + h*.5 + h*.19, 0);                       // évaporateur
+  kGrille(g, w*.7, h*.18, 0, .1 + h*.69, d/2 + .01);
+}
+function kCartonneuse(g, w, d, h, col, ferme){
+  const ht = .72;
+  kJambes(g, w, d*.7, ht - .05, 2);
+  kInox(g, w, .1, d*.8, 0, ht, 0, K_INOX_F);
+  kBande(g, w, d*.42, ht + .08, 0, 0, K_MAILLE);
+  [-1, 1].forEach(i => [-1, 1].forEach(k => kInox(g, .06, h - ht, .06, i*(w/2 - .03), ht + (h - ht)/2, k*(d*.4 - .03))));
+  kInox(g, w, .06, d*.8, 0, h - .03, 0);
+  [-1, 1].forEach(k => kBox(g, w - .1, h - ht - .1, .01, K_VITRE, 0, ht + (h - ht)/2, k*(d*.4 - .03), kGlass()));
+  if (ferme){
+    kBox(g, .45, .35, .32, "#c8a36a", -w*.2, ht + .1 + .175, 0);           // carton
+    kBox(g, .3, .18, .2, col, w*.05, ht + .55, 0);                          // tête de scotchage
+    kCyl(g, .09, .05, "#d9c7a0", w*.05, ht + .7, 0, "z", 18);
+  } else {
+    kBox(g, w*.3, (h - ht)*.6, d*.5, "#c8a36a", -w*.28, ht + .1 + (h - ht)*.3, 0);   // magasin de cartons à plat
+    kBox(g, .45, .35, .32, "#c8a36a", w*.2, ht + .1 + .175, 0);
+  }
+  kPupitre(g, w/2 - .2, ht + (h - ht)*.55, d*.4 + .06, .6);
+}
+function kBanderoleuse(g, w, d, h, col){
+  const R = Math.min(w*.6, d)*.48, cx = -w*.15;
+  kCyl(g, R, .1, col, cx, .05, 0, "y", 32);                                 // plateau tournant
+  kBox(g, 1.2, .14, .8, "#b98b4e", cx, .17, 0);
+  kBox(g, 1.1, h*.5, .76, "#c8a36a", cx, .24 + h*.25, 0);
+  kBox(g, 1.14, h*.48, .8, "#e8f0f7", cx, .24 + h*.25, 0, mat("#e8f0f7", {transparent:true, opacity:.35, depthWrite:false}));
+  kBox(g, .22, h, .22, col, w/2 - .2, h/2, -d*.2);                          // mât
+  kBox(g, .32, .36, .3, shade(col, -.2), w/2 - .4, h*.55, -d*.2);           // chariot de film
+  kCyl(g, .09, .5, "#e8f0f7", w/2 - .55, h*.55, -d*.2 + .1, "y", 16);
+  kPupitre(g, w/2 - .2, h*.42, -d*.2 + .17, .6);
+}
+function kArmoires(g, w, d, h, col){              // TGBT : rangée de cellules
+  const n = Math.max(1, Math.round(w/.8)), cw = w/n;
+  kBox(g, w, .1, d, K_NOIR, 0, .05, 0);
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + cw*(i + .5);
+    kBox(g, cw - .02, h - .1, d, col, x, .1 + (h - .1)/2, 0);
+    kBox(g, .03, .18, .04, K_NOIR, x + cw/2 - .1, h*.5, d/2 + .02);
+    kBox(g, cw*.5, .12, .01, K_NOIR, x, h*.88, d/2 + .006);
+    kCyl(g, .02, .02, i % 2 ? "#2e7d32" : "#f9a825", x - cw*.25, h*.78, d/2 + .01, "z", 8);
+  }
+  kBox(g, .14, .14, .01, K_JAUNE, -w/2 + cw*.5, h*.65, d/2 + .008);         // pictogramme danger
+}
+function kTransfo(g, w, d, h, col){
+  kBox(g, w, h*.9, d, col, 0, h*.45, 0);
+  kBox(g, w*1.06, h*.08, d*1.08, shade(col, -.25), 0, h*.94, 0);           // toiture débordante
+  kPorte(g, w*.22, h*.68, -w*.25, d/2, shade(col, -.15));
+  kPorte(g, w*.22, h*.68, w*.02, d/2, shade(col, -.15));
+  kGrille(g, w*.22, h*.3, w*.32, h*.55, d/2 + .01);
+  kBox(g, .2, .2, .01, K_JAUNE, -w*.25, h*.8, d/2 + .07);
+}
+function kCasiers(g, w, d, h, col){
+  const n = Math.max(1, Math.round(w/.3)), cw = w/n;
+  kBox(g, w, .1, d, "#3d4650", 0, .05, 0);
+  for (let i = 0; i < n; i++){
+    const x = -w/2 + cw*(i + .5);
+    kBox(g, cw - .015, h - .1, d, col, x, .1 + (h - .1)/2, 0);
+    kBox(g, cw*.8, .015, .01, shade(col, -.3), x, .1 + (h - .1)*.5, d/2 + .006);  // double compartiment
+    kBox(g, cw*.5, .03, .01, K_NOIR, x, h*.88, d/2 + .006);
+    kBox(g, cw*.5, .03, .01, K_NOIR, x, h*.4, d/2 + .006);
+    kCyl(g, .015, .02, K_INOX, x + cw*.3, h*.7, d/2 + .01, "z", 8);
+  }
+}
+function kCuiseur(g, w, d, h, col){               // cuve basculante à double enveloppe
+  const r = Math.min(w*.3, d*.44);
+  [-1, 1].forEach(k => kInox(g, w*.14, h*.78, d*.6, k*(w/2 - w*.07), h*.39, 0));
+  kCylI(g, r, h*.4, 0, h*.56, 0, "y", 28);
+  kSph(g, r, h*.12, r, K_INOX, 0, h*.36, 0, kShiny(K_INOX));
+  kCylI(g, .06, w*.74, 0, h*.62, 0, "x", 12);                               // axe de basculement
+  kSph(g, r*1.03, h*.06, r*1.03, K_INOX_F, 0, h*.77, 0, kShiny(K_INOX_F)); // couvercle
+  kBox(g, r*.6, h*.15, r*.5, "#3d4650", 0, h*.87, 0);                       // motoréducteur
+  kPupitre(g, w/2 - w*.07, h*.6, d*.3 + .06, .6);
+}
+function kRideauAir(g, w, d, h, col){
+  [-1, 1].forEach(k => kInox(g, .08, h*.8, d*.8, k*(w/2 - .04), h*.4, 0));
+  kBox(g, w, h*.2, d, col, 0, h*.9, 0);
+  kGrille(g, w*.85, h*.12, 0, h*.9, d/2 + .01);
+  for (let i = 0; i < 6; i++) kBox(g, w*.11, .02, d*.6, K_NOIR, -w*.38 + i*w*.152, h*.8 - .01, 0);
+}
+function kCompacteur(g, w, d, h, col){
+  kBox(g, w*.45, h*.62, d, col, -w*.27, h*.31, 0);                          // presse
+  kBox(g, w*.42, h*.28, d*.85, shade(col, .15), -w*.27, h*.62 + h*.14, 0);   // trémie de chargement
+  kBox(g, w*.55, h*.6, d*.95, shade(col, -.25), w*.22, h*.3, 0);             // conteneur
+  for (let i = 1; i < 4; i++) kBox(g, .04, h*.56, d*.97, shade(col, -.4), w*.22 - w*.275 + i*w*.1375, h*.3, 0);
+  kCyl(g, .06, w*.3, "#8c98a6", -w*.1, h*.15, d*.3, "x", 10);              // vérin
+  kPupitre(g, -w*.4, h*.45, d/2 + .06, .6);
+}
+function kTableTournante(g, w, d, h, col){
+  const r = Math.min(w, d)/2;
+  kCyl(g, r*.35, .06, K_NOIR, 0, .03, 0, "y", 20);
+  kCylI(g, .08, h*.85, 0, h*.43, 0, "y", 14);
+  kCyl(g, r, .04, col, 0, h - .06, 0, "y", 40, kShiny(col));               // plateau
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r, .02, 6, 40), kShiny(K_INOX_F));   // garde de bord
+  rim.rotation.x = Math.PI/2; rim.position.y = h - .02; g.add(rim);
+}
+function kCuvePetrin(g, w, d, h, col){
+  const r = Math.min(w, d)/2;
+  kRoues(g, r*1.4, r*1.4, .06);
+  kInox(g, r*1.5, .05, r*1.5, 0, .17, 0, K_INOX_F);                          // chariot
+  kCyl(g, r, h*.75, col, 0, .2 + h*.375, 0, "y", 32, kShiny(col));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r, .03, 6, 36), kShiny(K_INOX_F));
+  rim.rotation.x = Math.PI/2; rim.position.y = .2 + h*.75; g.add(rim);
+  kCyl(g, r*.95, .02, "#efe3c8", 0, .2 + h*.6, 0, "y", 32);                 // pâte en pointage
+}
+function kAdoucisseur(g, w, d, h, col){
+  const r = Math.min(w, d)*.22;
+  [-1, 1].forEach(k => {
+    kCyl(g, r, h*.72, col, k*w*.22, h*.36, -d*.15, "y", 18, kShiny(col));
+    kSph(g, r, r*.6, r, col, k*w*.22, h*.72, -d*.15, kShiny(col));
+    kBox(g, r*1.4, h*.08, r*1.4, "#37474f", k*w*.22, h*.79 + .04, -d*.15);  // tête de vanne
+  });
+  kBox(g, w*.8, h*.45, d*.35, "#eceff1", 0, h*.225, d*.28);                 // bac à sel
+}
+function kReserveIncendie(g, w, d, h, col){
+  const r = Math.min(w, d)/2;
+  kCyl(g, r, h*.9, col, 0, h*.45, 0, "y", 36);
+  for (let y = .6; y < h*.88; y += 1.1) kCyl(g, r*1.008, .05, shade(col, -.2), 0, y, 0, "y", 36);
+  kCone(g, r*.1, r*1.02, h*.1, shade(col, -.1), 0, h*.95, 0, 36);
+  [-1, 1].forEach(k => kBox(g, .04, h*.92, .04, "#cfd7df", k*.22, h*.46, r + .12));     // échelle
+  for (let y = .4; y < h*.9; y += .6) kBox(g, .44, .03, .03, "#cfd7df", 0, y, r + .12);
+}
+function kPostePesee(g, w, d, h, col){
+  kTable(g, w, d, h);
+  kBox(g, .42, .08, .36, "#dfe5ea", -w*.25, h + .04, 0);                    // balance 30 kg
+  kBox(g, .22, .14, .05, "#1c2a38", -w*.25, h + .15, -d*.3);
+  [0, 1, 2].forEach(i => kBox(g, .3, .15, .22, ["#ffd54f", "#81d4fa", "#ef9a9a"][i], w*.05 + i*.34, h + .075, d*.1));  // bacs recette
+}
+function kPaletteEUR(g, w, d, h, col){
+  [-1, 0, 1].forEach(k => kBox(g, w, .022, .1, "#b98b4e", 0, .011, k*(d/2 - .05)));      // semelles
+  [-1, 0, 1].forEach(k => kBox(g, w, .078, .1, "#a47a45", 0, .061, k*(d/2 - .05)));      // dés
+  for (let i = 0; i < 5; i++) kBox(g, .1, .022, d, "#c49a5f", -w/2 + .05 + i*(w - .1)/4, .111, 0);   // planches
+  if (h > .3){
+    const hp = .122, hl = h - hp;
+    kBox(g, w*.95, hl - .01, d*.95, "#cdb083", 0, hp + hl/2, 0);             // cartons
+    kBox(g, w*.97, hl*.92, d*.97, "#e8f0f7", 0, hp + hl*.48, 0, mat("#e8f0f7", {transparent:true, opacity:.3, depthWrite:false}));  // film
+  }
+}
+/* Gaine textile (chaussette) : manchette métallique, tube textile,
+   suspentes sur câble, rangées de micro-perforations sur les flancs bas. */
+function kChaussette(g, w, d, h, col){
+  const r = Math.min(d, h)/2, L = w;
+  kCyl(g, r, L - r*.3, col, -r*.15, r, 0, "x", 28);                        // gaine
+  kSph(g, r*.3, r, r, col, L/2 - r*.3, r, 0);                               // fond arrondi
+  kCyl(g, r*1.05, .14, "#a7b2bd", -L/2 + .07, r, 0, "x", 28, kShiny("#a7b2bd"));   // manchette
+  kCylI(g, r*.92, .45, -L/2 + .07, 2*r + .22, 0, "y", 24, "#a7b2bd");       // piquage sur le réseau
+  const s = Math.sin(.6), c = Math.cos(.6);
+  [-1, 1].forEach(k => kBox(g, L*.86, .014, .014, "#7d9bb3", r*.05, r - r*s, k*r*c*1.01));   // perforations
+  const n = Math.max(2, Math.floor(L/1.5) + 1);
+  for (let i = 0; i < n; i++){                                              // bandes de suspension
+    const x = -L/2 + .4 + (L - .8)*i/(n - 1);
+    kCyl(g, r*1.012, .03, shade(col, -.1), x, r, 0, "x", 28);
+    kBox(g, .01, .18, .01, "#5c6a78", x, 2*r + .09, 0);
+  }
+  kBox(g, L, .012, .012, "#5c6a78", 0, 2*r + .18, 0);                       // câble porteur
+}
+
+/* Par type d'élément (prioritaire), puis par forme. */
+const MACHINE3D = {
+  petrin: kPetrinSpirale,
+  four: kAlong(kFourTunnel),
+  four_tunnel: (g, w, d, h, col) => kFourSoles(g, w, d, h, col, 3),
+  cellule: (g, w, d, h, col) => kChambre(g, w, d, h, col, {groupe:true}),
+  tunnel_sur: kAlong((g, w, d, h, col) => kChambre(g, w, d, h, col, {groupe:true, portes:Math.max(1, Math.round(w/3))})),
+  trancheur: kTrancheuse,
+  peseuse: kPeseuse,
+  condi: kAlong(kFlowpack),
+  detect_met: kAlong(kDetecteur),
+  etiq: kAlong(kEtiqueteuse),
+  palettiseur: kPalettiseur,
+  cip: kNEP,
+  laveur: kAlong(kTunnelLavage),
+  lav_plaques: kAlong(kTunnelLavage),
+  lave_bot: kAlong(kLaveBottes),
+  frigo: kArmoireFroide,
+  evapo: kEvaporateur,
+  bac_dech: kBac660,
+  transpal: kAlong(kTranspal),
+  doseur_eau: kDoseurEau,
+  doseur_mixeur: kDoseurEau,
+  machine_glace: kMachineGlace,
+  formeuse_carton: kAlong((g, w, d, h, col) => kCartonneuse(g, w, d, h, col, false)),
+  fermeuse_carton: kAlong((g, w, d, h, col) => kCartonneuse(g, w, d, h, col, true)),
+  filmeuse: kBanderoleuse,
+  lav_echelles: (g, w, d, h, col) => { kChambre(g, w, d, h*.92, col, {vitre:true}); kCylI(g, .14, h*.12, -w*.25, h*.92 + h*.04, -d*.2, "y", 14); },
+  tgbt: kArmoires,
+  transfo: kTransfo,
+  casier: kCasiers,
+  cuiseur_prof: kCuiseur,
+  rideau_air: kRideauAir,
+  compacteur: kCompacteur,
+  table_tournante: kTableTournante,
+  cuve_petrin: kCuvePetrin,
+  adoucisseur: kAdoucisseur,
+  cuve_sprinkler: kReserveIncendie,
+  poste_pesee: kPostePesee
+};
+const SHAPE3D = {
+  cylinder: kCuve,
+  silo: kSilo,
+  conveyor: kAlong(kConvoyeur),
+  table: (g, w, d, h) => kTable(g, w, d, h),
+  proofer: kEnceinte,
+  deck_oven: (g, w, d, h, col) => kFourSoles(g, w, d, h, col, 4),
+  rotary_oven: kFourRotatif,
+  spiral_mixer: kPetrinSpirale,
+  sheeter: kAlong(kLaminoir),
+  folder: kAlong(kPlieuse),
+  bread_slicer: kTrancheuse,
+  pallet: kPaletteEUR,
+  textile_duct: kAlong(kChaussette)
+};
+
 function build3D(o){
   const def = BY_ID[o.type] || {shape:"box"};
   const g = new THREE.Group();
   const col = colorOf(o), zc = zoneOf(o).color;
   const w = o.w, d = o.d, h = Math.max(.02, o.h);
 
-  switch (def.shape){
+  const fab = MACHINE3D[o.type] || SHAPE3D[def.shape];
+  if (fab) fab(g, w, d, h, col, o);
+  else switch (def.shape){
     case "parking": {
       const asphalt = new THREE.Mesh(new THREE.BoxGeometry(w, .05, d), mat("#2c3542"));
       asphalt.position.y = .025; asphalt.receiveShadow = true; g.add(asphalt);
