@@ -660,10 +660,35 @@ const CATALOG = [
   {id:"surgel_vien", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"proofer", label:"Surgélateur viennoiserie (tunnel à chariots)", w:1.8, d:3.1, h:2.6, color:"#6fc9de", zone:"froid", temp:-35, note:"Plan prof : 1,8 × 3,1 m, 4,6 m portes ouvertes (une porte à chaque bout). 35 kW."},
   {id:"rideau_air", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Rideau d'air de refroidissement", w:1.6, d:0.4, h:2.4, color:"#7fdbe8", zone:"propre", note:"Ressuage des échelles en sortie de four (2 rideaux, 0,5 kW)."},
   {id:"compacteur", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Compacteur de quai", w:2.0, d:1.5, h:2.0, color:"#8b93a0", zone:"grise", sale:true, note:"Cartons et films de déconditionnement. 7,5 kW."},
-  {id:"ligne_semi_boul", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne boulangerie semi-industrielle", w:15.96, d:1.5, h:1.8, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 15,96 m. 6 000 baguettes/h, 10 000 p/h en petits pains."},
-  {id:"fritsch", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne viennoiserie semi-industrielle Fritsch", w:12.21, d:2.0, h:1.8, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 12,21 × 2,0 m. 5 400 à 7 200 croissants/h, 5 280 pains choc/h."},
-  {id:"mecatherm", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne boulangerie industrielle Mecatherm", w:85, d:13, h:4, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : façonnage, pousse, four tunnel, refroidissement et surgélation en spirale. Cote illisible sur le PDF : 85 × 13 m est une estimation à confirmer."},
-  {id:"ligne_vien_indus", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"conveyor", label:"Ligne viennoiserie industrielle continue", w:70.24, d:12, h:4, color:"#8fa0b3", zone:"propre", note:"Plan du 13/11 : 70,24 m au total dont 45,18 m de façonnage, double spirale et surgélateur. 12 m de large au droit des spirales (lu sur le plan). 10 800 à 14 400 croissants/h."},
+  {id:"ligne_semi_boul", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"line_layout", label:"Ligne boulangerie semi-industrielle", w:15.96, d:1.5, h:1.8, color:"#aab6c4", zone:"propre", note:"Plan du 13/11 : 15,96 m. Trémie-extrudeuse, laminage, tête de laminage, stations sous carter, tapis de détente, écartement, façonnage-découpe, table de sortie. 6 000 baguettes/h, 10 000 p/h en petits pains."},
+  {id:"fritsch", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"line_layout", label:"Ligne viennoiserie semi-industrielle Fritsch", w:12.21, d:2.0, h:1.8, color:"#aab6c4", zone:"propre", note:"Plan du 13/11 : 12,21 × 2,0 m, flux de droite à gauche. Entrée de bande, découpe, tête de laminage, tapis avec fleureuse, module de découpe-enroulage (2 m de large), sortie. 5 400 à 7 200 croissants/h, 5 280 pains choc/h."},
+  {id:"mecatherm", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"line_layout", label:"Ligne boulangerie industrielle Mecatherm", w:114.93, d:17.3, h:5, color:"#aab6c4", zone:"propre", note:"Plan du 13/11 : 114,93 m hors tout (cote lue sur le PDF), 11,81 m au droit du surgélateur, environ 17 m avec l'îlot de pétrissage. Pétrissage, division-façonnage, plaqueuse, étuve continue, scarification, four tunnel, spirale de refroidissement, surgélateur spirale, retour des plaques en partie basse."},
+  {id:"ligne_vien_indus", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"line_layout", label:"Ligne viennoiserie industrielle continue", w:70.24, d:12, h:5, color:"#aab6c4", zone:"propre", note:"Plan du 13/11 : 70,24 m au total dont 45,18 m de façonnage (flux de droite à gauche) : section de calibrage, machine à croissants, ligne universelle, transferts, boucle montant à la double spirale en enceinte isolée, contrôle, surgélateur spirale compact, emballage manuel. 10 800 à 14 400 croissants/h."},
+  /* ---- Lignes modulaires : modules séparés et convoyeurs de renvoi ----
+     Pour composer une ligne en L, en U ou en S : poser les modules,
+     les orienter, puis les relier par des convoyeurs droits et courbes. */
+  {id:"conv_courbe90", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"conveyor_curve", sweep:90, label:"Convoyeur courbe 90°", w:2.2, d:2.2, h:.95, color:"#aab6c4", zone:"propre", note:"Rayon extérieur = largeur de l'emprise. Entrée par le bord gauche, sortie par le bord haut (avant rotation) : tourner l'élément pour choisir le sens du virage."},
+  {id:"conv_courbe45", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"conveyor_curve", sweep:45, label:"Convoyeur courbe 45°", w:2.2, d:2.2, h:.95, color:"#aab6c4", zone:"propre", note:"Rayon extérieur = largeur de l'emprise. Entrée par le bord gauche, virage de 45° vers le haut (avant rotation)."},
+  {id:"conv_liaison", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"belt", label:"Convoyeur de liaison", w:3, d:1, h:.95, color:"#aab6c4", zone:"propre", note:"Tapis droit de transfert entre deux modules : régler la longueur (L) à la demande."},
+  {id:"mod_petrissage", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"petrissage", label:"Îlot de pétrissage (pétrins, rail de cuves, basculeur)", w:5.4, d:13.5, h:3.2, color:"#b6c2cf", zone:"propre", note:"Module de tête de la ligne Mecatherm : deux pétrins spirale, cuves sur rail, élévateur-basculeur, dosage eau et ingrédients."},
+  {id:"mod_division", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"division", label:"Division / laminage / façonnage", w:11.4, d:3, h:2.2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_plaqueuse", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"carter", label:"Plaqueuse (mise sur plaques)", w:2.2, d:2.2, h:2.2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_etuve", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"tunnel", label:"Étuve tunnel continue", w:28, d:3, h:3.4, color:"#f0b27a", zone:"propre", temp:30, note:"Pousse en continu à 30-35 °C et 80 % d'humidité. Portes de visite sur la façade."},
+  {id:"mod_scarif", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"scarif", label:"Scarificateur / décor", w:4.5, d:4, h:2.4, color:"#7cb342", zone:"propre"},
+  {id:"mod_enfourneur", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"gantries", label:"Enfourneur de four tunnel", w:3.6, d:2.6, h:1.8, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_four", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"oven", label:"Four tunnel continu", w:16, d:4.6, h:3, color:"#c4713f", zone:"propre", note:"Hotte et extraction des buées au droit du four, dégagement d'entretien sur les deux faces."},
+  {id:"mod_spirale_ref", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"spiral_open", label:"Spirale de refroidissement", w:8, d:8, h:4.5, color:"#f2c94c", zone:"propre"},
+  {id:"mod_surgel_spirale", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"spiral_box", n:1, label:"Surgélateur spirale (enceinte isolée)", w:9.4, d:11.8, h:5, color:"#e6ebf0", zone:"froid", temp:-35},
+  {id:"mod_double_spirale", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"spiral_box", n:2, spColor:"#ef5350", label:"Double spirale en enceinte isolée", w:12.4, d:6.9, h:5, color:"#e6ebf0", zone:"froid", temp:-30},
+  {id:"mod_surgel_compact", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"spiral_box", n:1, label:"Surgélateur spirale compact", w:7.7, d:4.3, h:3.5, color:"#e6ebf0", zone:"froid", temp:-35},
+  {id:"mod_calibrage", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"calibrage", label:"Section de calibrage (laminage)", w:9, d:1.7, h:2.2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_croissant", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"croissant", label:"Machine à croissants (découpe, écartement, enroulage)", w:7.4, d:1.7, h:1.8, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_universelle", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"universelle", label:"Ligne universelle (découpe, garnissage)", w:10.8, d:1.7, h:2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_tete_lam", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"head", label:"Tête de laminage", w:2.6, d:1.6, h:2.2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_guillotine", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"guillotine", label:"Guillotine / poste de découpe", w:2.2, d:1.6, h:2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_ecarteur", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"fan", label:"Écarteur de bandes", w:2.6, d:1.5, h:1.6, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_station", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"carter", label:"Station sous carter", w:2.6, d:1.5, h:2, color:"#b6c2cf", zone:"propre"},
+  {id:"mod_extrudeuse", fam:"Lignes modulaires — convoyeurs et modules", cat:"equip", shape:"line_module", kind:"boxm", label:"Trémie / extrudeuse de bande", w:1.9, d:1.4, h:2, color:"#b6c2cf", zone:"propre"},
   {id:"reserve", fam:"Projet B5 — lignes futures (données du 13/11)", cat:"equip", shape:"footprint", label:"Emprise réservée (ligne future)", w:16, d:3, h:0.05, color:"#ffb300", zone:"propre", note:"Surface à laisser libre de réseaux au sol et de cloisons pour le remplacement de la ligne."},
   {id:"four_tunnel", fam:"Projet B5 — pousse, cuisson, froid", cat:"equip", shape:"box", label:"Four tunnel à soles", w:2.0, d:1.9, h:2.2, color:"#c4713f", zone:"propre", note:"Plan prof : 2,0 × 1,9 m, enfourneur de 2,2 m en entrée, sortie à l'opposé. 79,2 kW. 6 fours = 22,9 m² de sole, besoin des flûtes (cas courant)."}
 ];
@@ -1004,6 +1029,117 @@ function drawOrder(){
   return state.objects.map((o,i) => [o,i]).sort((a,b) => layerOf(a[0]) - layerOf(b[0]) || a[1] - b[1]).map(p => p[0]);
 }
 
+/* ---- Plan 2D des lignes modulaires (v16) ---- */
+function k2dCurve(g, x, y, W, H, corner, sweep, B, col){   // secteur d'anneau, mêmes conventions qu'en 3D
+  const R = Math.min(W, H), bw = B || Math.max(2, R*.45), ri = Math.max(.5, R - bw);
+  const cx = corner[1] === "l" ? x : x + W, cy = corner[0] === "t" ? y : y + H;
+  const base = {tl:0, tr:90, br:180, bl:270}[corner] * Math.PI/180, sw = (sweep || 90)*Math.PI/180;
+  const a0 = base + Math.PI/2 - sw, a1 = base + Math.PI/2;
+  g.beginPath(); g.arc(cx, cy, R, a0, a1); g.arc(cx, cy, ri, a1, a0, true); g.closePath();
+  g.fillStyle = "#dfe4ea"; g.fill(); g.strokeStyle = "#5b6b7c"; g.lineWidth = 1.1; g.stroke();
+  g.strokeStyle = "rgba(43,51,61,.45)"; g.lineWidth = .7; g.beginPath();
+  const n = Math.max(3, Math.round(sw/(Math.PI/18)));
+  for (let i = 1; i < n; i++){
+    const a = a0 + sw*i/n;
+    g.moveTo(cx + ri*Math.cos(a), cy + ri*Math.sin(a)); g.lineTo(cx + R*Math.cos(a), cy + R*Math.sin(a));
+  }
+  g.stroke();
+}
+function k2dMod(g, kind, x, y, W, H, col, opt){
+  opt = opt || {};
+  const vert = H > W*1.15 && ["petrissage", "spiral_box", "spiral_open", "scarif"].indexOf(kind) < 0;
+  g.save(); g.translate(x + W/2, y + H/2);
+  if (vert){ g.rotate(Math.PI/2); const t = W; W = H; H = t; }
+  x = -W/2; y = -H/2;
+  const acier = "#c9d2dc", trait = "#56657a";
+  const cadre = (f) => { g.fillStyle = f; g.fillRect(x, y, W, H); g.strokeStyle = trait; g.lineWidth = 1; g.strokeRect(x, y, W, H); };
+  const tapis = () => {                                  // bande centrale + sens du flux
+    const bw = Math.min(H*.8, Math.max(2, H*.55));
+    g.fillStyle = "#eef1f4"; g.fillRect(x, -bw/2, W, bw);
+    g.strokeStyle = "rgba(86,101,122,.6)"; g.lineWidth = .7; g.strokeRect(x, -bw/2, W, bw);
+  };
+  switch (kind){
+    case "belt": {
+      g.fillStyle = opt.dark ? "#9aa3ad" : "#dfe4ea"; g.fillRect(x, y, W, H);
+      g.strokeStyle = trait; g.lineWidth = 1; g.strokeRect(x, y, W, H);
+      g.strokeStyle = "rgba(43,51,61,.35)"; g.lineWidth = .6; g.beginPath();
+      const st = Math.max(4, H*.9);
+      for (let i = st; i < W; i += st){ g.moveTo(x + i, y + 1); g.lineTo(x + i, y + H - 1); }
+      g.stroke(); break;
+    }
+    case "tunnel": case "oven": {
+      cadre(kind === "oven" ? col : hexA(col, .85));
+      g.strokeStyle = shade(col, -.35); g.lineWidth = .8; g.beginPath();
+      const st = Math.max(6, W/12);
+      for (let i = st; i < W; i += st){ g.moveTo(x + i, y); g.lineTo(x + i, y + H); }
+      g.stroke();
+      if (kind === "oven"){ g.strokeStyle = "rgba(0,0,0,.35)"; g.setLineDash([4, 3]); g.strokeRect(x + 2, y + 2, W - 4, H - 4); g.setLineDash([]); }
+      break;
+    }
+    case "spiral_open": {
+      const R = Math.min(W, H)/2*.95;
+      g.fillStyle = hexA(col, .3); g.beginPath(); g.arc(0, 0, R, 0, 6.2832); g.fill();
+      g.strokeStyle = col; g.lineWidth = 1.4; g.stroke();
+      g.beginPath(); g.arc(0, 0, R*.25, 0, 6.2832); g.stroke();
+      g.lineWidth = .7; g.beginPath();
+      for (let k = 0; k < 8; k++){ const a = k*Math.PI/4; g.moveTo(Math.cos(a)*R*.25, Math.sin(a)*R*.25); g.lineTo(Math.cos(a)*R, Math.sin(a)*R); }
+      g.stroke(); break;
+    }
+    case "spiral_box": {
+      cadre("#f3f6f9");
+      const n = opt.n || 1, R = Math.min(W/n, H)/2*.8, c = opt.spColor || "#4fc3f7";
+      for (let i = 0; i < n; i++){
+        const px = x + W*(i + .5)/n;
+        g.fillStyle = hexA(c, .25); g.beginPath(); g.arc(px, 0, R, 0, 6.2832); g.fill();
+        g.strokeStyle = c; g.lineWidth = 1.3; g.stroke();
+        g.beginPath(); g.arc(px, 0, R*.3, 0, 6.2832); g.stroke();
+      }
+      g.strokeStyle = "#5f7d95"; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, W - 2, H - 2);
+      break;
+    }
+    case "petrissage": {
+      cadre("#e3e8ee");
+      const r = Math.min(W*.22, H*.07);
+      [0, 1].forEach(i => { g.fillStyle = "#b6c2cf"; g.beginPath(); g.arc(x + W*.32, y + H*(.18 + i*.2), r, 0, 6.2832); g.fill(); g.strokeStyle = trait; g.stroke(); });
+      g.strokeStyle = trait; g.lineWidth = .8;
+      for (let i = 0; i < 8; i++) g.strokeRect(x + W*.72, y + H*(.08 + i*.1), W*.18, H*.07);
+      break;
+    }
+    default: {                                          // postes de façonnage et de découpe
+      cadre(acier); tapis();
+      g.strokeStyle = trait; g.lineWidth = .9; g.beginPath();
+      if (kind === "gantries" || kind === "calibrage" || kind === "universelle" || kind === "croissant" || kind === "division"){
+        const st = Math.max(5, Math.min(W/4, H*.9));
+        for (let i = st/2; i < W; i += st){ g.moveTo(x + i, y + 1); g.lineTo(x + i, y + H - 1); }
+      }
+      if (kind === "fan" || kind === "croissant"){
+        const x0 = kind === "fan" ? x + W*.1 : x + W*.05, x1 = kind === "fan" ? x + W*.9 : x + W*.45;
+        for (let i = -2; i <= 2; i++){ g.moveTo(x0, i*H*.05); g.lineTo(x1, i*H*.15); }
+      }
+      if (kind === "head" || kind === "calibrage"){ g.moveTo(0, y); g.lineTo(0, y + H); g.rect(-W*.1, y + H*.15, W*.2, H*.7); }
+      if (kind === "guillotine" || kind === "universelle"){ g.moveTo(x + W*.2, y); g.lineTo(x + W*.2, y + H); g.moveTo(x + W*.22, y); g.lineTo(x + W*.22, y + H); }
+      if (kind === "boxm"){ g.moveTo(x, y); g.lineTo(x + W*.6, y + H); g.moveTo(x + W*.6, y); g.lineTo(x, y + H); }
+      if (kind === "scarif"){ [-1, 1].forEach(a => [-1, 1].forEach(k => { g.moveTo(a*W*.22 + H*.15, k*H*.26); g.arc(a*W*.22, k*H*.26, H*.15, 0, 6.2832); })); }
+      if (kind === "big"){ g.rect(x + W*.25, y, W*.5, H*.22); g.rect(x + W*.25, y + H*.78, W*.5, H*.22); }
+      g.stroke();
+    }
+  }
+  g.restore();
+}
+function k2dLigne(g, o, x, y, W, H, col){
+  const L = LINE_LAYOUTS[o.type || o.id]; if (!L){ k2dMod(g, "belt", x, y, W, H, col); return; }
+  const sx = W/L.W, sy = H/L.D, sr = Math.min(sx, sy);
+  g.strokeStyle = "rgba(86,101,122,.35)"; g.setLineDash([3, 3]); g.lineWidth = .8; g.strokeRect(x, y, W, H); g.setLineDash([]);
+  L.mods.forEach(m => {
+    if (m.k === "curve"){
+      const B = (m.B || 1.2)*sr, R = m.r*sr + B/2, cx = x + m.c[0]*sx, cy = y + m.c[1]*sy;
+      const rx = m.corner[1] === "l" ? cx : cx - R, ry = m.corner[0] === "t" ? cy : cy - R;
+      k2dCurve(g, rx, ry, R, R, m.corner, 90, B, col); return;
+    }
+    k2dMod(g, m.k, x + m.x[0]*sx, y + m.z[0]*sy, (m.x[1] - m.x[0])*sx, (m.z[1] - m.z[0])*sy, m.col || col, m.o);
+  });
+}
+
 function drawShape(g, def, o, W, H, thumb){
   const col = colorOf(o), z = zoneOf(o);
   const x = -W/2, y = -H/2;
@@ -1078,6 +1214,9 @@ function drawShape(g, def, o, W, H, thumb){
       else { g.moveTo(-r*.7,0); g.lineTo(r*.7,0); g.moveTo(0,-r*.7); g.lineTo(0,r*.7); }
       g.stroke(); break;
     }
+    case "line_layout": { k2dLigne(g, o, x, y, W, H, col); break; }
+    case "line_module": { k2dMod(g, def.kind || "belt", x, y, W, H, col, {n:def.n, spColor:def.spColor}); break; }
+    case "conveyor_curve": { k2dCurve(g, x, y, W, H, "tl", def.sweep || 90, null, col); break; }
     case "conveyor": {
       g.fillStyle = shade(col,.18); g.fillRect(x, y, W, H);
       g.strokeStyle = shade(col,-.4); g.lineWidth = 1.2; g.strokeRect(x, y, W, H);
@@ -3258,6 +3397,323 @@ function kChaussette(g, w, d, h, col){
   kBox(g, L, .012, .012, "#5c6a78", 0, 2*r + .18, 0);                       // câble porteur
 }
 
+/* =====================================================================
+   Lignes modulaires (v16)
+   Chaque module se construit dans un rectangle local L × D (flux selon x),
+   hauteur H. Les lignes complètes sont des listes de modules posés à leurs
+   cotes réelles (plans du 13/11), mises à l'échelle de l'emprise saisie.
+   ===================================================================== */
+function kAt(g, x, z, fn){ const s = new THREE.Group(); s.position.set(x, 0, z); fn(s); g.add(s); return s; }
+const KMOD = {
+  belt(g, L, D, H, col, opt){
+    opt = opt || {};
+    const bh = opt.bh || Math.min(.9, H - .05), bw = Math.min(D*.85, opt.bw || 1.4);
+    kBande(g, L, bw, bh, 0, 0, opt.dark ? K_MAILLE : K_BANDE);
+    kJambes(g, L, bw*.85, bh - .05, opt.pas || 2.2);
+  },
+  carter(g, L, D, H, col, opt){                    // poste sous carter vitré
+    KMOD.belt(g, L, D, H, col, opt);
+    const bh = Math.min(.9, H - .05), hs = Math.max(.4, Math.min(H, 2.2) - bh), bw = Math.min(D*.9, 1.6);
+    [-1, 1].forEach(a => [-1, 1].forEach(k => kInox(g, .05, hs, .05, a*(L/2 - .03), bh + hs/2, k*bw/2)));
+    kBox(g, L, .06, bw + .05, col, 0, bh + hs, 0, kShiny(col));
+    kBox(g, L - .06, hs - .08, bw - .04, K_VITRE, 0, bh + (hs - .08)/2, 0, kGlass());
+    kPupitre(g, L/2 - .3, bh + hs*.5, bw/2 + .07, .7);
+  },
+  gantries(g, L, D, H, col, opt){                  // arches à rouleaux (calibrage, façonnage, enfournement)
+    opt = opt || {};
+    KMOD.belt(g, L, D, H, col, opt);
+    const bh = Math.min(.9, H - .05), top = Math.min(H, 1.8), bw = Math.min(D*.85, 1.4);
+    const n = Math.max(1, Math.round(L / (opt.pas || 1.2)));
+    for (let i = 0; i < n; i++){
+      const x = -L/2 + L*(i + .5)/n;
+      [-1, 1].forEach(k => kBox(g, .12, top - bh + .05, .1, col, x, bh + (top - bh)/2, k*(bw/2 + .08), kShiny(col)));
+      kBox(g, .14, .1, bw + .3, col, x, top - .05, 0, kShiny(col));
+      kCylI(g, .05, bw, x, bh + .1, 0, "z", 12, K_INOX_F);
+    }
+    kPupitre(g, -L/2 + .4, bh + .35, bw/2 + .2, .7);
+  },
+  head(g, L, D, H, col){                            // tête de laminage : bâti à cylindres
+    const bh = Math.min(.9, H - .05), hw = Math.min(L*.45, 1.6), bw = Math.min(D*.85, 1.4), top = Math.min(H, 2.2), tl = (L - hw)/2;
+    if (tl > .25) [-1, 1].forEach(k => kAt(g, k*(hw/2 + tl/2), 0, s => { kBande(s, tl, bw, bh); kJambes(s, tl, bw*.85, bh - .05, 2); }));
+    kBox(g, hw, bh - .05, D*.9, shade(col, -.15), 0, (bh - .05)/2, 0, kShiny(shade(col, -.15)));
+    [-1, 1].forEach(k => kBox(g, hw, top - bh + .05, .16, col, 0, bh + (top - bh)/2 - .02, k*(bw/2 + .12), kShiny(col)));
+    kBox(g, hw, .22, bw + .4, col, 0, top - .11, 0, kShiny(col));
+    kCylI(g, .09, bw, -hw*.12, bh + .14, 0, "z", 16, K_INOX_F);
+    kCylI(g, .09, bw, hw*.12, bh + .02, 0, "z", 16, K_INOX_F);
+    kCyl(g, .15, .04, K_NOIR, 0, top*.78, bw/2 + .22, "z", 20);
+    kPupitre(g, 0, top - .11, bw/2 + .27, .55);
+  },
+  fan(g, L, D, H, col){                             // écarteur : bandes divergentes
+    KMOD.belt(g, L, D, H, col);
+    const bh = Math.min(.9, H - .05), bw = Math.min(D*.85, 1.4), n = 6;
+    for (let i = 0; i < n; i++){
+      const z0 = (i - (n - 1)/2)*bw*.05, z1 = (i - (n - 1)/2)*bw*.15, len = Math.hypot(L*.8, z1 - z0);
+      const s = kInox(g, len, .02, .03, 0, bh + .04, (z0 + z1)/2, K_INOX_F);
+      s.rotation.y = -Math.atan2(z1 - z0, L*.8);
+    }
+    const top = Math.min(H, 1.5);
+    [-1, 1].forEach(k => kBox(g, .1, top - bh, .1, col, -L*.42, bh + (top - bh)/2, k*(bw/2 + .08), kShiny(col)));
+    kBox(g, .12, .1, bw + .3, col, -L*.42, top - .05, 0, kShiny(col));
+  },
+  guillotine(g, L, D, H, col){                      // poste de découpe : portique, couteau, vérins
+    KMOD.belt(g, L, D, H, col);
+    const bh = Math.min(.9, H - .05), top = Math.min(H, 2.0), bw = Math.min(D*.85, 1.4), gw = Math.min(L*.4, 1.2);
+    [-1, 1].forEach(k => kBox(g, gw, top - bh, .14, col, 0, bh + (top - bh)/2, k*(bw/2 + .1), kShiny(col)));
+    kBox(g, gw, .3, bw + .36, col, 0, top - .15, 0, kShiny(col));
+    kInox(g, gw*.9, .04, bw*.95, 0, bh + .35, 0, K_INOX_F);
+    [-1, 1].forEach(k => kCylI(g, .05, top - bh - .5, k*gw*.25, bh + .4 + (top - bh - .5)/2, 0, "y", 10, K_INOX_F));
+    kBox(g, gw*1.1, top - bh - .1, .02, K_VITRE, 0, bh + (top - bh - .1)/2, bw/2 + .18, kGlass());
+    kBox(g, .4, .35, .35, "#3d4650", L/2 - .35, bh + .3, -bw/2 - .25);
+    kPupitre(g, L/2 - .3, bh + .45, bw/2 + .25, .7);
+  },
+  boxm(g, L, D, H, col){                            // trémie / extrudeuse de bande
+    const top = Math.min(H, 2.0), r = Math.min(L, D);
+    kBox(g, L, top*.55, D*.85, col, 0, top*.275, 0, kShiny(col));
+    kCone(g, r*.38, r*.14, top*.4, K_INOX, -L*.15, top*.55 + top*.2, 0, 20, kShiny(K_INOX));
+    kBande(g, L*.4, Math.min(D*.6, 1.2), top*.55 + .04, L*.28, 0);
+    kPupitre(g, L*.3, top*.38, D*.425 + .06, .7);
+  },
+  tunnel(g, L, D, H, col, opt){                     // étuve / four tunnel : enceinte isolée
+    opt = opt || {};
+    const th = Math.min(H, 3.4), oven = !!opt.oven, y0 = oven ? th*.2 : .1, hb = th - y0 - (oven ? .35 : 0);
+    if (oven) kJambes(g, L*.98, D*.86, y0, 2.4); else kBox(g, L, .1, D, "#5c6a78", 0, .05, 0);
+    kBox(g, L, hb, D, col, 0, y0 + hb/2, 0);
+    const n = Math.max(1, Math.round(L/2.4));
+    for (let i = 1; i < n; i++) kBox(g, .03, hb - .06, .012, shade(col, -.2), -L/2 + L*i/n, y0 + hb/2, D/2 + .006);
+    if (oven){
+      kBox(g, L, .05, D*1.03, shade(col, -.25), 0, y0 + hb, 0);
+      const m = Math.max(2, Math.round(L/2));
+      for (let i = 0; i < m; i++) kBox(g, L/m*.6, hb*.4, .03, shade(col, -.25), -L/2 + L*(i + .5)/m, y0 + hb*.5, D/2 + .015);
+      const nc = Math.max(1, Math.round(L/5));
+      for (let i = 0; i < nc; i++) kCylI(g, .2, .9, -L/2 + L*(i + .5)/nc, y0 + hb + .45, -D*.2, "y", 14);
+      [-1, 1].forEach(k => kBande(g, .8, Math.min(D*.7, 1.2), y0 + .3, k*(L/2 + .35), 0, K_MAILLE));
+    } else {
+      const np = Math.max(1, Math.round(L/9));
+      for (let i = 0; i < np; i++) kPorte(g, .9, Math.min(hb*.8, 2.0), -L/2 + L*(i + .5)/np, D/2, shade(col, -.12));
+      kCylI(g, .07, .3, -L/2 + .5, y0 + hb + .15, -D/4, "y", 10);       // humidificateur
+    }
+    kPupitre(g, L/2 - .4, y0 + Math.min(hb*.55, 1.4), D/2 + .07, .8);
+  },
+  oven(g, L, D, H, col){ KMOD.tunnel(g, L, D, H, col, {oven:true}); },
+  spiral_open(g, L, D, H, col){                     // spirale ouverte (refroidissement)
+    const R = Math.min(L, D)/2*.95, top = Math.min(H, 4.8);
+    kCylI(g, R*.22, top, 0, top/2, 0, "y", 20);
+    const n = Math.max(4, Math.round(top/.45));
+    for (let i = 0; i < n; i++) kCyl(g, R*.94, .04, i % 2 ? K_BANDE : "#d6cfba", 0, .45 + i*(top - .6)/n, 0, "y", 36);
+    for (let k = 0; k < 8; k++){
+      const a = k*Math.PI/4;
+      kBox(g, .08, top, .08, col, Math.cos(a)*R, top/2, Math.sin(a)*R, kShiny(col));
+    }
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(R, .05, 6, 40), kShiny(col));
+    ring.rotation.x = Math.PI/2; ring.position.y = top; g.add(ring);
+    kBox(g, .5, .45, .5, "#3d4650", 0, top + .22, 0);                       // motorisation du tambour
+  },
+  spiral_box(g, L, D, H, col, opt){                 // spirale(s) dans une enceinte isolée
+    opt = opt || {};
+    const top = Math.min(H, 5), n = opt.n || 1;
+    const pm = mat("#eef3f7", {transparent:true, opacity:.3, depthWrite:false});
+    kBox(g, L, .12, D, "#5c6a78", 0, .06, 0);
+    [-1, 1].forEach(k => kBox(g, L, top, .1, "#eef3f7", 0, top/2, k*(D/2 - .05), pm));
+    [-1, 1].forEach(k => kBox(g, .1, top, D - .2, "#eef3f7", k*(L/2 - .05), top/2, 0, pm));
+    [-1, 1].forEach(a => [-1, 1].forEach(k => kBox(g, .12, top, .12, "#9aa7b5", a*(L/2 - .06), top/2, k*(D/2 - .06))));
+    [-1, 1].forEach(k => kBox(g, L, .1, .12, "#9aa7b5", 0, top, k*(D/2 - .06)));
+    [-1, 1].forEach(k => kBox(g, .12, .1, D, "#9aa7b5", k*(L/2 - .06), top, 0));
+    const R = Math.min(L/n, D)/2*.8;
+    for (let i = 0; i < n; i++) kAt(g, -L/2 + L*(i + .5)/n, 0, s => KMOD.spiral_open(s, 2*R, 2*R, top*.9, opt.spColor || "#4fc3f7"));
+    if (n === 2){ const b = kBox(g, L*.35, .05, 1, K_BANDE, 0, top*.5, 0); b.rotation.y = .6; }   // passage entre spirales
+    for (let i = 0; i < Math.min(n + 1, 3); i++) kAt(g, -L/2 + L*(i + .5)/Math.min(n + 1, 3), -D*.3, s => kGroupe(s, Math.min(L/3, 3), D*.3, top + .05));
+    kPorte(g, 1, Math.min(top*.8, 2.1), L/2 - 1.1, D/2, "#e6ebf0");
+  },
+  petrissage(g, L, D, H){                           // îlot de pétrissage
+    const top = Math.min(H, 3.2);
+    [0, 1].forEach(i => kAt(g, -L*.18, -D*.32 + i*D*.2, s => kPetrinSpirale(s, 2.0, 1.1, 1.5, "#b6c2cf")));
+    const n = 8;
+    for (let i = 0; i < n; i++) kAt(g, L*.32, -D*.42 + i*(D*.8/n), s => kCuvePetrin(s, 1.0, 1.0, .9, "#c3ccd6"));
+    kInox(g, .1, .1, D*.85, L*.32 - .62, .12, -D*.02, K_INOX_F);              // rail des cuves
+    kBox(g, .9, top, .9, "#8c98a6", L*.08, top/2, D*.3, kShiny("#8c98a6"));  // élévateur-basculeur
+    const bol = kCylI(g, .5, .7, L*.08 + .55, top - .35, D*.3, "y", 24); bol.rotation.z = .9;
+    kCylI(g, .6, Math.min(top, 3), -L*.3, Math.min(top, 3)/2, D*.2, "y", 20);  // silo journalier
+    kAt(g, -L*.3, D*.04, s => kDoseurEau(s, .9, .8, 1.8, "#7fdbe8"));
+    kAt(g, L*.05, D*.43, s => KMOD.boxm(s, 2.2, 1.4, 2.0, "#b6c2cf"));
+  },
+  division(g, L, D, H, col){                        // division, repos et façonnage
+    kAt(g, -L*.35, 0, s => KMOD.boxm(s, L*.3, D, H, col));
+    kAt(g, 0, 0, s => KMOD.gantries(s, L*.4, D, H, col));
+    kAt(g, L*.35, 0, s => KMOD.carter(s, L*.3, D, H, col));
+  },
+  scarif(g, L, D, H, col){                          // scarificateur / décor
+    KMOD.belt(g, L, Math.min(D, 1.8), H, col);
+    const bh = .9, top = Math.min(H, 2.4);
+    [-1, 1].forEach(a => [-1, 1].forEach(k => {
+      kCyl(g, Math.min(L, D)*.15, .25, col, a*L*.22, bh + .75, k*D*.26, "y", 24, kShiny(col));
+      kCylI(g, .05, .5, a*L*.22, bh + .4, k*D*.26, "y", 8);
+      kBox(g, .1, top, .1, "#9aa7b5", a*(L/2 - .05), top/2, k*(D/2 - .05));
+    }));
+    [-1, 1].forEach(k => kBox(g, L, .1, .1, "#9aa7b5", 0, top, k*(D/2 - .05)));
+    kPupitre(g, L/2 - .4, bh + .4, D/2 + .02, .7);
+  },
+  big(g, L, D, H, col){                             // module large de découpe-enroulage (Fritsch)
+    KMOD.belt(g, L, Math.min(D*.45, 1.0), H, col);
+    const top = Math.min(H, 1.9);
+    kBox(g, L*.42, top - .1, Math.min(D*.5, 1.1), col, -L*.08, (top - .1)/2 + .05, 0, kShiny(col));
+    kBox(g, L*.5, 1.1, D*.2, shade(col, -.1), 0, .55, -D*.39, kShiny(shade(col, -.1)));
+    kBox(g, L*.5, 1.1, D*.2, shade(col, -.1), 0, .55, D*.39, kShiny(shade(col, -.1)));
+    for (let i = 0; i < 3; i++) kCylI(g, .06, Math.min(D*.45, 1), L*(.1 + i*.1), 1.05, 0, "z", 12, K_INOX_F);
+    kPupitre(g, -L*.08, top*.7, Math.min(D*.25, .55) + .07, .7);
+  },
+  duster(g, L, D, H, col){                          // tapis + fleureuse inclinée
+    KMOD.belt(g, L, D, H, col);
+    const c = kInox(g, L*.4, .2, .35, -L*.05, 1.4, D*.1); c.rotation.z = .35; c.rotation.y = .3;
+    kBox(g, .5, .4, .4, col, L*.12, 1.75, D*.1, kShiny(col));
+  },
+  calibrage(g, L, D, H, col){
+    kAt(g, -L*.36, 0, s => KMOD.head(s, L*.28, D, H, col));
+    kAt(g, 0, 0, s => KMOD.gantries(s, L*.44, D, H, col));
+    kAt(g, L*.36, 0, s => KMOD.head(s, L*.28, D, H, col));
+  },
+  croissant(g, L, D, H, col){
+    kAt(g, -L*.24, 0, s => KMOD.fan(s, L*.52, D, H, col));
+    kAt(g, L*.26, 0, s => KMOD.gantries(s, L*.48, D, H, col, {pas:.8}));
+  },
+  universelle(g, L, D, H, col){
+    kAt(g, -L*.36, 0, s => KMOD.guillotine(s, L*.28, D, H, col));
+    kAt(g, L*.06, 0, s => KMOD.gantries(s, L*.56, D, H, col));
+    kAt(g, L*.42, 0, s => KMOD.carter(s, L*.16, D, H, col));
+  },
+  /* Convoyeur courbe : secteur d'anneau. Centre de courbure à un coin de
+     l'emprise (tl, tr, br, bl) ; rayon extérieur = plus petit côté.
+     L'arc part du bord latéral et tourne de `sweep` degrés. */
+  curve(g, L, D, H, col, opt){
+    opt = opt || {};
+    const R = Math.min(L, D), B = opt.B || Math.max(.4, Math.min(1.2, R*.45)), rm = R - B/2;
+    const bh = opt.bh || Math.min(.9, H - .05), c = opt.corner || "tl";
+    const cx = c[1] === "l" ? -L/2 : L/2, cz = c[0] === "t" ? -D/2 : D/2;
+    const base = {tl:0, tr:90, br:180, bl:270}[c] * Math.PI/180;
+    const sw = (opt.sweep || 90) * Math.PI/180, a0 = base + Math.PI/2 - sw;
+    const n = Math.max(3, Math.ceil(sw/(Math.PI/18))), da = sw/n;
+    const ri = Math.max(.05, R - B);
+    for (let i = 0; i < n; i++){
+      const a = a0 + (i + .5)*da, ca = Math.cos(a), sa = Math.sin(a);
+      const seg = kBox(g, 2*R*Math.sin(da/2)*1.02, .03, B, K_BANDE, cx + rm*ca, bh, cz + rm*sa);
+      seg.rotation.y = -(a + Math.PI/2);
+      const sl = kBox(g, B, .012, .03, K_NOIR, cx + rm*ca, bh + .017, cz + rm*sa); sl.rotation.y = -a;
+      const ro = kInox(g, 2*(R + .02)*Math.sin(da/2)*1.02, .1, .03, cx + (R + .02)*ca, bh - .03, cz + (R + .02)*sa);
+      ro.rotation.y = -(a + Math.PI/2);
+      const rin = kInox(g, 2*ri*Math.sin(da/2)*1.04, .1, .03, cx + (ri - .02)*ca, bh - .03, cz + (ri - .02)*sa);
+      rin.rotation.y = -(a + Math.PI/2);
+    }
+    const legs = sw > Math.PI/3 ? [a0, a0 + sw/2, a0 + sw] : [a0, a0 + sw];
+    legs.forEach(a => [ri + .08, R - .08].forEach(r => {
+      kCylI(g, .028, bh - .05, cx + r*Math.cos(a), (bh - .05)/2, cz + r*Math.sin(a), "y", 10);
+      kCyl(g, .045, .03, K_NOIR, cx + r*Math.cos(a), .015, cz + r*Math.sin(a), "y", 12);
+    }));
+    const am = a0 + sw;                                                         // motorisation en sortie
+    kBox(g, .3, .25, .25, "#3d4650", cx + (R + .2)*Math.cos(am), bh - .1, cz + (R + .2)*Math.sin(am));
+  }
+};
+/* Module seul : les modules en longueur sont tournés si l'emprise est en travers. */
+function kMod(kind, g, L, D, H, col, opt){
+  const f = KMOD[kind] || KMOD.belt;
+  const fixe = kind === "curve" || kind === "petrissage" || kind === "spiral_box" || kind === "spiral_open" || kind === "scarif";
+  if (!fixe && D > L*1.15){
+    const s = new THREE.Group(); s.rotation.y = Math.PI/2; f(s, D, L, H, col, opt); g.add(s);
+  } else f(g, L, D, H, col, opt);
+}
+/* Implantations des lignes complètes, en mètres, à leurs cotes de référence
+   (W × D × H). x le long de la ligne depuis le bord gauche, z depuis le bord
+   haut. Les courbes : centre c, rayon moyen r, coin du centre, largeur B. */
+const LINE_LAYOUTS = {
+  mecatherm: {W:114.93, D:17.3, H:5, mods:[
+    {k:"petrissage", x:[2.2, 7.6], z:[0.5, 14.0], H:3.2},
+    {k:"division", x:[7.6, 19.0], z:[9.2, 12.2], H:2.2},
+    {k:"belt", x:[19.0, 25.5], z:[10.1, 11.3]},
+    {k:"carter", x:[25.5, 27.4], z:[9.6, 11.8], H:2.2},
+    {k:"curve", c:[27.4, 9.2], r:1.5, corner:"tl", B:1.2},
+    {k:"curve", c:[30.9, 9.2], r:2.0, corner:"br", B:1.2},
+    {k:"belt", x:[30.9, 32.2], z:[6.6, 7.8]},
+    {k:"tunnel", x:[32.2, 60.4], z:[5.7, 8.7], H:3.4, col:"#f0b27a"},
+    {k:"belt", x:[60.4, 63.2], z:[6.6, 7.8]},
+    {k:"scarif", x:[63.2, 67.7], z:[5.2, 9.2], H:2.4, col:"#7cb342"},
+    {k:"carter", x:[67.7, 72.6], z:[6.4, 8.0], H:2.0},
+    {k:"gantries", x:[72.6, 76.2], z:[6.0, 8.6], H:1.8},
+    {k:"oven", x:[76.2, 92.1], z:[5.4, 10.0], H:3.0, col:"#c4713f"},
+    {k:"belt", x:[92.1, 95.2], z:[6.6, 7.8]},
+    {k:"belt", x:[93.7, 94.9], z:[7.8, 13.3]},
+    {k:"curve", c:[95.8, 13.3], r:1.5, corner:"tr", B:1.2},
+    {k:"belt", x:[95.8, 105.0], z:[14.2, 15.4]},
+    {k:"spiral_open", x:[96.8, 104.8], z:[6.2, 14.2], H:4.5, col:"#f2c94c"},
+    {k:"spiral_box", x:[105.0, 114.4], z:[5.5, 17.3], H:5.0, col:"#e6ebf0", o:{n:1}},
+    {k:"belt", x:[29.0, 75.0], z:[13.7, 14.9], o:{dark:true, pas:4}},           // retour des plaques
+    {k:"belt", x:[27.8, 29.0], z:[11.8, 14.9], o:{dark:true}},
+    {k:"belt", x:[74.4, 75.6], z:[10.0, 13.7], o:{dark:true}}
+  ]},
+  ligne_vien_indus: {W:70.24, D:12, H:5, mods:[
+    {k:"spiral_box", x:[0.2, 7.9], z:[7.3, 11.6], H:3.5, col:"#e6ebf0", o:{n:1}},   // surgélateur compact
+    {k:"belt", x:[7.9, 10.1], z:[10.2, 11.3]},
+    {k:"carter", x:[10.1, 13.6], z:[10.0, 11.5], H:2.0},                            // contrôle, détection
+    {k:"belt", x:[13.6, 23.5], z:[10.2, 11.3], o:{dark:true}},                      // accumulation
+    {k:"curve", c:[17.4, 8.95], r:1.8, corner:"tr", B:1.0, o:{bh:1.05}},            // montée IN
+    {k:"belt", x:[15.1, 16.1], z:[7.3, 8.95], o:{bh:1.1}},
+    {k:"curve", c:[19.7, 8.95], r:1.8, corner:"tl", B:1.0, o:{bh:1.05}},            // descente OUT
+    {k:"belt", x:[21.0, 22.0], z:[7.3, 8.95], o:{bh:1.1}},
+    {k:"spiral_box", x:[10.1, 22.5], z:[0.4, 7.3], H:5.0, col:"#e6ebf0", o:{n:2, spColor:"#ef5350"}},
+    {k:"belt", x:[23.5, 25.1], z:[10.2, 11.3]},
+    {k:"carter", x:[25.1, 30.0], z:[10.0, 11.5], H:1.8},
+    {k:"belt", x:[30.0, 33.0], z:[10.2, 11.3]},
+    {k:"gantries", x:[33.0, 37.5], z:[10.0, 11.5], H:1.8},
+    {k:"belt", x:[37.5, 41.4], z:[10.2, 11.3]},
+    {k:"universelle", x:[41.4, 52.2], z:[9.9, 11.6], H:2.0},
+    {k:"belt", x:[52.2, 53.7], z:[10.2, 11.3]},
+    {k:"croissant", x:[53.7, 61.1], z:[10.0, 11.5], H:1.8},
+    {k:"calibrage", x:[61.1, 70.1], z:[9.9, 11.6], H:2.2}
+  ]},
+  ligne_semi_boul: {W:15.96, D:1.5, H:1.8, mods:[
+    {k:"boxm", x:[0, 1.82], z:[0.1, 1.4]},
+    {k:"belt", x:[1.82, 2.17], z:[0.2, 1.3]},
+    {k:"gantries", x:[2.17, 3.99], z:[0.1, 1.4], o:{pas:.45}},
+    {k:"head", x:[3.99, 5.43], z:[0.05, 1.45]},
+    {k:"carter", x:[5.43, 6.62], z:[0.1, 1.4]},
+    {k:"carter", x:[6.62, 7.85], z:[0.1, 1.4]},
+    {k:"tunnel", x:[7.85, 10.42], z:[0.15, 1.35], H:1.6, col:"#cfd8dc"},
+    {k:"gantries", x:[10.42, 11.6], z:[0.1, 1.4], o:{pas:.4}},
+    {k:"fan", x:[11.6, 12.93], z:[0.1, 1.4]},
+    {k:"guillotine", x:[12.93, 14.92], z:[0.05, 1.45]},
+    {k:"belt", x:[14.92, 15.96], z:[0.15, 1.35]}
+  ]},
+  fritsch: {W:12.21, D:2.0, H:1.8, mods:[
+    {k:"carter", x:[0, 1.82], z:[0.45, 1.55]},
+    {k:"gantries", x:[1.82, 2.43], z:[0.5, 1.5], o:{pas:.3}},
+    {k:"belt", x:[2.43, 2.97], z:[0.55, 1.45]},
+    {k:"big", x:[2.97, 5.16], z:[0.05, 1.95]},
+    {k:"duster", x:[5.16, 8.0], z:[0.55, 1.45]},
+    {k:"head", x:[8.0, 9.07], z:[0.45, 1.55]},
+    {k:"gantries", x:[9.07, 10.29], z:[0.5, 1.5], o:{pas:.4}},
+    {k:"belt", x:[10.29, 12.21], z:[0.55, 1.45]}
+  ]}
+};
+function kLigne(g, w, d, h, col, o){
+  const L = LINE_LAYOUTS[o.type || o.id]; if (!L) return KMOD.belt(g, w, d, h, col);
+  const sx = w/L.W, sz = d/L.D, sh = h/L.H, sr = Math.min(sx, sz);
+  L.mods.forEach(m => {
+    if (m.k === "curve"){
+      const cx = m.c[0]*sx - w/2, cz = m.c[1]*sz - d/2, B = (m.B || 1.2)*Math.min(1, sr*1.3), R = m.r*sr + B/2;
+      const rx = m.corner[1] === "l" ? cx + R/2 : cx - R/2, rz = m.corner[0] === "t" ? cz + R/2 : cz - R/2;
+      kAt(g, rx, rz, s => KMOD.curve(s, R, R, h, col, Object.assign({corner:m.corner, B:B}, m.o)));
+      return;
+    }
+    const x0 = m.x[0]*sx, x1 = m.x[1]*sx, z0 = m.z[0]*sz, z1 = m.z[1]*sz;
+    kAt(g, (x0 + x1)/2 - w/2, (z0 + z1)/2 - d/2, s => kMod(m.k, s, x1 - x0, z1 - z0, (m.H || L.H)*sh, m.col || col, m.o));
+  });
+}
+function kModule(g, w, d, h, col, o){
+  const def = BY_ID[o.type] || {};
+  kMod(def.kind || "belt", g, w, d, h, col, {n:def.n, spColor:def.spColor});
+}
+function kCourbe(g, w, d, h, col, o){
+  const def = BY_ID[o.type] || {};
+  KMOD.curve(g, w, d, h, col, {corner:"tl", sweep:def.sweep || 90});
+}
+
 /* Par type d'élément (prioritaire), puis par forme. */
 const MACHINE3D = {
   petrin: kPetrinSpirale,
@@ -3311,7 +3767,10 @@ const SHAPE3D = {
   folder: kAlong(kPlieuse),
   bread_slicer: kTrancheuse,
   pallet: kPaletteEUR,
-  textile_duct: kAlong(kChaussette)
+  textile_duct: kAlong(kChaussette),
+  line_layout: kLigne,
+  line_module: kModule,
+  conveyor_curve: kCourbe
 };
 
 function build3D(o){
